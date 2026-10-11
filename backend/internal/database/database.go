@@ -56,6 +56,7 @@ func InitDB(cfg *config.Config) (*gorm.DB, error) {
 		&model.Pembayaran{},
 		&model.LogAktivitasAdmin{},
 		&model.PengaturanSistem{},
+		&model.FAQ{},
 		&model.RoleModel{},
 		&model.MenuGroup{},
 		&model.Menu{},
@@ -68,11 +69,12 @@ func InitDB(cfg *config.Config) (*gorm.DB, error) {
 	// Normalisasi nomor_pendaftaran kosong menjadi NULL agar tidak bentrok dengan UNIQUE index
 	db.Exec("UPDATE pendaftars SET nomor_pendaftaran = NULL WHERE nomor_pendaftaran = ''")
 
-	// Seed Master Data Awal (Prodi, Gelombang, Admin, Settings, RBAC)
+	// Seed Master Data Awal (Prodi, Gelombang, Admin, Settings, FAQ, RBAC)
 	seedProgramStudi(db)
 	seedGelombang(db)
 	seedAdminDefault(db)
 	seedSettingsDefault(db)
+	seedFAQDefault(db)
 	seedRBACDefault(db)
 
 	DB = db
@@ -163,19 +165,113 @@ func seedAdminDefault(db *gorm.DB) {
 func seedSettingsDefault(db *gorm.DB) {
 	var count int64
 	db.Model(&model.PengaturanSistem{}).Count(&count)
+	defaultPetunjuk := "1. Lakukan transfer manual sesuai nominal biaya pendaftaran ke rekening resmi STAICI di atas.\n2. Cantumkan Nomor Registrasi PMB pada kolom berita transfer jika memungkinkan.\n3. Simpan bukti transfer (struk ATM / tangkapan layar m-banking / bukti setor tunai).\n4. Unggah file bukti transfer dalam format JPG, PNG, atau PDF (maksimal 2 MB).\n5. Tim Keuangan PMB akan memverifikasi pembayaran Anda dalam waktu 1x24 jam kerja."
+	defaultRegulasi := "1. Bukti pembayaran harus memuat informasi nama pengirim, nominal transfer yang sesuai, tanggal/waktu transaksi, dan nomor referensi/struk yang terbaca jelas.\n2. Pembayaran yang tidak sesuai nominal atau bukti buram/rusak akan ditolak dan wajib diunggah ulang.\n3. Biaya pendaftaran yang telah dibayarkan dan diverifikasi sah tidak dapat ditarik kembali."
+	defaultPersyaratan := "1. Scan / Foto Kartu Keluarga (KK) Asli atau Legalisir.\n2. Scan / Foto KTP Calon Mahasiswa (atau Surat Keterangan Domisili/KTP Sementara).\n3. Scan / Foto Ijazah atau Surat Keterangan Lulus (SKL) SLTA Sederajat.\n4. Pas Foto Resmi Berwarna 3x4 (Latar Belakang Merah/Biru).\n5. Bukti Transfer Pembayaran Biaya Pendaftaran PMB yang sah.\n6. Scan Kartu KIP / KIP-Kuliah (Khusus Pendaftar Jalur Beasiswa KIP)."
+	defaultJalur := "Jalur Reguler (Mandiri): Terbuka bagi seluruh lulusan SMA/MA/SMK/Pondok Pesantren.\nJalur Beasiswa KIP-Kuliah: Terbuka bagi lulusan berprestasi pemegang KIP/KKS/PKH."
+
 	if count == 0 {
 		settings := model.PengaturanSistem{
-			BannerTitle:      "Pusat Pendaftaran Mahasiswa Baru & Informasi Program Studi",
-			BannerSubtitle:   "Meneguhkan keilmuan Islam modern dan etika profesional santri. Mari bergabung bersama STAI Cendekia Insani Tahun Akademik 2026/2027.",
-			AnnouncementText: "Penerimaan Mahasiswa Baru Gelombang 1 Resmi Dibuka",
-			BankName:         "Bank Syariah Indonesia (BSI)",
-			NomorRekening:    "7148899012",
-			AtasNama:         "STAI Cendekia Insani PMB",
-			NoWhatsappCS:     "085233432221",
-			EmailCS:          "pmb@staicisitubondo.ac.id",
-			AlamatKampus:     "Jl. Raya Panji No. 12, Situbondo, Jawa Timur",
+			BannerTitle:            "Pusat Pendaftaran Mahasiswa Baru & Informasi Program Studi",
+			BannerSubtitle:         "Meneguhkan keilmuan Islam modern dan etika profesional santri. Mari bergabung bersama STAI Cendekia Insani Tahun Akademik 2026/2027.",
+			AnnouncementText:       "Penerimaan Mahasiswa Baru Gelombang 1 Resmi Dibuka",
+			BankName:               "Bank Syariah Indonesia (BSI)",
+			NomorRekening:          "7148899012",
+			AtasNama:               "STAI Cendekia Insani PMB",
+			PetunjukPembayaran:     defaultPetunjuk,
+			RegulasiBuktiBayar:     defaultRegulasi,
+			BatasWaktuKonfirmasi:   "1x24 Jam Kerja",
+			PersyaratanPendaftaran: defaultPersyaratan,
+			JalurPendaftaranInfo:   defaultJalur,
+			NoWhatsappCS:           "085233432221",
+			EmailCS:                "pmb@staicisitubondo.ac.id",
+			AlamatKampus:           "Jl. Raya Panji No. 12, Situbondo, Jawa Timur",
 		}
 		db.Create(&settings)
+	} else {
+		// Update existing row if instructions are empty
+		var existing model.PengaturanSistem
+		if err := db.First(&existing).Error; err == nil {
+			updated := false
+			if existing.PetunjukPembayaran == "" {
+				existing.PetunjukPembayaran = defaultPetunjuk
+				updated = true
+			}
+			if existing.RegulasiBuktiBayar == "" {
+				existing.RegulasiBuktiBayar = defaultRegulasi
+				updated = true
+			}
+			if existing.BatasWaktuKonfirmasi == "" {
+				existing.BatasWaktuKonfirmasi = "1x24 Jam Kerja"
+				updated = true
+			}
+			if existing.PersyaratanPendaftaran == "" {
+				existing.PersyaratanPendaftaran = defaultPersyaratan
+				updated = true
+			}
+			if existing.JalurPendaftaranInfo == "" {
+				existing.JalurPendaftaranInfo = defaultJalur
+				updated = true
+			}
+			if updated {
+				db.Save(&existing)
+			}
+		}
+	}
+}
+
+func seedFAQDefault(db *gorm.DB) {
+	var count int64
+	db.Model(&model.FAQ{}).Count(&count)
+	if count == 0 {
+		defaultFAQs := []model.FAQ{
+			{
+				Kategori:   "Pendaftaran",
+				Pertanyaan: "Kapan waktu pendaftaran mahasiswa baru (PMB) STAICI dibuka?",
+				Jawaban:    "Pendaftaran dibuka melalui beberapa gelombang sepanjang tahun akademik berjalan. Silakan cek tabel Gelombang aktif pada halaman beranda atau dashboard untuk melihat tanggal buka dan tutupnya.",
+				Urutan:     1,
+				IsAktif:    true,
+			},
+			{
+				Kategori:   "Pendaftaran",
+				Pertanyaan: "Apakah pendaftaran PMB STAICI dapat dilakukan secara online sepenuhnya?",
+				Jawaban:    "Ya, calon mahasiswa dapat melakukan registrasi akun, verifikasi email/OTP, pengisian biodata EMIS/Kopertais, unggah berkas, dan konfirmasi pembayaran secara online melalui website resmi ini.",
+				Urutan:     2,
+				IsAktif:    true,
+			},
+			{
+				Kategori:   "Berkas",
+				Pertanyaan: "Bagaimana jika berkas saya dinyatakan tidak sah / perlu perbaikan?",
+				Jawaban:    "Admin akan memberikan catatan alasan penolakan pada dashboard akun Anda. Anda dapat mengunggah ulang berkas revisi yang benar sebelum batas gelombang berakhir.",
+				Urutan:     3,
+				IsAktif:    true,
+			},
+			{
+				Kategori:   "Pembayaran",
+				Pertanyaan: "Berapa lama proses verifikasi pembayaran biaya pendaftaran?",
+				Jawaban:    "Proses verifikasi oleh Tim Keuangan PMB memerlukan waktu maksimal 1x24 jam kerja setelah Anda mengunggah bukti transfer yang sah dan jelas.",
+				Urutan:     4,
+				IsAktif:    true,
+			},
+			{
+				Kategori:   "Beasiswa",
+				Pertanyaan: "Apakah tersedia jalur beasiswa KIP-Kuliah di STAI Cendekia Insani?",
+				Jawaban:    "Ya, STAICI menyediakan jalur beasiswa KIP-Kuliah bagi calon mahasiswa berprestasi dari keluarga kurang mampu. Pastikan Anda mengunggah berkas KIP/KKS/PKH saat pendaftaran.",
+				Urutan:     5,
+				IsAktif:    true,
+			},
+			{
+				Kategori:   "Layanan",
+				Pertanyaan: "Siapa yang dapat saya hubungi jika mengalami kendala saat mendaftar?",
+				Jawaban:    "Anda dapat menghubungi nomor WhatsApp Customer Service PMB di 0852-3343-2221 atau email pmb@staicisitubondo.ac.id pada jam layanan kerja (Senin - Sabtu: 08.00 - 16.00 WIB).",
+				Urutan:     6,
+				IsAktif:    true,
+			},
+		}
+		for _, f := range defaultFAQs {
+			db.Create(&f)
+		}
+		log.Println("✓ Seed Master Data FAQ PMB berhasil.")
 	}
 }
 
@@ -238,17 +334,23 @@ func seedRBACDefault(db *gorm.DB) {
 	db.Where("nama = ?", "Alat & Integrasi").First(&groupAlat)
 	db.Where("nama = ?", "Pengaturan").First(&groupPengaturan)
 
+	// 2.5 Hapus menu yang sudah tidak digunakan (verifikasi berkas & integrasi VA) sesuai instruksi admin
+	var deprecatedMenus []model.Menu
+	db.Where("`key` IN ?", []string{"verifikasi", "va"}).Find(&deprecatedMenus)
+	for _, dm := range deprecatedMenus {
+		db.Where("menu_id = ?", dm.ID).Delete(&model.RoleMenu{})
+		db.Delete(&dm)
+	}
+
 	// 3. Seed Default Menus
 	defaultMenus := []model.Menu{
 		// Menu Utama
 		{MenuGroupID: groupMenuUtama.ID, Nama: "Pendaftar PMB", Key: "pendaftar", Icon: "Users", URL: "pendaftar", BadgeText: "128", Urutan: 1, IsAktif: true},
-		{MenuGroupID: groupMenuUtama.ID, Nama: "Verifikasi Berkas", Key: "verifikasi", Icon: "FileText", URL: "verifikasi", Urutan: 2, IsAktif: true},
-		{MenuGroupID: groupMenuUtama.ID, Nama: "Seleksi & Kelulusan", Key: "seleksi", Icon: "Award", URL: "seleksi", Urutan: 3, IsAktif: true},
+		{MenuGroupID: groupMenuUtama.ID, Nama: "Seleksi & Kelulusan", Key: "seleksi", Icon: "Award", URL: "seleksi", Urutan: 2, IsAktif: true},
 		// Alat & Integrasi
-		{MenuGroupID: groupAlat.ID, Nama: "Sinkronisasi EMIS", Key: "emis", Icon: "RefreshCw", URL: "emis", Urutan: 1, IsAktif: true},
-		{MenuGroupID: groupAlat.ID, Nama: "Export Data", Key: "export", Icon: "Download", URL: "export", Urutan: 2, IsAktif: true},
+		{MenuGroupID: groupAlat.ID, Nama: "Export Data", Key: "export", Icon: "Download", URL: "export", Urutan: 1, IsAktif: true},
+		{MenuGroupID: groupAlat.ID, Nama: "Sinkronisasi EMIS", Key: "emis", Icon: "RefreshCw", URL: "emis", Urutan: 2, IsAktif: true},
 		{MenuGroupID: groupAlat.ID, Nama: "Log Audit", Key: "logs", Icon: "History", URL: "logs", Urutan: 3, IsAktif: true},
-		{MenuGroupID: groupAlat.ID, Nama: "Integrasi VA", Key: "va", Icon: "CreditCard", URL: "va", Urutan: 4, IsAktif: true},
 		// Pengaturan
 		{MenuGroupID: groupPengaturan.ID, Nama: "Kelola Gelombang", Key: "gelombang", Icon: "Calendar", URL: "gelombang", Urutan: 1, IsAktif: true},
 		{MenuGroupID: groupPengaturan.ID, Nama: "CMS Content & Banner", Key: "settings", Icon: "Settings", URL: "settings", Urutan: 2, IsAktif: true},
@@ -285,8 +387,8 @@ func seedRBACDefault(db *gorm.DB) {
 			}
 		}
 
-		// verifikator_keuangan -> gets pendaftar, verifikasi, va, export
-		if m.Key == "pendaftar" || m.Key == "verifikasi" || m.Key == "va" || m.Key == "export" {
+		// verifikator_keuangan -> gets pendaftar, export
+		if m.Key == "pendaftar" || m.Key == "export" {
 			var countVK int64
 			db.Model(&model.RoleMenu{}).Where("role_kode = ? AND menu_id = ?", "verifikator_keuangan", m.ID).Count(&countVK)
 			if countVK == 0 {

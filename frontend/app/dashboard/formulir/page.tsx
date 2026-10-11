@@ -479,7 +479,7 @@ export default function FormulirPendaftaranPage() {
           <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-8 shadow-xs space-y-6">
             <div className="border-b border-slate-100 pb-4">
               <h2 className="text-lg sm:text-xl font-bold text-slate-900 font-serif">
-                Bagian 1: Identitas Calon Mahasiswa (FR-2.1)
+                Bagian 1: Identitas Calon Mahasiswa
               </h2>
               <p className="text-xs text-slate-500 mt-1">
                 Data pribadi mengacu pada Formulir Lembar Penerimaan Mahasiswa Baru &amp; format EMIS.
@@ -613,7 +613,7 @@ export default function FormulirPendaftaranPage() {
           <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-8 shadow-xs space-y-6">
             <div className="border-b border-slate-100 pb-4">
               <h2 className="text-lg sm:text-xl font-bold text-slate-900 font-serif">
-                Bagian 2: Data Asal Sekolah (SLTA) (FR-2.2)
+                Bagian 2: Data Asal Sekolah (SLTA)
               </h2>
               <p className="text-xs text-slate-500 mt-1">
                 Informasi sekolah menengah (SMA / MA / SMK / Pondok Pesantren).
@@ -715,7 +715,7 @@ export default function FormulirPendaftaranPage() {
           <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-8 shadow-xs space-y-8">
             <div className="border-b border-slate-100 pb-4">
               <h2 className="text-lg sm:text-xl font-bold text-slate-900 font-serif">
-                Bagian 3: Data Orang Tua &amp; Wali (FR-2.3, FR-2.4, FR-2.5)
+                Bagian 3: Data Orang Tua &amp; Wali
               </h2>
               <p className="text-xs text-slate-500 mt-1">
                 Data Ayah dan Ibu diisi terpisah untuk keperluan sinkronisasi EMIS &amp; Kopertais IV Surabaya.
@@ -1037,7 +1037,7 @@ export default function FormulirPendaftaranPage() {
           <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-8 shadow-xs space-y-6">
             <div className="border-b border-slate-100 pb-4">
               <h2 className="text-lg sm:text-xl font-bold text-slate-900 font-serif">
-                Bagian 4: Pilihan Program Studi &amp; Gelombang PMB (FR-2.6)
+                Bagian 4: Pilihan Program Studi &amp; Gelombang PMB
               </h2>
               <p className="text-xs text-slate-500 mt-1">
                 Pilih salah satu dari 3 Program Studi resmi STAI Cendekia Insani Situbondo.
@@ -1123,7 +1123,7 @@ export default function FormulirPendaftaranPage() {
           <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-8 shadow-xs space-y-6">
             <div className="border-b border-slate-100 pb-4">
               <h2 className="text-lg sm:text-xl font-bold text-slate-900 font-serif">
-                Bagian 5: Upload Berkas Persyaratan (FR-3.1 - FR-3.4, Section 8.7)
+                Bagian 5: Upload Berkas Persyaratan
               </h2>
               <p className="text-xs text-slate-500 mt-1">
                 Format file didukung: JPG, PNG, PDF (Maksimal 2 MB per file).
@@ -1242,7 +1242,7 @@ export default function FormulirPendaftaranPage() {
           <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-8 shadow-xs space-y-6">
             <div className="border-b border-slate-100 pb-4">
               <h2 className="text-lg sm:text-xl font-bold text-slate-900 font-serif">
-                Bagian 6: Review &amp; Submit Pendaftaran (FR-5.5, FR-2.8)
+                Bagian 6: Review &amp; Submit Pendaftaran
               </h2>
               <p className="text-xs text-slate-500 mt-1">
                 Periksa kembali data Anda sebelum men-submit formulir final.

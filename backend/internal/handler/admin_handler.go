@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/csv"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -48,6 +49,7 @@ func (h *AdminHandler) GetDashboardStats(c *gin.Context) {
 	var belumLengkap int64
 	var menungguVerifikasi int64
 	var berkasDiverifikasi int64
+	var mengikutiUjian int64
 	var lolosSeleksi int64
 	var ditolak int64
 
@@ -55,7 +57,8 @@ func (h *AdminHandler) GetDashboardStats(c *gin.Context) {
 	database.DB.Model(&model.Pendaftar{}).Where("status_pendaftaran = ?", model.StatusBelumLengkap).Count(&belumLengkap)
 	database.DB.Model(&model.Pendaftar{}).Where("status_pendaftaran = ?", model.StatusMenungguVerifikasi).Count(&menungguVerifikasi)
 	database.DB.Model(&model.Pendaftar{}).Where("status_pendaftaran = ?", model.StatusBerkasDiverifikasi).Count(&berkasDiverifikasi)
-	database.DB.Model(&model.Pendaftar{}).Where("status_pendaftaran IN (?, ?)", model.StatusLolosSeleksi, model.StatusDaftarUlang).Count(&lolosSeleksi)
+	database.DB.Model(&model.Pendaftar{}).Where("status_pendaftaran = ?", model.StatusMengikutiUjian).Count(&mengikutiUjian)
+	database.DB.Model(&model.Pendaftar{}).Where("status_pendaftaran = ?", model.StatusLolosSeleksi).Count(&lolosSeleksi)
 	database.DB.Model(&model.Pendaftar{}).Where("status_pendaftaran = ?", model.StatusDitolak).Count(&ditolak)
 
 	// Stat per Program Studi
@@ -90,6 +93,7 @@ func (h *AdminHandler) GetDashboardStats(c *gin.Context) {
 		"belum_lengkap":        belumLengkap,
 		"menunggu_verifikasi":  menungguVerifikasi,
 		"berkas_diverifikasi":  berkasDiverifikasi,
+		"mengikuti_ujian":      mengikutiUjian,
 		"lolos_seleksi":        lolosSeleksi,
 		"ditolak":              ditolak,
 		"statistik_prodi":      prodiStats,
@@ -130,7 +134,21 @@ func (h *AdminHandler) ListPendaftar(c *gin.Context) {
 	}
 
 	if status != "" {
-		query = query.Where("pendaftars.status_pendaftaran = ?", status)
+		if strings.Contains(status, ",") {
+			parts := strings.Split(status, ",")
+			var validParts []string
+			for _, p := range parts {
+				trimmed := strings.TrimSpace(p)
+				if trimmed != "" {
+					validParts = append(validParts, trimmed)
+				}
+			}
+			if len(validParts) > 0 {
+				query = query.Where("pendaftars.status_pendaftaran IN (?)", validParts)
+			}
+		} else {
+			query = query.Where("pendaftars.status_pendaftaran = ?", status)
+		}
 	}
 
 	if prodiID != "" {
@@ -310,8 +328,10 @@ func (h *AdminHandler) VerifikasiPembayaran(c *gin.Context) {
 }
 
 type UpdateStatusSeleksiRequest struct {
-	Status model.StatusPendaftaran `json:"status" binding:"required"` // lolos_seleksi / tidak_lolos / mengikuti_ujian / daftar_ulang
-	Catatan string                 `json:"catatan"`
+	Status         model.StatusPendaftaran `json:"status" binding:"required"` // lolos_seleksi / tidak_lolos / mengikuti_ujian / berkas_diverifikasi
+	Catatan        string                  `json:"catatan"`
+	NilaiUjian     *float64                `json:"nilai_ujian"`
+	NilaiWawancara *float64                `json:"nilai_wawancara"`
 }
 
 // UpdateStatusSeleksi updates applicant selection graduation status (FR-8.5, FR-6.3)
@@ -333,11 +353,18 @@ func (h *AdminHandler) UpdateStatusSeleksi(c *gin.Context) {
 
 	pendaftar.StatusPendaftaran = req.Status
 	if req.Catatan != "" {
+		pendaftar.CatatanSeleksi = req.Catatan
 		pendaftar.CatatanRevisi = req.Catatan
+	}
+	if req.NilaiUjian != nil {
+		pendaftar.NilaiUjian = req.NilaiUjian
+	}
+	if req.NilaiWawancara != nil {
+		pendaftar.NilaiWawancara = req.NilaiWawancara
 	}
 	database.DB.Save(&pendaftar)
 
-	RecordAdminLog(c, "Mengubah Status Seleksi", fmt.Sprintf("Admin mengubah status pendaftar %s (%s) menjadi: %s",
+	RecordAdminLog(c, "Mengubah Status Seleksi", fmt.Sprintf("Admin menetapkan seleksi pendaftar %s (%s) menjadi: %s",
 		pendaftar.DisplayNomorPendaftaran(), pendaftar.User.NamaLengkap, req.Status))
 
 	response.Success(c, http.StatusOK, "Status seleksi calon mahasiswa berhasil diperbarui", pendaftar)
@@ -495,15 +522,20 @@ func (h *AdminHandler) GetLogs(c *gin.Context) {
 }
 
 type SettingsRequest struct {
-	BannerTitle      string `json:"banner_title"`
-	BannerSubtitle   string `json:"banner_subtitle"`
-	AnnouncementText string `json:"announcement_text"`
-	BankName         string `json:"bank_name"`
-	NomorRekening    string `json:"nomor_rekening"`
-	AtasNama         string `json:"atas_nama"`
-	NoWhatsappCS     string `json:"no_whatsapp_cs"`
-	EmailCS          string `json:"email_cs"`
-	AlamatKampus     string `json:"alamat_kampus"`
+	BannerTitle            string `json:"banner_title"`
+	BannerSubtitle         string `json:"banner_subtitle"`
+	AnnouncementText       string `json:"announcement_text"`
+	BankName               string `json:"bank_name"`
+	NomorRekening          string `json:"nomor_rekening"`
+	AtasNama               string `json:"atas_nama"`
+	PetunjukPembayaran     string `json:"petunjuk_pembayaran"`
+	RegulasiBuktiBayar     string `json:"regulasi_bukti_bayar"`
+	BatasWaktuKonfirmasi   string `json:"batas_waktu_konfirmasi"`
+	PersyaratanPendaftaran string `json:"persyaratan_pendaftaran"`
+	JalurPendaftaranInfo   string `json:"jalur_pendaftaran_info"`
+	NoWhatsappCS           string `json:"no_whatsapp_cs"`
+	EmailCS                string `json:"email_cs"`
+	AlamatKampus           string `json:"alamat_kampus"`
 }
 
 func (h *AdminHandler) GetSettings(c *gin.Context) {
@@ -535,14 +567,319 @@ func (h *AdminHandler) UpdateSettings(c *gin.Context) {
 	settings.BankName = req.BankName
 	settings.NomorRekening = req.NomorRekening
 	settings.AtasNama = req.AtasNama
+	settings.PetunjukPembayaran = req.PetunjukPembayaran
+	settings.RegulasiBuktiBayar = req.RegulasiBuktiBayar
+	settings.BatasWaktuKonfirmasi = req.BatasWaktuKonfirmasi
+	settings.PersyaratanPendaftaran = req.PersyaratanPendaftaran
+	settings.JalurPendaftaranInfo = req.JalurPendaftaranInfo
 	settings.NoWhatsappCS = req.NoWhatsappCS
 	settings.EmailCS = req.EmailCS
 	settings.AlamatKampus = req.AlamatKampus
 	settings.UpdatedAt = time.Now()
 
 	database.DB.Save(&settings)
-	RecordAdminLog(c, "Memperbarui Pengaturan Sistem & Banner", "Admin mengubah teks banner/bank/kontak PMB")
+	RecordAdminLog(c, "Memperbarui Pengaturan Sistem & Banner", "Admin memperbarui teks banner, rekening, petunjuk bayar, dan regulasi PMB")
 
 	response.Success(c, http.StatusOK, "Pengaturan sistem berhasil disimpan", settings)
 }
+
+// FAQ Management (FR-10 Dynamic FAQ)
+type FAQRequest struct {
+	Kategori   string `json:"kategori"`
+	Pertanyaan string `json:"pertanyaan" binding:"required"`
+	Jawaban    string `json:"jawaban" binding:"required"`
+	Urutan     int    `json:"urutan"`
+	IsAktif    *bool  `json:"is_aktif"`
+}
+
+func (h *AdminHandler) GetFAQs(c *gin.Context) {
+	var faqs []model.FAQ
+	database.DB.Order("urutan asc, id asc").Find(&faqs)
+	response.Success(c, http.StatusOK, "Daftar FAQ", faqs)
+}
+
+func (h *AdminHandler) CreateFAQ(c *gin.Context) {
+	var req FAQRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Data FAQ tidak valid", err.Error())
+		return
+	}
+
+	isAktif := true
+	if req.IsAktif != nil {
+		isAktif = *req.IsAktif
+	}
+
+	kategori := "Umum"
+	if req.Kategori != "" {
+		kategori = req.Kategori
+	}
+
+	faq := model.FAQ{
+		Kategori:   kategori,
+		Pertanyaan: req.Pertanyaan,
+		Jawaban:    req.Jawaban,
+		Urutan:     req.Urutan,
+		IsAktif:    isAktif,
+	}
+
+	if err := database.DB.Create(&faq).Error; err != nil {
+		response.InternalServerError(c, "Gagal menambahkan FAQ: "+err.Error())
+		return
+	}
+
+	RecordAdminLog(c, "Tambah FAQ PMB", "Admin menambahkan FAQ: "+faq.Pertanyaan)
+	response.Success(c, http.StatusCreated, "FAQ berhasil ditambahkan", faq)
+}
+
+func (h *AdminHandler) UpdateFAQ(c *gin.Context) {
+	faqID := c.Param("id")
+	var faq model.FAQ
+	if err := database.DB.First(&faq, faqID).Error; err != nil {
+		response.NotFound(c, "FAQ tidak ditemukan")
+		return
+	}
+
+	var req FAQRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Data FAQ tidak valid", err.Error())
+		return
+	}
+
+	if req.Kategori != "" {
+		faq.Kategori = req.Kategori
+	}
+	if req.Pertanyaan != "" {
+		faq.Pertanyaan = req.Pertanyaan
+	}
+	if req.Jawaban != "" {
+		faq.Jawaban = req.Jawaban
+	}
+	faq.Urutan = req.Urutan
+	if req.IsAktif != nil {
+		faq.IsAktif = *req.IsAktif
+	}
+
+	database.DB.Save(&faq)
+	RecordAdminLog(c, "Edit FAQ PMB", "Admin memperbarui FAQ ID: "+faqID)
+	response.Success(c, http.StatusOK, "FAQ berhasil diperbarui", faq)
+}
+
+func (h *AdminHandler) DeleteFAQ(c *gin.Context) {
+	faqID := c.Param("id")
+	var faq model.FAQ
+	if err := database.DB.First(&faq, faqID).Error; err != nil {
+		response.NotFound(c, "FAQ tidak ditemukan")
+		return
+	}
+
+	database.DB.Delete(&faq)
+	RecordAdminLog(c, "Hapus FAQ PMB", "Admin menghapus FAQ ID: "+faqID)
+	response.Success(c, http.StatusOK, "FAQ berhasil dihapus", nil)
+}
+
+func (h *AdminHandler) ToggleFAQStatus(c *gin.Context) {
+	faqID := c.Param("id")
+	var faq model.FAQ
+	if err := database.DB.First(&faq, faqID).Error; err != nil {
+		response.NotFound(c, "FAQ tidak ditemukan")
+		return
+	}
+
+	faq.IsAktif = !faq.IsAktif
+	database.DB.Save(&faq)
+	RecordAdminLog(c, "Toggle Status FAQ PMB", fmt.Sprintf("Admin mengubah status FAQ ID %s menjadi %v", faqID, faq.IsAktif))
+	response.Success(c, http.StatusOK, "Status FAQ berhasil diperbarui", faq)
+}
+
+// ExportPendaftar exports applicants' personal data with filters as CSV (Excel-compatible) or JSON
+func (h *AdminHandler) ExportPendaftar(c *gin.Context) {
+	status := strings.TrimSpace(c.Query("status"))
+	prodiID := strings.TrimSpace(c.Query("prodi_id"))
+	gelombangID := strings.TrimSpace(c.Query("gelombang_id"))
+	format := strings.ToLower(strings.TrimSpace(c.Query("format")))
+
+	query := database.DB.Model(&model.Pendaftar{}).
+		Preload("User").
+		Preload("Gelombang").
+		Preload("ProgramStudi").
+		Preload("DataOrangTua").
+		Preload("Pembayaran")
+
+	if status != "" {
+		query = query.Where("pendaftars.status_pendaftaran = ?", status)
+	}
+	if prodiID != "" {
+		query = query.Where("pendaftars.program_studi_id = ?", prodiID)
+	}
+	if gelombangID != "" {
+		query = query.Where("pendaftars.gelombang_id = ?", gelombangID)
+	}
+
+	var pendaftars []model.Pendaftar
+	if err := query.Order("pendaftars.id asc").Find(&pendaftars).Error; err != nil {
+		response.InternalServerError(c, "Gagal memuat data pendaftar untuk diekspor: "+err.Error())
+		return
+	}
+
+	RecordAdminLog(c, "Export Data Pendaftar", fmt.Sprintf("Admin mengekspor %d data calon mahasiswa", len(pendaftars)))
+
+	if format == "csv" {
+		fileName := fmt.Sprintf("Data_Pendaftar_PMB_STAICI_%s.csv", time.Now().Format("20060102_150405"))
+		c.Header("Content-Disposition", "attachment; filename="+fileName)
+		c.Header("Content-Type", "text/csv; charset=utf-8")
+
+		// Write UTF-8 BOM so Excel opens with proper Indonesian characters
+		c.Writer.Write([]byte{0xEF, 0xBB, 0xBF})
+
+		writer := csv.NewWriter(c.Writer)
+		defer writer.Flush()
+
+		headers := []string{
+			"No",
+			"No. Pendaftaran",
+			"NIK",
+			"Nama Lengkap",
+			"Jenis Kelamin",
+			"Tempat Lahir",
+			"Tanggal Lahir",
+			"Agama",
+			"Status Pernikahan",
+			"Kewarganegaraan",
+			"Alamat Lengkap",
+			"No. HP / WhatsApp",
+			"Email",
+			"Asal Sekolah",
+			"Status Sekolah",
+			"Jurusan Sekolah",
+			"Tahun Lulus",
+			"Nilai Rata-rata",
+			"Program Studi",
+			"Jenjang",
+			"Gelombang / Jalur",
+			"Tahun Akademik",
+			"Nama Ayah",
+			"Pekerjaan Ayah",
+			"Nama Ibu",
+			"Pekerjaan Ibu",
+			"No. HP Orang Tua / Wali",
+			"Status Pendaftaran",
+			"Status Pembayaran",
+			"Tanggal Pendaftaran",
+		}
+		_ = writer.Write(headers)
+
+		for i, p := range pendaftars {
+			tglLahirStr := "-"
+			if p.TanggalLahir != nil {
+				tglLahirStr = p.TanggalLahir.Format("2006-01-02")
+			}
+
+			namaSekolah := p.NamaSekolah
+			if namaSekolah == "" {
+				namaSekolah = "-"
+			}
+
+			prodiNama := "-"
+			jenjang := "-"
+			if p.ProgramStudi != nil {
+				prodiNama = p.ProgramStudi.Nama
+				jenjang = p.ProgramStudi.Jenjang
+			}
+
+			gelombangNama := "-"
+			tahunAkademik := "-"
+			if p.Gelombang != nil {
+				gelombangNama = p.Gelombang.Nama
+				tahunAkademik = p.Gelombang.TahunAkademik
+			}
+
+			namaAyah := "-"
+			pekerjaanAyah := "-"
+			namaIbu := "-"
+			pekerjaanIbu := "-"
+			noHPOrtu := "-"
+			if p.DataOrangTua != nil {
+				if p.DataOrangTua.NamaAyah != "" {
+					namaAyah = p.DataOrangTua.NamaAyah
+				}
+				if p.DataOrangTua.PekerjaanAyah != "" {
+					pekerjaanAyah = p.DataOrangTua.PekerjaanAyah
+				}
+				if p.DataOrangTua.NamaIbu != "" {
+					namaIbu = p.DataOrangTua.NamaIbu
+				}
+				if p.DataOrangTua.PekerjaanIbu != "" {
+					pekerjaanIbu = p.DataOrangTua.PekerjaanIbu
+				}
+				if p.DataOrangTua.NoHPOrangTuaWali != "" {
+					noHPOrtu = p.DataOrangTua.NoHPOrangTuaWali
+				}
+			}
+
+			statusBayar := "Belum Bayar"
+			for _, pay := range p.Pembayaran {
+				if pay.Status == model.StatusBayarDiterima {
+					statusBayar = "Lunas"
+					break
+				} else if pay.Status == model.StatusBayarMenungguVerifikasi {
+					statusBayar = "Menunggu Verifikasi"
+				}
+			}
+
+			noPmb := "-"
+			if p.NomorPendaftaran != nil && *p.NomorPendaftaran != "" {
+				noPmb = *p.NomorPendaftaran
+			}
+
+			// Format NIK and No HP with ="..." so Excel treats them as literal strings
+			nikStr := fmt.Sprintf("=\"%s\"", p.User.NIK)
+			hpStr := fmt.Sprintf("=\"%s\"", p.User.NoHP)
+			if noHPOrtu != "-" {
+				noHPOrtu = fmt.Sprintf("=\"%s\"", noHPOrtu)
+			}
+
+			row := []string{
+				strconv.Itoa(i + 1),
+				noPmb,
+				nikStr,
+				p.User.NamaLengkap,
+				p.JenisKelamin,
+				p.TempatLahir,
+				tglLahirStr,
+				p.Agama,
+				p.StatusPernikahan,
+				p.StatusWargaNegara,
+				p.Alamat,
+				hpStr,
+				p.User.Email,
+				namaSekolah,
+				p.StatusSekolah,
+				p.JurusanSekolah,
+				strconv.Itoa(p.TahunLulus),
+				fmt.Sprintf("%.2f", p.NilaiRataRata),
+				prodiNama,
+				jenjang,
+				gelombangNama,
+				tahunAkademik,
+				namaAyah,
+				pekerjaanAyah,
+				namaIbu,
+				pekerjaanIbu,
+				noHPOrtu,
+				string(p.StatusPendaftaran),
+				statusBayar,
+				p.CreatedAt.Format("2006-01-02 15:04"),
+			}
+			_ = writer.Write(row)
+		}
+		return
+	}
+
+	response.Success(c, http.StatusOK, "Data pendaftar untuk ekspor berhasil dimuat", gin.H{
+		"total": len(pendaftars),
+		"data":  pendaftars,
+	})
+}
+
 

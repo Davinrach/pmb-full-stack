@@ -1,4 +1,5 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
+export const API_HOST = API_BASE_URL.replace(/\/api\/v1\/?$/, '');
 
 export interface UserSession {
   id: number;
@@ -10,6 +11,14 @@ export interface UserSession {
   pendaftar_id?: number;
   status_pendaftaran?: string;
   nomor_pendaftaran?: string;
+  foto_profil?: string;
+}
+
+export function getFileUrl(path?: string | null): string {
+  if (!path) return '';
+  if (path.startsWith('http://') || path.startsWith('https://')) return path;
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  return `${API_HOST}${cleanPath}`;
 }
 
 export const authStorage = {
@@ -79,7 +88,12 @@ export async function apiRequest<T = any>(
       resJson?.error?.message ||
       resJson?.message ||
       `Terjadi kesalahan pada server (Status: ${response.status})`;
-    throw new Error(errorMsg);
+    const err = new Error(errorMsg) as any;
+    err.status = response.status;
+    err.code = resJson?.error?.code;
+    err.data = resJson?.data;
+    err.resJson = resJson;
+    throw err;
   }
 
   return resJson;
@@ -95,6 +109,11 @@ export const api = {
   put: <T = any>(endpoint: string, body?: any) =>
     apiRequest<T>(endpoint, {
       method: 'PUT',
+      body: body instanceof FormData ? body : JSON.stringify(body),
+    }),
+  patch: <T = any>(endpoint: string, body?: any) =>
+    apiRequest<T>(endpoint, {
+      method: 'PATCH',
       body: body instanceof FormData ? body : JSON.stringify(body),
     }),
   delete: <T = any>(endpoint: string) =>

@@ -13,6 +13,8 @@ export default function LupaPasswordPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [resetToken, setResetToken] = useState("");
 
+  const [resetLink, setResetLink] = useState("");
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage("");
@@ -21,8 +23,11 @@ export default function LupaPasswordPage() {
     try {
       const res = await api.post("/auth/forgot-password", { email });
       setIsSuccess(true);
-      if (res.data && res.data.reset_token) {
+      if (res.data?.reset_token) {
         setResetToken(res.data.reset_token);
+      }
+      if (res.data?.reset_link) {
+        setResetLink(res.data.reset_link);
       }
     } catch (err: any) {
       setErrorMessage(err.message || "Gagal memproses permintaan reset kata sandi");
@@ -32,10 +37,10 @@ export default function LupaPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#072520] flex items-center justify-center p-4 relative overflow-hidden font-sans">
+    <div className="min-h-screen bg-[#072520] flex items-center justify-center p-4 relative overflow-hidden font-sans selection:bg-emerald-200 selection:text-emerald-950">
       <div className="absolute inset-0 z-0 bg-cover bg-center opacity-25 bg-[url('/banner.png')]" />
 
-      <div className="relative z-10 bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-slate-100">
+      <div className="relative z-10 bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-slate-100 animate-scaleUp">
         <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
           <div className="relative w-10 h-10 rounded-xl bg-white border border-slate-200 p-1 flex items-center justify-center shadow-xs">
             <Image
@@ -53,32 +58,44 @@ export default function LupaPasswordPage() {
         </div>
 
         {isSuccess ? (
-          <div className="text-center py-4 space-y-4">
-            <div className="w-12 h-12 rounded-full bg-emerald-100 text-[#0d3830] flex items-center justify-center mx-auto">
-              <CheckCircle2 className="w-7 h-7" />
+          <div className="text-center py-2 space-y-4">
+            <div className="w-14 h-14 rounded-2xl bg-emerald-50 border border-emerald-100 text-[#0d3830] flex items-center justify-center mx-auto shadow-xs">
+              <CheckCircle2 className="w-8 h-8 stroke-[2.2] text-emerald-600" />
             </div>
-            <h3 className="text-lg font-bold text-slate-900">Instruksi Terkirim</h3>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Tautan dan token reset kata sandi telah dikirimkan ke alamat email <strong>{email}</strong>.
+            <h3 className="text-xl font-extrabold text-slate-900 tracking-tight">Email Verifikasi Terkirim!</h3>
+            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+              Kami telah mengirimkan email berisi tombol <strong>"Atur Ulang Kata Sandi"</strong> ke alamat:
+              <br />
+              <span className="font-bold text-[#0d3830] inline-block bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100 mt-1">
+                {email}
+              </span>
             </p>
-            {resetToken && (
+
+            <div className="p-3.5 bg-blue-50/80 border border-blue-200 rounded-xl text-xs text-blue-900 text-left leading-relaxed">
+              💡 <strong>Langkah Selanjutnya:</strong>
+              <ol className="list-decimal pl-4 mt-1.5 space-y-1">
+                <li>Buka email Anda (periksa juga folder <em>Spam/Promosi</em>).</li>
+                <li>Klik tombol verifikasi <strong>"Atur Ulang Kata Sandi Saya"</strong> di dalam email.</li>
+                <li>Anda akan diarahkan ke form pembuatan kata sandi baru.</li>
+              </ol>
+            </div>
+
+            {resetLink && (
               <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-left">
-                <span className="font-bold text-amber-900 block mb-1">Token Reset (Pengujian):</span>
-                <code className="text-slate-800 break-all bg-white p-1.5 rounded border border-amber-200 block text-[11px]">
-                  {resetToken}
-                </code>
+                <span className="font-bold text-amber-900 block mb-1">⚡ Tautan Cepat (Mode Uji Coba):</span>
                 <Link
-                  href={`/reset-password?token=${resetToken}`}
-                  className="mt-2 text-[#0d3830] font-bold hover:underline block text-center"
+                  href={resetLink.replace(/^https?:\/\/[^\/]+/, "") || `/reset-password?token=${resetToken}`}
+                  className="w-full py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-lg block text-center transition shadow-xs"
                 >
-                  Lanjut ke Form Reset Password →
+                  Buka Form Password Baru Langsung →
                 </Link>
               </div>
             )}
+
             <div className="pt-2">
               <Link
                 href="/login"
-                className="w-full py-3 bg-[#10342d] hover:bg-[#0c2a24] text-white font-bold text-xs sm:text-sm rounded-xl transition block"
+                className="w-full py-3 bg-[#0d3830] hover:bg-[#072520] text-white font-bold text-xs sm:text-sm rounded-xl transition block shadow-sm"
               >
                 Kembali ke Halaman Masuk
               </Link>

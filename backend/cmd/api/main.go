@@ -18,9 +18,11 @@ func main() {
 	cfg := config.LoadConfig()
 
 	// 2. Ensure Secure Upload Directory exists (FR-3.1, Section 7.1)
+	// 2. Ensure Secure Upload Directory exists (FR-3.1, Section 7.1)
 	if err := os.MkdirAll(cfg.UploadDir, 0755); err != nil {
 		log.Fatalf("Gagal membuat direktori upload: %v", err)
 	}
+	_ = os.MkdirAll(cfg.UploadDir+"/avatars", 0755)
 
 	// 3. Connect to Database (MySQL) & Seed Defaults
 	_, err := database.InitDB(cfg)
@@ -39,6 +41,9 @@ func main() {
 	r.Use(middleware.CORSMiddleware())
 	r.Use(middleware.StructuredLogger())
 
+	// Static file serving for uploads (Avatars, etc.)
+	r.Static("/uploads", cfg.UploadDir)
+
 	// 6. Initialize Handlers
 	healthHandler := handler.NewHealthHandler()
 	authHandler := handler.NewAuthHandler(cfg)
@@ -55,6 +60,7 @@ func main() {
 		api.GET("/health", healthHandler.Check)
 		api.GET("/info-pmb", publicHandler.GetInfoPMB)
 		api.GET("/public/settings", publicHandler.GetSettings)
+		api.GET("/faqs", publicHandler.GetPublicFAQs)
 
 		api.GET("/program-studi", func(c *gin.Context) {
 			var results []model.ProgramStudi
@@ -66,6 +72,8 @@ func main() {
 		auth := api.Group("/auth")
 		{
 			auth.POST("/register", authHandler.Register)
+			auth.POST("/verify-otp", authHandler.VerifyOTP)
+			auth.POST("/resend-otp", authHandler.ResendOTP)
 			auth.POST("/login", authHandler.Login)
 			auth.POST("/forgot-password", authHandler.ForgotPassword)
 			auth.POST("/reset-password", authHandler.ResetPassword)
@@ -76,6 +84,9 @@ func main() {
 		authRequired.Use(middleware.AuthMiddleware(cfg))
 		{
 			authRequired.GET("/auth/me", authHandler.GetMe)
+			authRequired.PUT("/auth/profile", authHandler.UpdateProfile)
+			authRequired.POST("/auth/profile/photo", authHandler.UploadProfilePhoto)
+			authRequired.DELETE("/auth/profile/photo", authHandler.DeleteProfilePhoto)
 			authRequired.POST("/auth/change-password", authHandler.ChangePassword)
 
 			// Protected Document Streaming (PRD 7.1)
@@ -110,6 +121,7 @@ func main() {
 				adminGroup.GET("/dashboard/stats", adminHandler.GetDashboardStats)
 				adminGroup.GET("/pendaftar", adminHandler.ListPendaftar)
 				adminGroup.GET("/pendaftar/:id", adminHandler.GetDetailPendaftar)
+				adminGroup.GET("/export/pendaftar", adminHandler.ExportPendaftar)
 				adminGroup.PUT("/pendaftar/:id/verifikasi-berkas", adminHandler.VerifikasiBerkas)
 				adminGroup.PUT("/pendaftar/:id/verifikasi-pembayaran", adminHandler.VerifikasiPembayaran)
 				adminGroup.PUT("/pendaftar/:id/status-seleksi", adminHandler.UpdateStatusSeleksi)
@@ -127,6 +139,13 @@ func main() {
 				adminGroup.GET("/logs", adminHandler.GetLogs)
 				adminGroup.GET("/settings", adminHandler.GetSettings)
 				adminGroup.PUT("/settings", adminHandler.UpdateSettings)
+
+				// Dynamic FAQ Management
+				adminGroup.GET("/faqs", adminHandler.GetFAQs)
+				adminGroup.POST("/faqs", adminHandler.CreateFAQ)
+				adminGroup.PUT("/faqs/:id", adminHandler.UpdateFAQ)
+				adminGroup.DELETE("/faqs/:id", adminHandler.DeleteFAQ)
+				adminGroup.PATCH("/faqs/:id/toggle", adminHandler.ToggleFAQStatus)
 
 				// Dynamic RBAC Navigation & Role Management Endpoints
 				rbacHandler := handler.NewRBACHandler()

@@ -19,74 +19,100 @@ import {
   FileCheck,
   RefreshCw,
 } from "lucide-react";
-import { api, authStorage, UserSession } from "@/lib/api";
+import { api, authStorage, UserSession, getFileUrl } from "@/lib/api";
+import ProfileModal from "@/components/ProfileModal";
+import { useLanguage } from "@/lib/LanguageContext";
 
-const statusConfig: Record<
+const getStatusConfig = (lang: "id" | "eng"): Record<
   string,
   { label: string; color: string; desc: string }
-> = {
+> => ({
   draft: {
     label: "Draft",
-    color: "bg-slate-100 text-slate-700 border-slate-300",
-    desc: "Akun telah dibuat. Silakan mulai melengkapi data formulir pendaftaran.",
+    color: "bg-slate-100 text-slate-700 border-slate-200",
+    desc: lang === "eng"
+      ? "Account created. Please start completing your application form."
+      : "Akun telah dibuat. Silakan mulai melengkapi data formulir pendaftaran.",
   },
   akun_terdaftar: {
-    label: "Akun Terdaftar",
-    color: "bg-blue-50 text-blue-700 border-blue-200",
-    desc: "Akun Anda aktif. Silakan isi formulir data calon mahasiswa dan unggah berkas.",
+    label: lang === "eng" ? "Account Registered" : "Akun Terdaftar",
+    color: "bg-slate-100 text-slate-700 border-slate-200",
+    desc: lang === "eng"
+      ? "Your account is active. Please complete applicant identity and upload documents."
+      : "Akun Anda aktif. Silakan isi formulir data calon mahasiswa dan unggah berkas.",
   },
   belum_lengkap: {
-    label: "Belum Lengkap",
-    color: "bg-amber-50 text-amber-800 border-amber-300",
-    desc: "Formulir pendaftaran atau berkas wajib sedang dalam pengisian / memerlukan revisi.",
+    label: lang === "eng" ? "Incomplete" : "Belum Lengkap",
+    color: "bg-amber-50 text-amber-800 border-amber-200",
+    desc: lang === "eng"
+      ? "Application form or required documents are in progress or require revision."
+      : "Formulir pendaftaran atau berkas wajib sedang dalam pengisian / memerlukan revisi.",
   },
   menunggu_pembayaran: {
-    label: "Menunggu Pembayaran",
-    color: "bg-indigo-50 text-indigo-700 border-indigo-200",
-    desc: "Formulir telah disubmit. Silakan transfer biaya pendaftaran & unggah bukti bayar.",
+    label: lang === "eng" ? "Awaiting Payment" : "Menunggu Pembayaran",
+    color: "bg-amber-50 text-amber-800 border-amber-200",
+    desc: lang === "eng"
+      ? "Form submitted. Please transfer the registration fee & upload payment proof."
+      : "Formulir telah disubmit. Silakan transfer biaya pendaftaran & unggah bukti bayar.",
   },
   menunggu_verifikasi: {
-    label: "Menunggu Verifikasi",
-    color: "bg-purple-50 text-purple-700 border-purple-200",
-    desc: "Berkas & pembayaran Anda telah masuk. Panitia PMB sedang memverifikasi data Anda.",
+    label: lang === "eng" ? "Awaiting Verification" : "Menunggu Verifikasi",
+    color: "bg-amber-50 text-amber-800 border-amber-200",
+    desc: lang === "eng"
+      ? "Documents & payment submitted. The admissions committee is verifying your data."
+      : "Berkas & pembayaran Anda telah masuk. Panitia PMB sedang memverifikasi data Anda.",
   },
   berkas_diverifikasi: {
-    label: "Berkas Diverifikasi",
-    color: "bg-emerald-50 text-emerald-800 border-emerald-300",
-    desc: "Seluruh berkas dan pembayaran sah. Menunggu jadwal seleksi/pengumuman kelulusan.",
+    label: lang === "eng" ? "Documents Verified" : "Berkas Diverifikasi",
+    color: "bg-emerald-50 text-emerald-800 border-emerald-200",
+    desc: lang === "eng"
+      ? "All documents and payment verified. Awaiting selection schedule or announcement."
+      : "Seluruh berkas dan pembayaran sah. Menunggu jadwal seleksi/pengumuman kelulusan.",
   },
   ditolak_perlu_perbaikan: {
-    label: "Perlu Perbaikan",
-    color: "bg-red-50 text-red-700 border-red-300",
-    desc: "Terdapat berkas yang perlu diperbaiki. Silakan periksa catatan revisi di bawah.",
+    label: lang === "eng" ? "Revision Required" : "Perlu Perbaikan",
+    color: "bg-rose-50 text-rose-700 border-rose-200",
+    desc: lang === "eng"
+      ? "Some documents need revision. Please check the revision notes below."
+      : "Terdapat berkas yang perlu diperbaiki. Silakan periksa catatan revisi di bawah.",
   },
   mengikuti_ujian: {
-    label: "Mengikuti Ujian / Wawancara",
-    color: "bg-sky-50 text-sky-800 border-sky-300",
-    desc: "Anda dijadwalkan mengikuti sesi tes/wawancara seleksi PMB STAICI.",
+    label: lang === "eng" ? "Exam / Interview Scheduled" : "Mengikuti Ujian / Wawancara",
+    color: "bg-emerald-50 text-emerald-800 border-emerald-200",
+    desc: lang === "eng"
+      ? "You are scheduled for the STAICI PMB test/interview session."
+      : "Anda dijadwalkan mengikuti sesi tes/wawancara seleksi PMB STAICI.",
   },
   lolos_seleksi: {
-    label: "Lolos Seleksi (Diterima)",
-    color: "bg-emerald-600 text-white border-emerald-700 font-bold",
-    desc: "Selamat! Anda dinyatakan LULUS seleksi PMB STAI Cendekia Insani Situbondo.",
+    label: lang === "eng" ? "Passed Selection (Accepted)" : "Lolos Seleksi (Diterima)",
+    color: "bg-[#0d3830] text-emerald-100 border-[#0d3830] font-bold",
+    desc: lang === "eng"
+      ? "Congratulations! You have PASSED the STAI Cendekia Insani PMB selection."
+      : "Selamat! Anda dinyatakan LULUS seleksi PMB STAI Cendekia Insani Situbondo.",
   },
   tidak_lolos: {
-    label: "Tidak Lolos",
-    color: "bg-rose-100 text-rose-800 border-rose-300",
-    desc: "Mohon maaf, Anda belum berhasil pada periode seleksi ini.",
+    label: lang === "eng" ? "Not Accepted" : "Tidak Lolos",
+    color: "bg-rose-50 text-rose-800 border-rose-200",
+    desc: lang === "eng"
+      ? "We regret to inform you that you have not passed this selection period."
+      : "Mohon maaf, Anda belum berhasil pada periode seleksi ini.",
   },
   daftar_ulang: {
-    label: "Daftar Ulang (Mahasiswa Aktif)",
-    color: "bg-teal-700 text-white border-teal-800 font-bold",
-    desc: "Selamat datang Mahasiswa Baru! Berkas daftar ulang her-registrasi telah diverifikasi.",
+    label: lang === "eng" ? "Enrolled (Active Student)" : "Daftar Ulang (Mahasiswa Aktif)",
+    color: "bg-[#0d3830] text-white border-[#0d3830] font-bold",
+    desc: lang === "eng"
+      ? "Welcome, New Student! Re-registration documents have been verified."
+      : "Selamat datang Mahasiswa Baru! Berkas daftar ulang her-registrasi telah diverifikasi.",
   },
-};
+});
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { lang, setLang } = useLanguage();
   const [user, setUser] = useState<UserSession | null>(null);
   const [pendaftar, setPendaftar] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
 
   const fetchProfile = async () => {
     try {
@@ -139,7 +165,9 @@ export default function DashboardPage() {
   }
 
   const currentStatus = pendaftar?.status_pendaftaran || "akun_terdaftar";
+  const statusConfig = getStatusConfig(lang);
   const statusInfo = statusConfig[currentStatus] || statusConfig.akun_terdaftar;
+  const isEng = lang === "eng";
 
   // Calculate progress
   let completedSteps = 0;
@@ -169,7 +197,7 @@ export default function DashboardPage() {
               </div>
               <div className="flex flex-col">
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                  Portal PMB Calon Mahasiswa
+                  {isEng ? "Student Admission Portal" : "Portal PMB Calon Mahasiswa"}
                 </span>
                 <span className="text-sm sm:text-base font-extrabold text-[#0d3830] font-serif">
                   STAI Cendekia Insani Situbondo
@@ -178,19 +206,69 @@ export default function DashboardPage() {
             </Link>
           </div>
 
-          <div className="flex items-center gap-4">
-            <div className="hidden sm:flex flex-col text-right text-xs">
-              <span className="font-bold text-slate-900">{user?.nama_lengkap}</span>
-              <span className="text-slate-500 font-mono text-[11px]">
-                {pendaftar?.nomor_pendaftaran || user?.nik}
-              </span>
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <button
+              type="button"
+              onClick={() => setProfileModalOpen(true)}
+              className="flex items-center gap-2.5 p-1 sm:p-1.5 sm:pr-3 hover:bg-slate-100 rounded-full border border-slate-200 transition shadow-2xs cursor-pointer group"
+              title={isEng ? "Manage Profile & Password" : "Kelola Profil & Kata Sandi"}
+            >
+              <div className="w-8 h-8 rounded-full bg-[#0d3830] text-emerald-300 font-extrabold text-xs flex items-center justify-center flex-shrink-0 shadow-inner overflow-hidden border border-emerald-300/30">
+                {user?.foto_profil ? (
+                  <Image
+                    src={getFileUrl(user.foto_profil)}
+                    alt={user.nama_lengkap || "User"}
+                    width={32}
+                    height={32}
+                    unoptimized
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  (user?.nama_lengkap?.slice(0, 2) || "PMB").toUpperCase()
+                )}
+              </div>
+              <div className="hidden sm:flex flex-col text-left text-xs">
+                <span className="font-bold text-slate-900 group-hover:text-[#0d3830] transition truncate max-w-[130px]">
+                  {user?.nama_lengkap}
+                </span>
+                <span className="text-slate-500 font-mono text-[10px]">
+                  {pendaftar?.nomor_pendaftaran || user?.nik}
+                </span>
+              </div>
+            </button>
+
+            {/* Language Switcher */}
+            <div className="inline-flex items-center p-0.5 bg-slate-100 rounded-lg border border-slate-200/80 text-xs font-bold">
+              <button
+                type="button"
+                onClick={() => setLang("id")}
+                className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
+                  lang === "id"
+                    ? "bg-white text-slate-900 shadow-xs border border-slate-200/90 font-extrabold"
+                    : "text-slate-500 hover:text-slate-900"
+                }`}
+              >
+                ID
+              </button>
+              <button
+                type="button"
+                onClick={() => setLang("eng")}
+                className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
+                  lang === "eng"
+                    ? "bg-[#0d3830] text-white shadow-xs font-extrabold"
+                    : "text-slate-500 hover:text-slate-900"
+                }`}
+              >
+                ENG
+              </button>
             </div>
+
             <button
               onClick={handleLogout}
               className="p-2 sm:px-3 sm:py-2 text-xs font-bold text-rose-700 hover:bg-rose-50 rounded-xl transition flex items-center gap-1.5 border border-rose-200/60 cursor-pointer"
             >
               <LogOut className="w-4 h-4" />
-              <span className="hidden sm:inline">Keluar</span>
+              <span className="hidden sm:inline">{isEng ? "Sign Out" : "Keluar"}</span>
             </button>
           </div>
         </div>
@@ -204,10 +282,10 @@ export default function DashboardPage() {
             <div className="space-y-2 max-w-2xl">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-[#e8f8f2] text-[#0d3830] border border-emerald-200">
                 <ShieldCheck className="w-3.5 h-3.5" />
-                <span>Akun Terverifikasi EMIS</span>
+                <span>{isEng ? "EMIS Verified Account" : "Akun Terverifikasi EMIS"}</span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 font-serif">
-                Ahlan wa Sahlan, {user?.nama_lengkap}!
+                {isEng ? `Welcome, ${user?.nama_lengkap}!` : `Ahlan wa Sahlan, ${user?.nama_lengkap}!`}
               </h1>
               <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
                 {statusInfo.desc}
@@ -217,7 +295,7 @@ export default function DashboardPage() {
             {/* Status Badge Box */}
             <div className="bg-slate-50 border border-slate-200/90 rounded-2xl p-5 flex flex-col gap-2.5 min-w-[260px] shadow-2xs">
               <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                Status Pendaftaran Saat Ini
+                {isEng ? "Current Application Status" : "Status Pendaftaran Saat Ini"}
               </span>
               <div
                 className={`px-3.5 py-1.5 rounded-xl border text-xs sm:text-sm font-bold flex items-center justify-between ${statusInfo.color}`}
@@ -227,7 +305,7 @@ export default function DashboardPage() {
               </div>
               {pendaftar?.nomor_pendaftaran && (
                 <div className="text-xs pt-1 border-t border-slate-200/60 flex items-center justify-between">
-                  <span className="text-slate-500">No. Registrasi:</span>
+                  <span className="text-slate-500">{isEng ? "Registration No.:" : "No. Registrasi:"}</span>
                   <strong className="font-mono font-bold text-[#0d3830]">
                     {pendaftar.nomor_pendaftaran}
                   </strong>
@@ -240,13 +318,15 @@ export default function DashboardPage() {
           <div className="mt-8 pt-6 border-t border-slate-100">
             <div className="flex items-center justify-between text-xs font-bold mb-2">
               <span className="text-slate-700">
-                Kelengkapan Formulir &amp; Berkas PMB ({completedSteps}/6 Bagian Selesai)
+                {isEng
+                  ? `Application & Document Completion (${completedSteps}/6 Sections Completed)`
+                  : `Kelengkapan Formulir & Berkas PMB (${completedSteps}/6 Bagian Selesai)`}
               </span>
               <span className="text-[#0d3830]">{progressPercent}%</span>
             </div>
             <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-[#0d3830] to-emerald-500 rounded-full transition-all duration-500"
+                className="h-full bg-[#0d3830] rounded-full transition-all duration-500"
                 style={{ width: `${progressPercent}%` }}
               />
             </div>
@@ -258,14 +338,16 @@ export default function DashboardPage() {
           <div className="bg-red-50 border border-red-200 rounded-2xl p-5 flex items-start gap-4 text-red-800 shadow-2xs animate-fadeIn">
             <AlertCircle className="w-5 h-5 flex-shrink-0 text-red-600 mt-0.5" />
             <div className="space-y-1 text-xs sm:text-sm">
-              <h4 className="font-bold text-red-900">Catatan Perbaikan dari Panitia PMB:</h4>
+              <h4 className="font-bold text-red-900">
+                {isEng ? "Revision Notes from PMB Committee:" : "Catatan Perbaikan dari Panitia PMB:"}
+              </h4>
               <p className="leading-relaxed">{pendaftar.catatan_revisi}</p>
               <div className="pt-2">
                 <Link
                   href="/dashboard/formulir"
                   className="inline-flex items-center gap-1 font-bold text-red-700 hover:underline"
                 >
-                  <span>Revisi Berkas / Data Sekarang</span>
+                  <span>{isEng ? "Revise Documents / Data Now" : "Revisi Berkas / Data Sekarang"}</span>
                   <ChevronRight className="w-4 h-4" />
                 </Link>
               </div>
@@ -285,14 +367,20 @@ export default function DashboardPage() {
                 <FileText className="w-6 h-6" />
               </div>
               <h3 className="text-base font-bold text-slate-900 group-hover:text-[#0d3830] transition">
-                Formulir Pendaftaran
+                {isEng ? "Application Form" : "Formulir Pendaftaran"}
               </h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Isi identitas diri, data asal sekolah SLTA, data orang tua / wali, serta pilihan program studi.
+                {isEng
+                  ? "Fill in personal identity, secondary school history, parent/guardian info, and study program selection."
+                  : "Isi identitas diri, data asal sekolah SLTA, data orang tua / wali, serta pilihan program studi."}
               </p>
             </div>
             <div className="pt-5 flex items-center justify-between text-xs font-bold text-[#0d3830]">
-              <span>{pendaftar?.is_locked ? "Lihat Formulir Terkunci" : "Buka Formulir"}</span>
+              <span>
+                {pendaftar?.is_locked
+                  ? (isEng ? "View Locked Form" : "Lihat Formulir Terkunci")
+                  : (isEng ? "Open Form" : "Buka Formulir")}
+              </span>
               <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition" />
             </div>
           </Link>
@@ -307,14 +395,16 @@ export default function DashboardPage() {
                 <CreditCard className="w-6 h-6" />
               </div>
               <h3 className="text-base font-bold text-slate-900 group-hover:text-amber-800 transition">
-                Informasi &amp; Bukti Pembayaran
+                {isEng ? "Payment Info & Receipts" : "Informasi & Bukti Pembayaran"}
               </h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Lihat nomor rekening bank tujuan, rincian biaya pendaftaran gelombang, dan unggah bukti transfer.
+                {isEng
+                  ? "View official bank accounts, wave registration fee details, and upload transfer receipts."
+                  : "Lihat nomor rekening bank tujuan, rincian biaya pendaftaran gelombang, dan unggah bukti transfer."}
               </p>
             </div>
             <div className="pt-5 flex items-center justify-between text-xs font-bold text-amber-800">
-              <span>Kelola Pembayaran</span>
+              <span>{isEng ? "Manage Payment" : "Kelola Pembayaran"}</span>
               <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition" />
             </div>
           </Link>
@@ -329,14 +419,16 @@ export default function DashboardPage() {
                 <Award className="w-6 h-6" />
               </div>
               <h3 className="text-base font-bold text-slate-900 group-hover:text-blue-800 transition">
-                Hasil Seleksi &amp; Daftar Ulang
+                {isEng ? "Selection Results & Enrollment" : "Hasil Seleksi & Daftar Ulang"}
               </h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Cek kelulusan seleksi administrasi/ujian dan panduan her-registrasi mahasiswa baru.
+                {isEng
+                  ? "Check administrative/exam selection results and guidance for new student enrollment."
+                  : "Cek kelulusan seleksi administrasi/ujian dan panduan her-registrasi mahasiswa baru."}
               </p>
             </div>
             <div className="pt-5 flex items-center justify-between text-xs font-bold text-blue-800">
-              <span>Cek Pengumuman</span>
+              <span>{isEng ? "Check Announcement" : "Cek Pengumuman"}</span>
               <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition" />
             </div>
           </Link>
@@ -353,15 +445,17 @@ export default function DashboardPage() {
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-slate-900">
-                    Cetak Kartu &amp; Bukti Pendaftaran PMB (PDF)
+                    {isEng ? "Print PMB Registration Card & Proof (PDF)" : "Cetak Kartu & Bukti Pendaftaran PMB (PDF)"}
                   </h3>
                   <p className="text-xs text-slate-600 mt-0.5">
-                    Unduh atau cetak langsung kartu peserta PMB dan tanda bukti pendaftaran resmi STAICI.
+                    {isEng
+                      ? "Download or print official PMB participant exam card and registration proof."
+                      : "Unduh atau cetak langsung kartu peserta PMB dan tanda bukti pendaftaran resmi STAICI."}
                   </p>
                 </div>
               </div>
               <div className="flex items-center gap-1.5 text-xs font-bold text-[#0d3830] group-hover:translate-x-1 transition flex-shrink-0">
-                <span>Cetak Dokumen Sekarang</span>
+                <span>{isEng ? "Print Documents Now" : "Cetak Dokumen Sekarang"}</span>
                 <ChevronRight className="w-4 h-4" />
               </div>
             </div>
@@ -372,9 +466,22 @@ export default function DashboardPage() {
       {/* Footer */}
       <footer className="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-500">
         <div className="max-w-7xl mx-auto px-4">
-          <span>© 2026 STAI Cendekia Insani Situbondo — Layanan Bantuan PMB: +62 852-3343-2221</span>
+          <span>
+            {isEng
+              ? "© 2026 STAI Cendekia Insani Situbondo — PMB Support Service: +62 852-3343-2221"
+              : "© 2026 STAI Cendekia Insani Situbondo — Layanan Bantuan PMB: +62 852-3343-2221"}
+          </span>
         </div>
       </footer>
+
+      {/* Profile Management Modal */}
+      <ProfileModal
+        isOpen={profileModalOpen}
+        onClose={() => setProfileModalOpen(false)}
+        onUserUpdated={(updatedUser) => {
+          setUser(updatedUser);
+        }}
+      />
     </div>
   );
 }

@@ -21,12 +21,15 @@ import { api } from "@/lib/api";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useLanguage } from "@/lib/LanguageContext";
+import OTPVerificationModal from "@/components/OTPVerificationModal";
 
 export default function RegisterPage() {
   const { lang, t } = useLanguage();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [devOtp, setDevOtp] = useState<string | undefined>(undefined);
+  const [registeredEmail, setRegisteredEmail] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
   // Form State
@@ -41,15 +44,6 @@ export default function RegisterPage() {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const maskEmail = (email: string) => {
-    if (!email || !email.includes("@")) return "pendaftar****@gmail.com";
-    const [user, domain] = email.split("@");
-    if (user.length <= 4) {
-      return `${user.slice(0, 1)}****@${domain}`;
-    }
-    return `${user.slice(0, 4)}****@${domain}`;
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,7 +84,7 @@ export default function RegisterPage() {
 
     setIsSubmitting(true);
     try {
-      await api.post("/auth/register", {
+      const res = await api.post("/auth/register", {
         nama_lengkap: formData.namaLengkap,
         nik: formData.nik,
         no_hp: formData.noWhatsapp,
@@ -98,7 +92,11 @@ export default function RegisterPage() {
         password: formData.password,
       });
 
-      setShowSuccessModal(true);
+      setRegisteredEmail(formData.email);
+      if (res.data?.dev_otp) {
+        setDevOtp(res.data.dev_otp);
+      }
+      setShowOtpModal(true);
     } catch (err: any) {
       setErrorMessage(
         err.message ||
@@ -431,44 +429,14 @@ export default function RegisterPage() {
       {/* 4. Footer Section */}
       <Footer />
 
-      {/* Pop-Up Modal: Pendaftaran Akun Berhasil */}
-      {showSuccessModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fadeIn">
-          <div className="bg-white rounded-[28px] max-w-sm sm:max-w-[420px] w-full p-6 sm:p-8 shadow-2xl relative text-center flex flex-col items-center border border-slate-100 animate-scaleUp">
-            <div className="relative w-12 h-12 mb-3">
-              <Image
-                src="/logo-staici.png"
-                alt="Logo STAICI"
-                fill
-                className="object-contain"
-              />
-            </div>
-
-            <div className="w-12 h-12 rounded-full bg-[#e8f8f2] text-[#0d3830] flex items-center justify-center mb-5 shadow-xs">
-              <Check className="w-6 h-6 stroke-[2.5]" />
-            </div>
-
-            <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight mb-2">
-              {lang === "eng" ? "Account Registration Successful!" : "Pendaftaran Akun Berhasil!"}
-            </h3>
-
-            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed max-w-xs mb-7">
-              {lang === "eng" ? "Your account has been registered for email (" : "Akun Anda telah terdaftar untuk email ("}
-              <span className="font-semibold text-slate-800">
-                {maskEmail(formData.email)}
-              </span>
-              {lang === "eng" ? "). Please sign in to fill out your admission data and documents." : "). Silakan login untuk melengkapi formulir data pribadi dan berkas PMB."}
-            </p>
-
-            <Link
-              href="/login"
-              className="w-full py-3.5 bg-[#173a33] hover:bg-[#102b26] text-white font-bold text-sm sm:text-base rounded-xl shadow-md transition-all duration-200 cursor-pointer text-center block"
-            >
-              {lang === "eng" ? "Sign In to My Account" : "Masuk ke Akun Saya"}
-            </Link>
-          </div>
-        </div>
-      )}
+      {/* Pop-Up Modal: Verifikasi OTP Email */}
+      <OTPVerificationModal
+        isOpen={showOtpModal}
+        email={registeredEmail}
+        initialDevOtp={devOtp}
+        onClose={() => setShowOtpModal(false)}
+        redirectTo="/dashboard"
+      />
     </div>
   );
 }

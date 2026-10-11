@@ -14,6 +14,10 @@ import {
   BookOpen,
   X,
   ChevronRight,
+  ChevronDown,
+  HelpCircle,
+  FileText,
+  ShieldCheck,
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -24,12 +28,26 @@ export default function HomePage() {
   const { t, lang } = useLanguage();
   const [selectedProdi, setSelectedProdi] = useState<any | null>(null);
   const [backendSettings, setBackendSettings] = useState<any>(null);
+  const [faqs, setFaqs] = useState<any[]>([]);
+  const [persyaratanList, setPersyaratanList] = useState<string[]>([]);
+  const [expandedFaqId, setExpandedFaqId] = useState<number | null>(null);
 
   useEffect(() => {
-    api.get("/public/settings")
-      .then((res) => {
-        if (res.data) {
-          setBackendSettings(res.data);
+    Promise.all([
+      api.get("/public/settings"),
+      api.get("/info-pmb"),
+      api.get("/faqs"),
+    ])
+      .then(([setRes, infoRes, faqRes]) => {
+        if (setRes.data) setBackendSettings(setRes.data);
+        if (infoRes.data?.persyaratan) setPersyaratanList(infoRes.data.persyaratan);
+        if (faqRes.data && Array.isArray(faqRes.data)) {
+          setFaqs(faqRes.data);
+          if (faqRes.data.length > 0) {
+            setExpandedFaqId(faqRes.data[0].id);
+          }
+        } else if (infoRes.data?.faq) {
+          setFaqs(infoRes.data.faq);
         }
       })
       .catch(() => {});
@@ -169,38 +187,9 @@ export default function HomePage() {
             </div>
           </section>
 
-          {/* RIGHT COLUMN: Tata Cara & Hotline (col-span-4) */}
+          {/* RIGHT COLUMN: Hotline & Persyaratan (col-span-4) */}
           <aside className="lg:col-span-4 space-y-6">
-            {/* Card 1: Tata Cara Pendaftaran */}
-            <div
-              id="alur-pendaftaran"
-              className="bg-white rounded-2xl border border-slate-200/90 p-6 shadow-sm"
-            >
-              <h3 className="text-lg font-bold text-slate-900">
-                {t.sidebar.caraDaftarTitle}
-              </h3>
-              <p className="text-xs text-slate-500 mt-1 mb-5 leading-relaxed">
-                {t.sidebar.caraDaftarSubtitle}
-              </p>
-
-              <ol className="space-y-4 text-xs sm:text-sm text-slate-700">
-                {t.sidebar.steps.map((step, idx) => (
-                  <li key={idx} className="flex gap-2.5 items-start">
-                    <span className="font-bold text-slate-900 flex-shrink-0">{step.no}</span>
-                    <div>
-                      <strong className="text-slate-900 block font-bold">
-                        {step.title}
-                      </strong>
-                      <span className="text-slate-600 text-xs leading-relaxed">
-                        {step.desc}
-                      </span>
-                    </div>
-                  </li>
-                ))}
-              </ol>
-            </div>
-
-            {/* Card 2: Hotline Panitia PMB */}
+            {/* Card 1: Hotline Panitia PMB */}
             <div className="bg-white rounded-2xl border border-slate-200/90 p-6 shadow-sm">
               <div className="flex items-center gap-2 text-slate-900 font-bold text-base sm:text-lg mb-1">
                 <Headphones className="w-5 h-5 text-emerald-700" />
@@ -212,7 +201,7 @@ export default function HomePage() {
 
               {/* WhatsApp Callout Card */}
               <a
-                href="https://wa.me/6285233432221?text=Halo%20Panitia%20PMB%20STAICI,%20saya%20ingin%20berkonsultasi%20terkait%20pendaftaran%20mahasiswa%20baru"
+                href={`https://wa.me/${(backendSettings?.no_whatsapp_cs || "085233432221").replace(/[^0-9]/g, "")}?text=Halo%20Panitia%20PMB%20STAICI,%20saya%20ingin%20berkonsultasi%20terkait%20pendaftaran%20mahasiswa%20baru`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-3.5 p-3.5 bg-[#e9f2ee] hover:bg-[#dfeee6] rounded-xl border border-emerald-100 transition group"
@@ -225,7 +214,7 @@ export default function HomePage() {
                     {t.sidebar.whatsappLabel}
                   </span>
                   <span className="text-base font-extrabold text-slate-900 tracking-tight leading-snug">
-                    0852-3343-2221
+                    {backendSettings?.no_whatsapp_cs || "0852-3343-2221"}
                   </span>
                 </div>
               </a>
@@ -236,14 +225,40 @@ export default function HomePage() {
                 <span>{t.sidebar.operatingHours}</span>
               </div>
             </div>
+
+            {/* Card 3: Persyaratan Berkas PMB (Dinamis) */}
+            <div className="bg-white rounded-2xl border border-slate-200/90 p-6 shadow-sm space-y-4">
+              <div className="flex items-center gap-2 text-slate-900 font-bold text-base">
+                <FileText className="w-5 h-5 text-emerald-700" />
+                <h3>Persyaratan Berkas Pendaftaran</h3>
+              </div>
+              <p className="text-xs text-slate-500">
+                Dokumen yang wajib disiapkan sebelum melakukan submit formulir:
+              </p>
+              <ul className="space-y-2 text-xs text-slate-700">
+                {(persyaratanList.length > 0 ? persyaratanList : [
+                  "Scan/Foto Kartu Keluarga (KK) Asli/Legalisir",
+                  "Scan/Foto KTP Calon Mahasiswa",
+                  "Scan/Foto Ijazah / SKL SLTA Sederajat",
+                  "Pas Foto Resmi Berwarna 3x4",
+                  "Bukti Transfer Pembayaran Biaya Pendaftaran PMB",
+                  "Scan Kartu KIP (Khusus Jalur Beasiswa KIP)",
+                ]).map((item, idx) => (
+                  <li key={idx} className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+                    <span className="leading-relaxed">{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </aside>
         </div>
 
         {/* 4. Bottom Banner: Jalur Masuk Reguler & KIP */}
-        <div className="mt-8 bg-gradient-to-r from-[#eef2ff] via-[#f3f4fd] to-[#f8faff] rounded-2xl border border-indigo-100/80 p-5 sm:p-6 shadow-sm">
+        <div className="mt-8 bg-white rounded-2xl border border-slate-200/90 p-5 sm:p-6 shadow-xs">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2">
             <div className="flex items-center gap-2.5 text-slate-900 font-bold text-sm sm:text-base">
-              <IdCard className="w-5 h-5 text-indigo-700" />
+              <IdCard className="w-5 h-5 text-[#0d3830]" />
               <h4>{t.sidebar.jalurTitle}</h4>
             </div>
             <span className="inline-block self-start sm:self-auto px-3 py-1 text-xs font-bold text-emerald-800 bg-emerald-100/90 rounded-full border border-emerald-200">
@@ -251,9 +266,67 @@ export default function HomePage() {
             </span>
           </div>
           <p className="text-xs sm:text-sm text-slate-600 leading-relaxed pt-1">
-            {t.sidebar.jalurDesc}
+            {backendSettings?.jalur_pendaftaran_info || t.sidebar.jalurDesc}
           </p>
         </div>
+
+        {/* 5. Interactive Dynamic FAQ Section */}
+        <section id="faq" className="mt-16 pt-10 border-t border-slate-200/80 space-y-8">
+          <div className="text-center max-w-2xl mx-auto space-y-2">
+            <span className="text-xs font-bold tracking-wider text-emerald-800 uppercase px-3 py-1 bg-emerald-100/70 rounded-full border border-emerald-200 inline-block">
+              Pusat Informasi &amp; Regulasi
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+              Tanya Jawab Seputar PMB (FAQ)
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-600">
+              Pertanyaan umum mengenai alur pendaftaran, berkas, verifikasi pembayaran, dan perkuliahan di STAI Cendekia Insani Situbondo.
+            </p>
+          </div>
+
+          {/* FAQ Accordion List */}
+          <div className="max-w-3xl mx-auto space-y-3">
+            {faqs.filter((faq) => (faq.is_aktif ?? true)).map((faq) => {
+              const isOpen = expandedFaqId === faq.id;
+              return (
+                <div
+                  key={faq.id}
+                  className={`bg-white rounded-2xl border transition-all overflow-hidden ${
+                    isOpen ? "border-emerald-300 shadow-md ring-1 ring-emerald-100" : "border-slate-200 hover:border-slate-300 shadow-xs"
+                  }`}
+                >
+                  <button
+                    type="button"
+                    onClick={() => setExpandedFaqId(isOpen ? null : faq.id)}
+                    className="w-full p-5 text-left flex items-start justify-between gap-4 cursor-pointer"
+                  >
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 inline-block">
+                        {faq.kategori || "Umum"}
+                      </span>
+                      <h4 className="text-sm sm:text-base font-bold text-slate-900">
+                        {faq.pertanyaan}
+                      </h4>
+                    </div>
+                    <div
+                      className={`p-1.5 rounded-lg text-slate-500 transition-transform flex-shrink-0 ${
+                        isOpen ? "rotate-180 text-emerald-700 bg-emerald-50" : "bg-slate-50"
+                      }`}
+                    >
+                      <ChevronDown className="w-4 h-4" />
+                    </div>
+                  </button>
+
+                  {isOpen && (
+                    <div className="px-5 pb-5 pt-1 text-xs sm:text-sm text-slate-600 leading-relaxed border-t border-slate-100/80 animate-fadeIn whitespace-pre-line">
+                      {faq.jawaban}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </section>
       </main>
 
       {/* 5. Footer Section */}

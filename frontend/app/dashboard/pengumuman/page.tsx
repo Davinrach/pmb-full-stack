@@ -89,7 +89,7 @@ export default function PengumumanPage() {
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full flex-1 space-y-6">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 font-serif">
-            Hasil Seleksi PMB STAICI (FR-6.3, FR-6.4)
+            Hasil Seleksi PMB STAICI
           </h1>
           <p className="text-xs sm:text-sm text-slate-600 mt-1">
             Status pengumuman seleksi berkas dan penerimaan mahasiswa baru tahun akademik 2026/2027.

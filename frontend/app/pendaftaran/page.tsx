@@ -235,19 +235,14 @@ export default function PendaftaranPage() {
     }
   };
 
-  // Load User & Saved Draft + Auth Guard
+  // Load User Data from Database + Auth Guard
   useEffect(() => {
     loadUserPendaftarData();
 
-    // Load from localStorage draft if exists
-    const draft = localStorage.getItem("pmb_form_draft");
-    if (draft) {
-      try {
-        const parsed = JSON.parse(draft);
-        if (parsed.tahap1) setTahap1((prev) => ({ ...prev, ...parsed.tahap1 }));
-        if (parsed.tahap2) setTahap2((prev) => ({ ...prev, ...parsed.tahap2 }));
-      } catch {}
-    }
+    // Hapus draft lokal jika ada untuk menjaga privasi data sensitif
+    try {
+      localStorage.removeItem("pmb_form_draft");
+    } catch {}
 
     const handleAuthChange = () => {
       loadUserPendaftarData();
@@ -259,13 +254,10 @@ export default function PendaftaranPage() {
     };
   }, []);
 
-  // Save Draft Handler
+  // Save Step Data to Database on Proceed
   const handleSaveDraft = async () => {
     setIsSavingDraft(true);
     setNotification(null);
-
-    const draftData = { tahap1, tahap2 };
-    localStorage.setItem("pmb_form_draft", JSON.stringify(draftData));
 
     if (authStorage.getToken()) {
       try {
@@ -322,26 +314,14 @@ export default function PendaftaranPage() {
             no_hp_orang_tua_wali: tahap2.noHpOrangTuaWali || tahap2.noHpAyah || tahap2.noHpIbu || tahap1.noWhatsapp,
           });
         }
-        setNotification({
-          type: "success",
-          message: lang === "eng" ? "Registration draft successfully saved to server." : "Draft formulir pendaftaran berhasil disimpan ke server.",
-        });
       } catch (err: any) {
-        setNotification({
-          type: "info",
-          message: lang === "eng" ? "Draft saved locally in your browser." : "Draft tersimpan di browser Anda.",
-        });
+        // Abaikan error background save saat transisi langkah
       }
-    } else {
-      setNotification({
-        type: "success",
-        message: lang === "eng" ? "Draft successfully saved on your device." : "Draft formulir pendaftaran berhasil disimpan di perangkat Anda.",
-      });
     }
 
     setTimeout(() => {
       setIsSavingDraft(false);
-    }, 600);
+    }, 400);
   };
 
   // Step 1 Validation & Proceed
@@ -637,8 +617,10 @@ export default function PendaftaranPage() {
                 >
                   <div
                     className={`w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center font-bold text-sm sm:text-base flex-shrink-0 ${
-                      currentStep >= 2
+                      currentStep === 2
                         ? "bg-[#0d3830] text-white"
+                        : currentStep > 2
+                        ? "bg-emerald-600 text-white"
                         : "bg-slate-200 text-slate-600"
                     }`}
                   >
@@ -995,22 +977,12 @@ export default function PendaftaranPage() {
                   </div>
 
                   {/* Bottom Actions */}
-                  <div className="pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
-                    <button
-                      type="button"
-                      onClick={handleSaveDraft}
-                      disabled={isSavingDraft}
-                      className="w-full sm:w-auto px-5 py-3 bg-[#e8eeff] hover:bg-[#dbe5ff] text-slate-800 font-bold text-xs sm:text-sm rounded-xl transition flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
-                    >
-                      <Save className="w-4 h-4 text-blue-700" />
-                      <span>{isSavingDraft ? (lang === "eng" ? "Saving..." : "Menyimpan...") : (lang === "eng" ? "Save Draft" : "Simpan Draft")}</span>
-                    </button>
-
+                  <div className="pt-6 border-t border-slate-100 flex items-center justify-end">
                     <button
                       type="submit"
                       className="w-full sm:w-auto px-8 py-3.5 bg-[#0e3831] hover:bg-[#165349] text-white font-bold text-xs sm:text-sm rounded-xl transition flex items-center justify-center gap-2 cursor-pointer shadow-md"
                     >
-                      <span>{lang === "eng" ? "Proceed to Stage 2: School & Family →" : "Lanjut ke Tahap 2: Data Sekolah & Keluarga →"}</span>
+                      <span>{lang === "eng" ? "Proceed to Stage 2: School & Family" : "Lanjut ke Tahap 2: Data Sekolah & Keluarga"}</span>
                       <ArrowRight className="w-4 h-4" />
                     </button>
                   </div>
@@ -1630,24 +1602,14 @@ export default function PendaftaranPage() {
                     className="w-full sm:w-auto px-6 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs sm:text-sm rounded-xl transition flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
                   >
                     <ArrowLeft className="w-4 h-4" />
-                    <span>{lang === "eng" ? "← Back to Stage 1" : "← Kembali ke Tahap 1"}</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleSaveDraft}
-                    disabled={isSavingDraft}
-                    className="w-full sm:w-auto px-6 py-3.5 bg-[#e8eeff] hover:bg-[#dbe5ff] text-slate-800 font-bold text-xs sm:text-sm rounded-xl transition flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
-                  >
-                    <Save className="w-4 h-4 text-blue-700" />
-                    <span>{isSavingDraft ? (lang === "eng" ? "Saving..." : "Menyimpan...") : (lang === "eng" ? "Save Draft" : "Simpan Draft")}</span>
+                    <span>{lang === "eng" ? "Back to Stage 1" : "Kembali ke Tahap 1"}</span>
                   </button>
 
                   <button
                     type="submit"
                     className="w-full sm:w-auto px-8 py-3.5 bg-[#0e3831] hover:bg-[#165349] text-white font-bold text-xs sm:text-sm rounded-xl transition flex items-center justify-center gap-2 cursor-pointer shadow-md"
                   >
-                    <span>{lang === "eng" ? "Proceed to Stage 3: Documents & Payment →" : "Lanjut ke Tahap 3: Berkas & VA →"}</span>
+                    <span>{lang === "eng" ? "Proceed to Stage 3: Documents & Payment" : "Lanjut ke Tahap 3: Berkas & VA"}</span>
                     <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>
@@ -1807,15 +1769,15 @@ export default function PendaftaranPage() {
                     <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
                       {lang === "eng" ? "Admission Fee Payment via Virtual Account (VA)" : "Biaya Pendaftaran Melalui Virtual Account (VA)"}
                     </h2>
-                    <div className="px-3.5 py-1.5 rounded-xl bg-[#133b34] text-white flex items-center gap-2 self-start sm:self-center">
-                      <span className="text-[11px] text-emerald-200">{lang === "eng" ? "Total Bill:" : "Total Tagihan:"}</span>
+                    <div className="px-3.5 py-1.5 rounded-xl bg-slate-900 text-white flex items-center gap-2 self-start sm:self-center shadow-xs">
+                      <span className="text-[11px] text-slate-300">{lang === "eng" ? "Total Bill:" : "Total Tagihan:"}</span>
                       <strong className="text-sm font-bold font-mono">Rp 250.000</strong>
                     </div>
                   </div>
 
-                  <div className="bg-[#eef4ff] border border-blue-200/90 rounded-xl p-4 flex items-start gap-3 text-xs text-slate-700">
-                    <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <span className="font-bold text-xs">i</span>
+                  <div className="bg-slate-50 border border-slate-200/90 rounded-xl p-4 flex items-start gap-3 text-xs text-slate-600">
+                    <div className="w-5 h-5 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center flex-shrink-0 mt-0.5 font-bold text-xs">
+                      i
                     </div>
                     <p className="leading-relaxed">
                       {lang === "eng"
@@ -1824,79 +1786,145 @@ export default function PendaftaranPage() {
                     </p>
                   </div>
 
-                  {/* 2 VA Cards */}
+                  {/* 2 Modern & Informative VA Cards */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {/* BSI Card */}
-                    <div className="bg-[#0e302b] text-white p-5 rounded-2xl border border-emerald-800/50 relative overflow-hidden shadow-sm space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-xs sm:text-sm text-emerald-100">
-                          Bank Syariah Indonesia (BSI)
-                        </span>
-                        <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-800/80 text-emerald-200">
+                    <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs hover:border-slate-300 transition-all flex flex-col justify-between gap-4">
+                      {/* Header */}
+                      <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 flex-shrink-0">
+                            <Building2 className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-sm text-slate-900 leading-snug">
+                              Bank Syariah Indonesia (BSI)
+                            </h4>
+                            <span className="text-[11px] text-slate-500 block">Virtual Account Channel</span>
+                          </div>
+                        </div>
+                        <span className="text-[11px] font-medium px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200 flex-shrink-0">
                           VA Syariah
                         </span>
                       </div>
+
+                      {/* VA Number */}
                       <div>
-                        <span className="text-[11px] text-emerald-300/80 block">
-                          {lang === "eng" ? "BSI Virtual Account Number:" : "Nomor Virtual Account BSI:"}
+                        <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wider block mb-1.5">
+                          {lang === "eng" ? "Virtual Account Number:" : "Nomor Virtual Account:"}
                         </span>
-                        <div className="flex items-center justify-between pt-1">
-                          <span className="text-lg sm:text-xl font-bold font-mono tracking-wider text-white">
+                        <div className="bg-slate-50 border border-slate-200/90 rounded-xl p-3 flex items-center justify-between gap-3">
+                          <span className="text-lg sm:text-xl font-bold font-mono tracking-wider text-slate-900 select-all">
                             8901 0260 8821 0001
                           </span>
                           <button
                             type="button"
                             onClick={() => handleCopyVA("8901 0260 8821 0001", "bsi")}
-                            className="p-1.5 rounded-lg bg-emerald-900/80 hover:bg-emerald-800 text-emerald-200 hover:text-white transition flex items-center gap-1 text-[10px] font-bold cursor-pointer"
+                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs ${
+                              copiedVA === "bsi"
+                                ? "bg-emerald-50 border-emerald-300 text-emerald-700"
+                                : "bg-white border-slate-200 text-slate-700 hover:bg-slate-100 hover:border-slate-300"
+                            }`}
                           >
-                            <Copy className="w-3.5 h-3.5" />
-                            <span>{copiedVA === "bsi" ? (lang === "eng" ? "Copied!" : "Tersalin!") : (lang === "eng" ? "Copy" : "Salin")}</span>
+                            {copiedVA === "bsi" ? (
+                              <>
+                                <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+                                <span>{lang === "eng" ? "Copied!" : "Tersalin!"}</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-3.5 h-3.5 text-slate-500" />
+                                <span>{lang === "eng" ? "Copy" : "Salin"}</span>
+                              </>
+                            )}
                           </button>
                         </div>
                       </div>
-                      <div className="text-[11px] text-emerald-200/70 pt-2 border-t border-emerald-900/60">
-                        {lang === "eng" ? "Account Name:" : "Atas Nama:"} <strong className="text-emerald-100">PMB STAI Cendekia Insani</strong>
+
+                      {/* Information Details */}
+                      <div className="pt-2 text-xs space-y-1.5 border-t border-slate-100">
+                        <div className="flex items-center justify-between text-slate-600">
+                          <span className="text-slate-500">{lang === "eng" ? "Account Name:" : "Atas Nama:"}</span>
+                          <strong className="font-semibold text-slate-800">PMB STAI Cendekia Insani</strong>
+                        </div>
+                        <div className="flex items-center justify-between text-slate-600">
+                          <span className="text-slate-500">{lang === "eng" ? "Payment Channel:" : "Metode Transfer:"}</span>
+                          <span className="text-slate-700 font-medium">BSI Mobile, ATM, Teller</span>
+                        </div>
                       </div>
                     </div>
 
                     {/* Mandiri Card */}
-                    <div className="bg-[#142338] text-white p-5 rounded-2xl border border-blue-900/50 relative overflow-hidden shadow-sm space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-xs sm:text-sm text-blue-100">
-                          Bank Mandiri
-                        </span>
-                        <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-blue-800/80 text-blue-200">
+                    <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs hover:border-slate-300 transition-all flex flex-col justify-between gap-4">
+                      {/* Header */}
+                      <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 flex-shrink-0">
+                            <Building2 className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-sm text-slate-900 leading-snug">
+                              Bank Mandiri
+                            </h4>
+                            <span className="text-[11px] text-slate-500 block">Virtual Account Channel</span>
+                          </div>
+                        </div>
+                        <span className="text-[11px] font-medium px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200 flex-shrink-0">
                           VA Partner
                         </span>
                       </div>
+
+                      {/* VA Number */}
                       <div>
-                        <span className="text-[11px] text-blue-300/80 block">
-                          {lang === "eng" ? "Mandiri Virtual Account Number:" : "Nomor Virtual Account Mandiri:"}
+                        <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wider block mb-1.5">
+                          {lang === "eng" ? "Virtual Account Number:" : "Nomor Virtual Account:"}
                         </span>
-                        <div className="flex items-center justify-between pt-1">
-                          <span className="text-lg sm:text-xl font-bold font-mono tracking-wider text-white">
+                        <div className="bg-slate-50 border border-slate-200/90 rounded-xl p-3 flex items-center justify-between gap-3">
+                          <span className="text-lg sm:text-xl font-bold font-mono tracking-wider text-slate-900 select-all">
                             8872 1026 0034 5678
                           </span>
                           <button
                             type="button"
                             onClick={() => handleCopyVA("8872 1026 0034 5678", "mandiri")}
-                            className="p-1.5 rounded-lg bg-blue-900/80 hover:bg-blue-800 text-blue-200 hover:text-white transition flex items-center gap-1 text-[10px] font-bold cursor-pointer"
+                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs ${
+                              copiedVA === "mandiri"
+                                ? "bg-emerald-50 border-emerald-300 text-emerald-700"
+                                : "bg-white border-slate-200 text-slate-700 hover:bg-slate-100 hover:border-slate-300"
+                            }`}
                           >
-                            <Copy className="w-3.5 h-3.5" />
-                            <span>{copiedVA === "mandiri" ? (lang === "eng" ? "Copied!" : "Tersalin!") : (lang === "eng" ? "Copy" : "Salin")}</span>
+                            {copiedVA === "mandiri" ? (
+                              <>
+                                <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+                                <span>{lang === "eng" ? "Copied!" : "Tersalin!"}</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-3.5 h-3.5 text-slate-500" />
+                                <span>{lang === "eng" ? "Copy" : "Salin"}</span>
+                              </>
+                            )}
                           </button>
                         </div>
                       </div>
-                      <div className="text-[11px] text-blue-200/70 pt-2 border-t border-blue-900/60">
-                        {lang === "eng" ? "Account Name:" : "Atas Nama:"} <strong className="text-blue-100">KAS PMB STAICI SITUBONDO</strong>
+
+                      {/* Information Details */}
+                      <div className="pt-2 text-xs space-y-1.5 border-t border-slate-100">
+                        <div className="flex items-center justify-between text-slate-600">
+                          <span className="text-slate-500">{lang === "eng" ? "Account Name:" : "Atas Nama:"}</span>
+                          <strong className="font-semibold text-slate-800">KAS PMB STAICI SITUBONDO</strong>
+                        </div>
+                        <div className="flex items-center justify-between text-slate-600">
+                          <span className="text-slate-500">{lang === "eng" ? "Payment Channel:" : "Metode Transfer:"}</span>
+                          <span className="text-slate-700 font-medium">Livin&apos; Mandiri, ATM, Teller</span>
+                        </div>
                       </div>
                     </div>
                   </div>
 
                   {/* Upload Bukti Transfer */}
-                  <div className="p-4 sm:p-5 bg-[#f0f3f8] border border-slate-200/90 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="p-4 sm:p-5 bg-slate-50 border border-slate-200/90 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div className="flex items-start gap-3.5">
-                      <div className="w-10 h-10 rounded-full bg-[#0d3830] text-emerald-300 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 text-slate-700 flex items-center justify-center flex-shrink-0 mt-0.5 shadow-2xs">
                         <CreditCard className="w-5 h-5" />
                       </div>
                       <div>
@@ -1970,17 +1998,7 @@ export default function PendaftaranPage() {
                     className="w-full sm:w-auto px-6 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs sm:text-sm rounded-xl transition flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
                   >
                     <ArrowLeft className="w-4 h-4" />
-                    <span>{lang === "eng" ? "← Back to Stage 2" : "← Kembali ke Tahap 2"}</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleSaveDraft}
-                    disabled={isSavingDraft}
-                    className="w-full sm:w-auto px-6 py-3.5 bg-[#e8eeff] hover:bg-[#dbe5ff] text-slate-800 font-bold text-xs sm:text-sm rounded-xl transition flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
-                  >
-                    <Save className="w-4 h-4 text-blue-700" />
-                    <span>{isSavingDraft ? (lang === "eng" ? "Saving..." : "Menyimpan...") : (lang === "eng" ? "Save Draft" : "Simpan Draft")}</span>
+                    <span>{lang === "eng" ? "Back to Stage 2" : "Kembali ke Tahap 2"}</span>
                   </button>
 
                   <button

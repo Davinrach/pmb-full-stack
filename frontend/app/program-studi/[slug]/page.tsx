@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { use } from "react";
+import { use, useState, useEffect } from "react";
 import { notFound } from "next/navigation";
 import {
   Home,
@@ -15,6 +15,7 @@ import { getProdiDetail } from "@/lib/prodi-data";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useLanguage } from "@/lib/LanguageContext";
+import { api } from "@/lib/api";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -23,7 +24,16 @@ interface PageProps {
 export default function DetailProdiPage({ params }: PageProps) {
   const { slug } = use(params);
   const { t, lang } = useLanguage();
+  const [backendSettings, setBackendSettings] = useState<any>(null);
   const prodi = getProdiDetail(slug, lang);
+
+  useEffect(() => {
+    api.get("/public/settings")
+      .then((res) => {
+        if (res.data) setBackendSettings(res.data);
+      })
+      .catch(() => {});
+  }, []);
 
   if (!prodi) {
     notFound();
@@ -140,8 +150,38 @@ export default function DetailProdiPage({ params }: PageProps) {
             </div>
           </article>
 
-          {/* RIGHT COLUMN: Hotline Sidebar Card (col-span-4) */}
+          {/* RIGHT COLUMN: Tata Cara & Hotline Sidebar (col-span-4) */}
           <aside className="lg:col-span-4 space-y-6">
+            {/* Card 1: Tata Cara Pendaftaran */}
+            <div
+              id="alur-pendaftaran"
+              className="bg-white rounded-2xl border border-slate-200/90 p-6 shadow-sm"
+            >
+              <h3 className="text-lg font-bold text-slate-900">
+                {t.sidebar.caraDaftarTitle}
+              </h3>
+              <p className="text-xs text-slate-500 mt-1 mb-5 leading-relaxed">
+                {t.sidebar.caraDaftarSubtitle}
+              </p>
+
+              <ol className="space-y-4 text-xs sm:text-sm text-slate-700">
+                {t.sidebar.steps.map((step, idx) => (
+                  <li key={idx} className="flex gap-2.5 items-start">
+                    <span className="font-bold text-slate-900 flex-shrink-0">{step.no}</span>
+                    <div>
+                      <strong className="text-slate-900 block font-bold">
+                        {step.title}
+                      </strong>
+                      <span className="text-slate-600 text-xs leading-relaxed">
+                        {step.desc}
+                      </span>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </div>
+
+            {/* Card 2: Hotline Panitia PMB */}
             <div className="bg-white rounded-2xl border border-slate-200/90 p-6 shadow-sm">
               <div className="flex items-center gap-2 text-slate-900 font-bold text-base sm:text-lg mb-1">
                 <Headphones className="w-5 h-5 text-emerald-700" />
@@ -153,7 +193,7 @@ export default function DetailProdiPage({ params }: PageProps) {
 
               {/* WhatsApp Callout Card */}
               <a
-                href="https://wa.me/6285233432221?text=Halo%20Panitia%20PMB%20STAICI,%20saya%20ingin%20berkonsultasi%20terkait%20program%20studi"
+                href={`https://wa.me/${(backendSettings?.no_whatsapp_cs || "085233432221").replace(/[^0-9]/g, "")}?text=Halo%20Panitia%20PMB%20STAICI,%20saya%20ingin%20berkonsultasi%20terkait%20program%20studi%20${encodeURIComponent(prodi.title)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-3.5 p-3.5 bg-[#e9f2ee] hover:bg-[#dfeee6] rounded-xl border border-emerald-100 transition group"
@@ -166,7 +206,7 @@ export default function DetailProdiPage({ params }: PageProps) {
                     {t.sidebar.whatsappLabel}
                   </span>
                   <span className="text-base font-extrabold text-slate-900 tracking-tight leading-snug">
-                    0852-3343-2221
+                    {backendSettings?.no_whatsapp_cs || "0852-3343-2221"}
                   </span>
                 </div>
               </a>

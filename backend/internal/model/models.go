@@ -55,12 +55,16 @@ type User struct {
 	NoHP               string         `gorm:"type:varchar(30);not null" json:"no_hp"`
 	NIK                string         `gorm:"type:varchar(30);uniqueIndex;not null" json:"nik"`
 	Role               Role           `gorm:"type:varchar(30);default:'calon_mahasiswa'" json:"role"`
+	FotoProfil         string         `gorm:"type:varchar(255)" json:"foto_profil,omitempty"`
 	IsEmailVerified    bool           `gorm:"default:false" json:"is_email_verified"`
 	VerificationToken  string         `gorm:"type:varchar(255)" json:"-"`
-	ResetPasswordToken string         `gorm:"type:varchar(255)" json:"-"`
-	CreatedAt          time.Time      `json:"created_at"`
-	UpdatedAt          time.Time      `json:"updated_at"`
-	DeletedAt          gorm.DeletedAt `gorm:"index" json:"-"`
+	VerificationOTP    string         `gorm:"type:varchar(10)" json:"-"`
+	OTPExpiresAt       *time.Time     `json:"-"`
+	ResetPasswordToken     string         `gorm:"type:varchar(255)" json:"-"`
+	ResetPasswordExpiresAt *time.Time     `json:"-"`
+	CreatedAt              time.Time      `json:"created_at"`
+	UpdatedAt              time.Time      `json:"updated_at"`
+	DeletedAt              gorm.DeletedAt `gorm:"index" json:"-"`
 }
 
 type ProgramStudi struct {
@@ -118,6 +122,11 @@ type Pendaftar struct {
 	JurusanSekolah     string            `gorm:"type:varchar(100)" json:"jurusan_sekolah"`
 	NilaiRataRata      float64           `gorm:"type:decimal(5,2)" json:"nilai_rata_rata"`
 	TahunLulus         int               `json:"tahun_lulus"`
+
+	// Penilaian Seleksi & Kelulusan (FR-6.2, FR-8.5)
+	NilaiUjian         *float64          `gorm:"type:decimal(5,2)" json:"nilai_ujian,omitempty"`
+	NilaiWawancara     *float64          `gorm:"type:decimal(5,2)" json:"nilai_wawancara,omitempty"`
+	CatatanSeleksi     string            `gorm:"type:text" json:"catatan_seleksi,omitempty"`
 
 	// Relasi
 	DataOrangTua       *OrangTua         `gorm:"foreignKey:PendaftarID" json:"data_orang_tua,omitempty"`
@@ -212,18 +221,35 @@ type LogAktivitasAdmin struct {
 }
 
 type PengaturanSistem struct {
-	ID               uint      `gorm:"primaryKey" json:"id"`
-	BannerTitle      string    `gorm:"type:varchar(255)" json:"banner_title"`
-	BannerSubtitle   string    `gorm:"type:text" json:"banner_subtitle"`
-	AnnouncementText string    `gorm:"type:varchar(255)" json:"announcement_text"`
-	BankName         string    `gorm:"type:varchar(100)" json:"bank_name"`
-	NomorRekening    string    `gorm:"type:varchar(100)" json:"nomor_rekening"`
-	AtasNama         string    `gorm:"type:varchar(100)" json:"atas_nama"`
-	NoWhatsappCS     string    `gorm:"type:varchar(50)" json:"no_whatsapp_cs"`
-	EmailCS          string    `gorm:"type:varchar(100)" json:"email_cs"`
-	AlamatKampus     string    `gorm:"type:text" json:"alamat_kampus"`
-	UpdatedAt        time.Time `json:"updated_at"`
+	ID                     uint      `gorm:"primaryKey" json:"id"`
+	BannerTitle            string    `gorm:"type:varchar(255)" json:"banner_title"`
+	BannerSubtitle         string    `gorm:"type:text" json:"banner_subtitle"`
+	AnnouncementText       string    `gorm:"type:varchar(255)" json:"announcement_text"`
+	BankName               string    `gorm:"type:varchar(100)" json:"bank_name"`
+	NomorRekening          string    `gorm:"type:varchar(100)" json:"nomor_rekening"`
+	AtasNama               string    `gorm:"type:varchar(100)" json:"atas_nama"`
+	PetunjukPembayaran     string    `gorm:"type:text" json:"petunjuk_pembayaran"`
+	RegulasiBuktiBayar     string    `gorm:"type:text" json:"regulasi_bukti_bayar"`
+	BatasWaktuKonfirmasi   string    `gorm:"type:varchar(100)" json:"batas_waktu_konfirmasi"`
+	PersyaratanPendaftaran string    `gorm:"type:text" json:"persyaratan_pendaftaran"`
+	JalurPendaftaranInfo   string    `gorm:"type:text" json:"jalur_pendaftaran_info"`
+	NoWhatsappCS           string    `gorm:"type:varchar(50)" json:"no_whatsapp_cs"`
+	EmailCS                string    `gorm:"type:varchar(100)" json:"email_cs"`
+	AlamatKampus           string    `gorm:"type:text" json:"alamat_kampus"`
+	UpdatedAt              time.Time `json:"updated_at"`
 }
+
+type FAQ struct {
+	ID        uint      `gorm:"primaryKey" json:"id"`
+	Kategori  string    `gorm:"type:varchar(100);default:'Umum'" json:"kategori"`
+	Pertanyaan string    `gorm:"type:text;not null" json:"pertanyaan"`
+	Jawaban   string    `gorm:"type:text;not null" json:"jawaban"`
+	Urutan    int       `gorm:"default:0" json:"urutan"`
+	IsAktif   bool      `gorm:"default:true" json:"is_aktif"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
 
 // RBAC System Structs
 type RoleModel struct {

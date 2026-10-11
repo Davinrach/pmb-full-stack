@@ -3,9 +3,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { ChevronDown, Menu, User as UserIcon, LogOut, LayoutDashboard } from "lucide-react";
+import { ChevronDown, Menu, User as UserIcon, LogOut, LayoutDashboard, UserCheck, Settings } from "lucide-react";
 import LoginModal from "@/components/LoginModal";
-import { authStorage, UserSession } from "@/lib/api";
+import ProfileModal from "@/components/ProfileModal";
+import { authStorage, UserSession, getFileUrl } from "@/lib/api";
 
 import { useLanguage } from "@/lib/LanguageContext";
 
@@ -17,6 +18,7 @@ export default function Navbar({ activePage = "beranda" }: NavbarProps) {
   const { lang, setLang, t } = useLanguage();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [user, setUser] = useState<UserSession | null>(null);
 
@@ -136,6 +138,13 @@ export default function Navbar({ activePage = "beranda" }: NavbarProps) {
             >
               {t.navbar.pendaftaran}
             </Link>
+
+            <Link
+              href="/#faq"
+              className="text-slate-600 hover:text-[#0d3830] transition-colors"
+            >
+              FAQ
+            </Link>
           </nav>
 
           {/* Right Action Buttons */}
@@ -174,8 +183,19 @@ export default function Navbar({ activePage = "beranda" }: NavbarProps) {
                   onClick={() => setUserDropdownOpen(!userDropdownOpen)}
                   className="flex items-center gap-2.5 p-1.5 pr-3 bg-slate-100 hover:bg-slate-200/80 border border-slate-200 rounded-full transition shadow-xs cursor-pointer group"
                 >
-                  <div className="w-8 h-8 rounded-full bg-[#0d3830] text-emerald-300 font-extrabold text-xs flex items-center justify-center flex-shrink-0 shadow-inner">
-                    {getInitials(user.nama_lengkap)}
+                  <div className="w-8 h-8 rounded-full bg-[#0d3830] text-emerald-300 font-extrabold text-xs flex items-center justify-center flex-shrink-0 shadow-inner overflow-hidden border border-emerald-300/30">
+                    {user.foto_profil ? (
+                      <Image
+                        src={getFileUrl(user.foto_profil)}
+                        alt={user.nama_lengkap}
+                        width={32}
+                        height={32}
+                        unoptimized
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      getInitials(user.nama_lengkap)
+                    )}
                   </div>
                   <span className="text-xs font-bold text-slate-900 truncate max-w-[130px]">
                     {user.nama_lengkap}
@@ -185,23 +205,39 @@ export default function Navbar({ activePage = "beranda" }: NavbarProps) {
 
                 {/* User Dropdown Menu */}
                 {userDropdownOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-52 bg-white rounded-xl shadow-xl border border-slate-100 py-1.5 z-50 animate-fadeIn">
-                    <div className="px-4 py-2 border-b border-slate-100">
-                      <p className="text-xs font-semibold text-slate-400">{t.navbar.masukSebagai}</p>
+                  <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-slate-100 py-1.5 z-50 animate-fadeIn overflow-hidden">
+                    <div className="px-4 py-2.5 border-b border-slate-100 bg-slate-50/60">
+                      <p className="text-[11px] font-semibold text-slate-400">{t.navbar.masukSebagai}</p>
                       <p className="text-xs font-bold text-slate-900 truncate">{user.email}</p>
                     </div>
-                    <Link
-                      href={dashboardUrl}
-                      onClick={() => setUserDropdownOpen(false)}
-                      className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 hover:text-[#0d3830] transition"
-                    >
-                      <LayoutDashboard className="w-4 h-4 text-emerald-700" />
-                      <span>{t.navbar.dashboardPmb}</span>
-                    </Link>
+
+                    <div className="py-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setUserDropdownOpen(false);
+                          setProfileModalOpen(true);
+                        }}
+                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 hover:text-[#0d3830] transition text-left cursor-pointer"
+                      >
+                        <UserIcon className="w-4 h-4 text-emerald-700" />
+                        <span>Pengaturan Akun & Profil</span>
+                      </button>
+
+                      <Link
+                        href={dashboardUrl}
+                        onClick={() => setUserDropdownOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 hover:text-[#0d3830] transition"
+                      >
+                        <LayoutDashboard className="w-4 h-4 text-emerald-700" />
+                        <span>{t.navbar.dashboardPmb}</span>
+                      </Link>
+                    </div>
+
                     <button
                       type="button"
                       onClick={handleLogout}
-                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-rose-600 hover:bg-rose-50 transition text-left cursor-pointer border-t border-slate-50"
+                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-rose-600 hover:bg-rose-50 transition text-left cursor-pointer border-t border-slate-100"
                     >
                       <LogOut className="w-4 h-4 text-rose-500" />
                       <span>{t.navbar.keluar}</span>
@@ -279,6 +315,14 @@ export default function Navbar({ activePage = "beranda" }: NavbarProps) {
               }`}
             >
               {t.navbar.pendaftaran}
+            </Link>
+
+            <Link
+              href="/#faq"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block text-sm font-medium text-slate-700 hover:text-[#0d3830]"
+            >
+              FAQ PMB
             </Link>
 
             {/* Mobile Language Switcher */}
@@ -369,6 +413,15 @@ export default function Navbar({ activePage = "beranda" }: NavbarProps) {
         onSuccess={() => {
           const u = authStorage.getUser();
           if (u) setUser(u);
+        }}
+      />
+
+      {/* Profile Management & Password Modal */}
+      <ProfileModal
+        isOpen={profileModalOpen}
+        onClose={() => setProfileModalOpen(false)}
+        onUserUpdated={(updatedUser) => {
+          setUser(updatedUser);
         }}
       />
     </>

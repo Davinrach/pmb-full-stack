@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { api, authStorage } from "@/lib/api";
 import { useLanguage } from "@/lib/LanguageContext";
+import OTPVerificationModal from "@/components/OTPVerificationModal";
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -45,6 +46,8 @@ export default function LoginModal({
   const [rememberMe, setRememberMe] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [unverifiedEmail, setUnverifiedEmail] = useState("");
 
   if (!isOpen) return null;
 
@@ -79,6 +82,15 @@ export default function LoginModal({
         onClose();
       }
     } catch (err: any) {
+      if (err.data?.need_email_verification || err.code === "UNVERIFIED_EMAIL" || err.message?.toLowerCase().includes("belum diverifikasi")) {
+        const targetEmail = err.data?.email || (identifier.includes("@") ? identifier.trim() : "");
+        if (targetEmail) {
+          setUnverifiedEmail(targetEmail);
+          setShowOtpModal(true);
+          return;
+        }
+      }
+
       setErrorMessage(
         err.message ||
           (lang === "eng"
@@ -344,6 +356,22 @@ export default function LoginModal({
           <span>PMB PORTAL STAICI</span>
         </div>
       </div>
+
+      {/* OTP Verification Modal if login requires verification */}
+      <OTPVerificationModal
+        isOpen={showOtpModal}
+        email={unverifiedEmail}
+        onClose={() => setShowOtpModal(false)}
+        onVerified={(data) => {
+          setShowOtpModal(false);
+          if (onSuccess) {
+            onSuccess(data?.user);
+          } else {
+            router.push(redirectTo || "/dashboard");
+          }
+          onClose();
+        }}
+      />
     </div>
   );
 }

@@ -39,14 +39,37 @@ func (h *PembayaranHandler) GetInfoRekening(c *gin.Context) {
 		biaya = pendaftar.Gelombang.BiayaPendaftaran
 	}
 
+	var settings model.PengaturanSistem
+	database.DB.First(&settings)
+
+	bankName := settings.BankName
+	if bankName == "" {
+		bankName = "Bank Syariah Indonesia (BSI)"
+	}
+	noRek := settings.NomorRekening
+	if noRek == "" {
+		noRek = "7148899012"
+	}
+	atasNama := settings.AtasNama
+	if atasNama == "" {
+		atasNama = "STAI Cendekia Insani PMB"
+	}
+	petunjuk := settings.PetunjukPembayaran
+	if petunjuk == "" {
+		petunjuk = "Harap cantumkan Nomor Registrasi PMB pada berita transfer atau simpan struk transfer untuk diunggah sebagai bukti bayar."
+	}
+
 	response.Success(c, http.StatusOK, "Informasi rekening pembayaran PMB STAICI", gin.H{
-		"bank_name":              "Bank Syariah Indonesia (BSI)",
-		"nomor_rekening":         "7148899012",
-		"atas_nama":              "STAI Cendekia Insani PMB",
+		"bank_name":              bankName,
+		"nomor_rekening":         noRek,
+		"atas_nama":              atasNama,
 		"biaya_pendaftaran":      biaya,
 		"nomor_pendaftaran":      pendaftar.NomorPendaftaran,
 		"kode_pembayaran_unik":   fmt.Sprintf("PMB-%04d", pendaftar.ID),
-		"instruksi":              "Harap cantumkan Nomor Registrasi PMB pada berita transfer atau simpan struk transfer untuk diunggah sebagai bukti bayar.",
+		"instruksi":              petunjuk,
+		"petunjuk_pembayaran":    petunjuk,
+		"regulasi_bukti_bayar":   settings.RegulasiBuktiBayar,
+		"batas_waktu_konfirmasi": settings.BatasWaktuKonfirmasi,
 	})
 }
 
@@ -59,10 +82,17 @@ func (h *PembayaranHandler) KonfirmasiPembayaran(c *gin.Context) {
 		return
 	}
 
+	var settings model.PengaturanSistem
+	database.DB.First(&settings)
+
 	namaPengirim := strings.TrimSpace(c.PostForm("nama_pengirim"))
 	bankTujuan := strings.TrimSpace(c.PostForm("bank_tujuan"))
 	if bankTujuan == "" {
-		bankTujuan = "Bank Syariah Indonesia (BSI)"
+		if settings.BankName != "" {
+			bankTujuan = settings.BankName
+		} else {
+			bankTujuan = "Bank Syariah Indonesia (BSI)"
+		}
 	}
 
 	file, header, err := c.Request.FormFile("bukti_transfer")
@@ -101,11 +131,16 @@ func (h *PembayaranHandler) KonfirmasiPembayaran(c *gin.Context) {
 		biaya = pendaftar.Gelombang.BiayaPendaftaran
 	}
 
+	noRekTujuan := settings.NomorRekening
+	if noRekTujuan == "" {
+		noRekTujuan = "7148899012"
+	}
+
 	pembayaran := model.Pembayaran{
 		PendaftarID:         pendaftar.ID,
 		Jumlah:              biaya,
 		BankTujuan:          bankTujuan,
-		NomorRekeningTujuan: "7148899012",
+		NomorRekeningTujuan: noRekTujuan,
 		NamaPengirim:        namaPengirim,
 		BuktiTransferPath:   targetPath,
 		Status:              model.StatusBayarMenungguVerifikasi,
