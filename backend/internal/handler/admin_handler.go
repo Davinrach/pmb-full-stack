@@ -352,6 +352,9 @@ func (h *AdminHandler) UpdateStatusSeleksi(c *gin.Context) {
 	}
 
 	pendaftar.StatusPendaftaran = req.Status
+	if req.Status == model.StatusBelumLengkap || req.Status == model.StatusDitolak {
+		pendaftar.IsLocked = false
+	}
 	if req.Catatan != "" {
 		pendaftar.CatatanSeleksi = req.Catatan
 		pendaftar.CatatanRevisi = req.Catatan

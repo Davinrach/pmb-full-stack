@@ -346,7 +346,7 @@ func seedRBACDefault(db *gorm.DB) {
 	defaultMenus := []model.Menu{
 		// Menu Utama
 		{MenuGroupID: groupMenuUtama.ID, Nama: "Pendaftar PMB", Key: "pendaftar", Icon: "Users", URL: "pendaftar", BadgeText: "128", Urutan: 1, IsAktif: true},
-		{MenuGroupID: groupMenuUtama.ID, Nama: "Seleksi & Kelulusan", Key: "seleksi", Icon: "Award", URL: "seleksi", Urutan: 2, IsAktif: true},
+		{MenuGroupID: groupMenuUtama.ID, Nama: "Seleksi & Penerimaan", Key: "seleksi", Icon: "Award", URL: "seleksi", Urutan: 2, IsAktif: true},
 		// Alat & Integrasi
 		{MenuGroupID: groupAlat.ID, Nama: "Export Data", Key: "export", Icon: "Download", URL: "export", Urutan: 1, IsAktif: true},
 		{MenuGroupID: groupAlat.ID, Nama: "Sinkronisasi EMIS", Key: "emis", Icon: "RefreshCw", URL: "emis", Urutan: 2, IsAktif: true},
@@ -359,10 +359,11 @@ func seedRBACDefault(db *gorm.DB) {
 	}
 
 	for _, m := range defaultMenus {
-		var count int64
-		db.Model(&model.Menu{}).Where("`key` = ?", m.Key).Count(&count)
-		if count == 0 {
+		var existing model.Menu
+		if err := db.Where("`key` = ?", m.Key).First(&existing).Error; err != nil {
 			db.Create(&m)
+		} else {
+			db.Model(&existing).Update("nama", m.Nama)
 		}
 	}
 

@@ -126,8 +126,50 @@ function getUserNik(p: any): string {
 }
 
 function getAsalSekolah(p: any): string {
+  if (typeof p?.nama_sekolah === "string" && p.nama_sekolah) return p.nama_sekolah;
   if (typeof p?.asal_sekolah === "string" && p.asal_sekolah) return p.asal_sekolah;
   return "-";
+}
+
+function getPembayaranBadge(p: any) {
+  const pay = Array.isArray(p?.pembayaran) && p.pembayaran.length > 0
+    ? p.pembayaran[p.pembayaran.length - 1]
+    : null;
+
+  if (!pay) {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 text-slate-700 font-bold rounded-full text-[11px] border border-slate-200 whitespace-nowrap">
+        <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+        Menunggu Pembayaran
+      </span>
+    );
+  }
+
+  if (pay.status === "diterima") {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-100 text-emerald-900 font-bold rounded-full text-[11px] border border-emerald-300 whitespace-nowrap">
+        <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+        Lunas &amp; Sah
+      </span>
+    );
+  }
+
+  if (pay.status === "ditolak") {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-900 font-bold rounded-full text-[11px] border border-amber-300 whitespace-nowrap">
+        <span className="w-1.5 h-1.5 rounded-full bg-amber-600" />
+        Perlu Revisi
+      </span>
+    );
+  }
+
+  // Default: pay.status === "menunggu_verifikasi" (Pendaftar sudah upload bukti transfer, menunggu admin validasi!)
+  return (
+    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-100 text-amber-900 font-bold rounded-full text-[11px] border border-amber-300 whitespace-nowrap">
+      <span className="w-1.5 h-1.5 rounded-full bg-amber-600 animate-pulse" />
+      Menunggu Validasi
+    </span>
+  );
 }
 
 export default function AdminCMSDashboardPage() {
@@ -502,11 +544,12 @@ export default function AdminCMSDashboardPage() {
       }
 
       const res = await api.get(query);
-      if (res.data && Array.isArray(res.data.pendaftars)) {
-        setSeleksiApplicants(res.data.pendaftars);
-      } else {
-        setSeleksiApplicants([]);
-      }
+      const list = Array.isArray(res.data)
+        ? res.data
+        : Array.isArray(res.data?.data)
+        ? res.data.data
+        : [];
+      setSeleksiApplicants(list);
     } catch (err) {
       console.error("Gagal memuat data seleksi:", err);
       setSeleksiApplicants([]);
@@ -601,6 +644,15 @@ export default function AdminCMSDashboardPage() {
   }, [seleksiSearch, seleksiProdiFilter, seleksiGelombangFilter, seleksiStatusFilter]);
 
   useEffect(() => {
+    if (activeTab === "pendaftar" || activeTab === "verifikasi") {
+      const timer = setTimeout(() => {
+        loadPendaftars(1);
+      }, 250);
+      return () => clearTimeout(timer);
+    }
+  }, [search, prodiFilter, statusFilter, activeTab]);
+
+  useEffect(() => {
     if (activeTab === "rbac") {
       loadRolePermissions(selectedRoleForMatrix);
     }
@@ -665,29 +717,23 @@ export default function AdminCMSDashboardPage() {
     }
   };
 
-  const handleVerifikasiSemuaDokumen = async () => {
-    if (!selectedPendaftar || !selectedPendaftar.berkas || selectedPendaftar.berkas.length === 0) {
-      alert("Tidak ada berkas yang perlu diverifikasi.");
-      return;
-    }
+  const handleMintaRevisiGlobal = async (catatan: string) => {
+    if (!selectedPendaftar) return;
     setIsProcessing(true);
     try {
-      for (const b of selectedPendaftar.berkas) {
-        if (b.status_verifikasi !== "valid") {
-          await api.put(`/admin/pendaftar/${selectedPendaftar.id}/verifikasi-berkas`, {
-            berkas_id: b.id,
-            status: "valid",
-            catatan_admin: "",
-          });
-        }
-      }
+      await api.put(`/admin/pendaftar/${selectedPendaftar.id}/status-seleksi`, {
+        status: "belum_lengkap",
+        catatan,
+      });
       const res = await api.get(`/admin/pendaftar/${selectedPendaftar.id}`);
       setSelectedPendaftar(res.data);
+      setIsMintaRevisiGlobalOpen(false);
+      setGlobalRevisiNote("");
       loadPendaftars(meta.page);
       loadStats();
-      alert("Seluruh berkas pendaftar berhasil diverifikasi sah!");
+      alert("Instruksi revisi berhasil dikirim! Status pendaftaran diubah menjadi 'Belum Lengkap / Perlu Revisi', dan formulir pendaftaran mahasiswa dibuka kembali untuk unggah ulang.");
     } catch (err: any) {
-      alert(err.message || "Gagal memverifikasi semua berkas");
+      alert(err.message || "Gagal mengirim permintaan revisi");
     } finally {
       setIsProcessing(false);
     }
@@ -1132,7 +1178,7 @@ export default function AdminCMSDashboardPage() {
                     : activeTab === "emis"
                     ? "Sinkronisasi EMIS & Kopertais"
                     : activeTab === "seleksi"
-                    ? "Seleksi & Kelulusan PMB"
+                    ? "Seleksi & Penerimaan PMB"
                     : activeTab === "rbac"
                     ? "Manajemen Role & Menu RBAC"
                     : activeTab === "settings"
@@ -1155,7 +1201,7 @@ export default function AdminCMSDashboardPage() {
                   : activeTab === "emis"
                   ? "Integrasi dan kesiapan pemetaan format data EMIS Kementerian Agama & Kopertais Wilayah IV."
                   : activeTab === "seleksi"
-                  ? "Penetapan hasil seleksi dan status kelulusan calon mahasiswa."
+                  ? "Penetapan hasil seleksi dan status penerimaan calon mahasiswa baru."
                   : activeTab === "rbac"
                   ? "Pengaturan hak akses, grup menu, dan matriks wewenang akun administrator."
                   : activeTab === "settings"
@@ -1587,57 +1633,41 @@ export default function AdminCMSDashboardPage() {
 
           {/* SEARCH & FILTER TOOLBAR (for pendaftar) */}
           {activeTab === "pendaftar" && (
-            <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs flex flex-col md:flex-row items-center justify-between gap-3 animate-fadeIn">
-              <div className="flex items-center gap-2 w-full md:w-auto flex-1">
-                <div className="relative flex-1 max-w-md">
-                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="text"
-                    placeholder="Cari Nama, NIK, No. PMB, atau Asal Sekolah..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") loadPendaftars(1);
-                    }}
-                    className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-[#0d3830] focus:bg-white"
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={() => loadPendaftars(1)}
-                  className="px-3.5 py-2 bg-[#0d3830] text-white rounded-xl text-xs font-bold hover:bg-[#165349] transition cursor-pointer"
-                >
-                  Cari
-                </button>
+            <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 text-xs animate-fadeIn">
+              <div className="relative flex-1">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder="Cari Nama, NIK, No. PMB, atau Asal Sekolah..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 bg-white border border-slate-300 rounded-xl text-xs focus:outline-none focus:border-[#0d3830]"
+                />
               </div>
 
-              <div className="flex items-center gap-2 w-full md:w-auto flex-wrap">
+              <div className="flex items-center gap-2 flex-wrap">
                 <select
                   value={prodiFilter}
-                  onChange={(e) => {
-                    setProdiFilter(e.target.value);
-                  }}
-                  className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:border-[#0d3830]"
+                  onChange={(e) => setProdiFilter(e.target.value)}
+                  className="px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#0d3830]"
                 >
                   <option value="">Semua Program Studi</option>
                   {prodiList.map((prodi) => (
                     <option key={prodi.id} value={prodi.id}>
-                      {prodi.nama}
+                      {prodi.kode ? `${prodi.kode} - ` : ""}{prodi.nama}
                     </option>
                   ))}
                 </select>
 
                 <select
                   value={statusFilter}
-                  onChange={(e) => {
-                    setStatusFilter(e.target.value);
-                  }}
-                  className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:border-[#0d3830]"
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#0d3830]"
                 >
-                  <option value="">Semua Status</option>
-                  <option value="belum_lengkap">Belum Lengkap / Perlu Revisi</option>
+                  <option value="">Semua Status Berkas</option>
                   <option value="menunggu_verifikasi">Menunggu Verifikasi</option>
                   <option value="berkas_diverifikasi">Berkas Sah / Diverifikasi</option>
+                  <option value="belum_lengkap">Perlu Revisi / Belum Lengkap</option>
                   <option value="lolos_seleksi">Lolos Seleksi</option>
                   <option value="ditolak">Ditolak</option>
                 </select>
@@ -1649,12 +1679,12 @@ export default function AdminCMSDashboardPage() {
                       setSearch("");
                       setStatusFilter("");
                       setProdiFilter("");
-                      loadPendaftars(1);
                     }}
-                    className="px-2.5 py-2 text-rose-600 hover:bg-rose-50 rounded-xl text-xs font-bold transition cursor-pointer"
+                    className="px-3 py-2 text-rose-600 hover:bg-rose-50 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1"
                     title="Reset Filter"
                   >
-                    Reset
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>Reset</span>
                   </button>
                 )}
               </div>
@@ -1897,22 +1927,15 @@ export default function AdminCMSDashboardPage() {
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">
-                      <th className="p-4 w-10 text-center">
-                        <input
-                          type="checkbox"
-                          onChange={handleSelectAll}
-                          checked={selectedIds.length === pendaftars.length && pendaftars.length > 0}
-                          className="w-4 h-4 text-[#0d3830] border-slate-300 rounded focus:ring-[#0d3830] cursor-pointer"
-                        />
-                      </th>
-                      <th className="p-4">Pendaftar &amp; No. PMB</th>
-                      <th className="p-4">Asal Sekolah &amp; NIK</th>
-                      <th className="p-4">Program Studi</th>
-                      <th className="p-4">Jalur</th>
-                      <th className="p-4">Status Biaya</th>
-                      <th className="p-4">Status Berkas</th>
-                      <th className="p-4">Status Akhir</th>
+                    <tr className="bg-slate-50/90 border-b border-slate-200 text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">
+                      <th className="py-3 px-3 w-10 text-center font-mono">No.</th>
+                      <th className="py-3 px-3 min-w-[170px]">Pendaftar &amp; No. PMB</th>
+                      <th className="py-3 px-3 min-w-[140px]">Asal Sekolah &amp; NIK</th>
+                      <th className="py-3 px-3 min-w-[140px]">Program Studi</th>
+                      <th className="py-3 px-3 min-w-[110px]">Jalur</th>
+                      <th className="py-3 px-3 min-w-[120px]">Status Biaya</th>
+                      <th className="py-3 px-3 min-w-[115px]">Status Berkas</th>
+                      <th className="py-3 px-3 w-[100px] text-center">Status Akhir</th>
                     </tr>
                   </thead>
 
@@ -1936,39 +1959,35 @@ export default function AdminCMSDashboardPage() {
                         </td>
                       </tr>
                     ) : (
-                      pendaftars.map((p) => {
-                        const isChecked = selectedIds.includes(p.id);
+                      pendaftars.map((p, idx) => {
                         const namaLengkap = getUserName(p);
                         const nik = getUserNik(p);
                         const asalSekolah = getAsalSekolah(p);
                         const prodiTitle = getProdiTitle(p.program_studi);
                         const gelombangTitle = getGelombangTitle(p.gelombang, p.jalur);
 
+                        // Split Gelombang title into main badge name and TA subtext if contains ' - '
+                        const gelombangMain = gelombangTitle.includes(" - ") ? gelombangTitle.split(" - ")[0] : gelombangTitle;
+                        const gelombangSub = gelombangTitle.includes(" - ") ? gelombangTitle.split(" - ")[1] : null;
+
                         return (
                           <tr
                             key={p.id}
-                            className={`hover:bg-slate-50/80 transition ${
-                              isChecked ? "bg-emerald-50/40" : ""
-                            }`}
+                            className="hover:bg-slate-50/80 transition"
                           >
-                            {/* Checkbox */}
-                            <td className="p-4 text-center">
-                              <input
-                                type="checkbox"
-                                checked={isChecked}
-                                onChange={() => handleSelectOne(p.id)}
-                                className="w-4 h-4 text-[#0d3830] border-slate-300 rounded focus:ring-[#0d3830] cursor-pointer"
-                              />
+                            {/* Nomor Urut */}
+                            <td className="py-3.5 px-3 text-center font-mono font-bold text-slate-400 align-middle">
+                              {(meta.page - 1) * (meta.per_page || 10) + idx + 1}
                             </td>
 
                             {/* Pendaftar & No PMB */}
-                            <td className="p-4">
+                            <td className="py-3.5 px-3 align-middle">
                               <button
                                 type="button"
                                 onClick={() => openDetail(p.id)}
-                                className="text-left group cursor-pointer"
+                                className="text-left group cursor-pointer block"
                               >
-                                <p className="font-extrabold text-slate-900 group-hover:text-[#0d3830] transition">
+                                <p className="font-extrabold text-slate-900 group-hover:text-[#0d3830] transition leading-snug">
                                   {namaLengkap}
                                 </p>
                                 <p className="text-[11px] font-mono text-emerald-800 font-bold mt-0.5">
@@ -1978,80 +1997,75 @@ export default function AdminCMSDashboardPage() {
                             </td>
 
                             {/* Asal Sekolah & NIK */}
-                            <td className="p-4">
-                              <p className="font-semibold text-slate-800">
+                            <td className="py-3.5 px-3 align-middle">
+                              <p className="font-semibold text-slate-800 leading-snug">
                                 {asalSekolah}
                               </p>
-                              <p className="text-[11px] font-mono text-slate-500">
+                              <p className="text-[11px] font-mono text-slate-400 mt-0.5">
                                 NIK: {nik}
                               </p>
                             </td>
 
                             {/* Program Studi */}
-                            <td className="p-4 font-bold text-slate-800">
-                              {prodiTitle}
+                            <td className="py-3.5 px-3 align-middle">
+                              <p className="font-bold text-slate-800 leading-snug">
+                                {prodiTitle}
+                              </p>
                             </td>
 
                             {/* Jalur */}
-                            <td className="p-4">
-                              <span className={`px-2.5 py-1 rounded-md text-[11px] font-bold ${
-                                gelombangTitle === "KIP-Kuliah" || p.jalur === "KIP-Kuliah"
-                                    ? "bg-amber-100 text-amber-900 border border-amber-200"
-                                    : "bg-indigo-50 text-indigo-800 border border-indigo-100"
-                              }`}>
-                                {gelombangTitle}
-                              </span>
+                            <td className="py-3.5 px-3 align-middle">
+                              <div className="flex flex-col items-start gap-0.5">
+                                <span className={`inline-block px-2.5 py-0.5 rounded-lg text-[11px] font-bold whitespace-nowrap ${
+                                  gelombangMain === "KIP-Kuliah" || p.jalur === "KIP-Kuliah"
+                                      ? "bg-amber-100 text-amber-900 border border-amber-200"
+                                      : "bg-indigo-50 text-indigo-800 border border-indigo-100"
+                                }`}>
+                                  {gelombangMain}
+                                </span>
+                                {gelombangSub && (
+                                  <span className="text-[10px] text-slate-400 font-mono pl-0.5 whitespace-nowrap">
+                                    {gelombangSub}
+                                  </span>
+                                )}
+                              </div>
                             </td>
 
                             {/* Status Pembayaran */}
-                            <td className="p-4">
-                              {p.status_pembayaran === "diterima" || p.status_va === "Lunas" ? (
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-100 text-emerald-900 font-bold rounded-full text-[11px]">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
-                                  Lunas
-                                </span>
-                              ) : p.status_pembayaran === "ditolak" ? (
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-rose-100 text-rose-900 font-bold rounded-full text-[11px]">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-rose-600" />
-                                  Ditolak
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-100 text-amber-900 font-bold rounded-full text-[11px]">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-amber-600" />
-                                  Menunggu Pembayaran
-                                </span>
-                              )}
+                            <td className="py-3.5 px-3 align-middle">
+                              {getPembayaranBadge(p)}
                             </td>
 
                             {/* Status Berkas */}
-                            <td className="p-4">
+                            <td className="py-3.5 px-3 align-middle">
                               {p.status_pendaftaran === "berkas_diverifikasi" || p.status_berkas === "Valid & Sah" ? (
-                                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 border border-emerald-200 text-emerald-800 font-bold rounded-lg text-[11px]">
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 border border-emerald-200 text-emerald-800 font-bold rounded-lg text-[11px] whitespace-nowrap">
                                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                                  Valid &amp; Sah
+                                  <span>Valid &amp; Sah</span>
                                 </span>
-                              ) : p.status_pendaftaran === "belum_lengkap" || p.status_berkas === "Perlu Revisi" ? (
-                                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 border border-amber-200 text-amber-900 font-bold rounded-lg text-[11px]">
+                              ) : p.status_pendaftaran === "belum_lengkap" || p.status_pendaftaran === "ditolak_perlu_perbaikan" || p.status_berkas === "Perlu Revisi" ? (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 border border-amber-200 text-amber-900 font-bold rounded-lg text-[11px] whitespace-nowrap">
                                   <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
-                                  Perlu Revisi
+                                  <span>Perlu Revisi</span>
                                 </span>
                               ) : (
-                                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 border border-blue-200 text-blue-800 font-bold rounded-lg text-[11px]">
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 border border-blue-200 text-blue-800 font-bold rounded-lg text-[11px] whitespace-nowrap">
                                   <Clock className="w-3.5 h-3.5 text-blue-600" />
-                                  {p.status_pendaftaran || "Sedang Ditinjau"}
+                                  <span>{p.status_pendaftaran === "menunggu_verifikasi" ? "Menunggu Verifikasi" : p.status_pendaftaran || "Sedang Ditinjau"}</span>
                                 </span>
                               )}
                             </td>
 
                             {/* Status Akhir / Verifikasi */}
-                            <td className="p-4">
+                            <td className="py-3.5 px-3 text-center align-middle">
                               <button
                                 type="button"
                                 onClick={() => openDetail(p.id)}
-                                className="px-3 py-1.5 bg-[#0d3830] hover:bg-[#165349] text-white rounded-lg text-[11px] font-bold transition flex items-center gap-1 cursor-pointer"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#0d3830] hover:bg-[#165349] text-white rounded-xl text-xs font-bold transition shadow-xs whitespace-nowrap cursor-pointer mx-auto"
                               >
                                 <FileCheck className="w-3.5 h-3.5" />
-                                <span>Periksa →</span>
+                                <span>Periksa</span>
+                                <ArrowRight className="w-3 h-3 opacity-80" />
                               </button>
                             </td>
                           </tr>
@@ -3382,19 +3396,9 @@ export default function AdminCMSDashboardPage() {
                         <span>Dokumen Persyaratan Calon Mahasiswa (FR-8.3)</span>
                       </h4>
                       <p className="text-xs text-slate-500 mt-0.5">
-                        Periksa keaslian file yang diunggah dan beri status verifikasi per-dokumen.
+                        Periksa keaslian file yang diunggah dan beri status verifikasi per-dokumen di bawah ini.
                       </p>
                     </div>
-
-                    <button
-                      type="button"
-                      onClick={handleVerifikasiSemuaDokumen}
-                      disabled={isProcessing}
-                      className="px-3.5 py-1.5 bg-[#0d3830] hover:bg-[#165349] text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer disabled:opacity-75"
-                    >
-                      <Check className="w-3.5 h-3.5" />
-                      <span>Setujui Semua Berkas Sah</span>
-                    </button>
                   </div>
 
                   {/* List of Documents */}
@@ -3452,7 +3456,7 @@ export default function AdminCMSDashboardPage() {
                           </div>
 
                           {/* Action Buttons for Document */}
-                          {berkasItem && (
+                          {berkasItem ? (
                             <div className="flex items-center gap-2 flex-shrink-0">
                               <a
                                 href={getFileUrl(berkasItem.file_path)}
@@ -3469,6 +3473,7 @@ export default function AdminCMSDashboardPage() {
                                 disabled={isProcessing}
                                 onClick={() => handleVerifikasiDokumen(berkasItem.id, "valid")}
                                 className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs transition flex items-center gap-1 cursor-pointer disabled:opacity-75"
+                                title="Sahkan berkas ini"
                               >
                                 <Check className="w-3.5 h-3.5" />
                                 <span>Valid</span>
@@ -3481,10 +3486,31 @@ export default function AdminCMSDashboardPage() {
                                   setRejectingBerkas(berkasItem);
                                   setRejectNote(berkasItem.catatan_admin || "");
                                 }}
-                                className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg font-bold text-xs transition flex items-center gap-1 cursor-pointer disabled:opacity-75"
+                                className="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-lg font-bold text-xs transition flex items-center gap-1.5 cursor-pointer disabled:opacity-75"
+                                title="Minta mahasiswa mengunggah ulang berkas ini"
                               >
-                                <X className="w-3.5 h-3.5" />
-                                <span>Revisi / Tolak</span>
+                                <RotateCcw className="w-3.5 h-3.5 text-amber-700" />
+                                <span>Minta Revisi</span>
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              <button
+                                type="button"
+                                disabled={isProcessing}
+                                onClick={() => {
+                                  setRejectingBerkas({
+                                    id: 0,
+                                    jenis_dokumen: docType.key,
+                                    file_name: docType.label,
+                                  });
+                                  setRejectNote(`Mohon segera unggah dokumen ${docType.label} untuk kelengkapan administrasi PMB.`);
+                                }}
+                                className="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-lg font-bold text-xs transition flex items-center gap-1 cursor-pointer"
+                                title="Minta mahasiswa mengunggah dokumen ini"
+                              >
+                                <RotateCcw className="w-3.5 h-3.5 text-amber-600" />
+                                <span>Minta Unggah</span>
                               </button>
                             </div>
                           )}
@@ -3509,17 +3535,17 @@ export default function AdminCMSDashboardPage() {
                             <strong className="text-slate-900 font-bold text-sm">
                               Transfer Rp {Number(pembayaran.jumlah).toLocaleString("id-ID")}
                             </strong>
-                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
+                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border whitespace-nowrap ${
                               pembayaran.status === "diterima"
                                 ? "bg-emerald-50 text-emerald-800 border-emerald-200"
                                 : pembayaran.status === "ditolak"
-                                ? "bg-rose-50 text-rose-800 border-rose-200"
-                                : "bg-amber-50 text-amber-800 border-amber-200"
+                                ? "bg-amber-50 text-amber-800 border-amber-300"
+                                : "bg-blue-50 text-blue-800 border-blue-200"
                             }`}>
                               {pembayaran.status === "diterima"
                                 ? "Lunas & Sah"
                                 : pembayaran.status === "ditolak"
-                                ? "Ditolak"
+                                ? "Perlu Revisi"
                                 : "Menunggu Verifikasi"}
                             </span>
                           </div>
@@ -3527,8 +3553,8 @@ export default function AdminCMSDashboardPage() {
                             Bank Tujuan: <strong>{pembayaran.bank_tujuan}</strong> • Pengirim: <strong>{pembayaran.nama_pengirim || "-"}</strong>
                           </p>
                           {pembayaran.alasan_penolakan && (
-                            <p className="text-rose-700 font-semibold text-[11px]">
-                              Alasan Penolakan: {pembayaran.alasan_penolakan}
+                            <p className="text-amber-800 font-semibold text-[11px]">
+                              Catatan Revisi: {pembayaran.alasan_penolakan}
                             </p>
                           )}
                         </div>
@@ -3550,9 +3576,10 @@ export default function AdminCMSDashboardPage() {
                             type="button"
                             disabled={isProcessing}
                             onClick={() => handleVerifikasiPembayaran(pembayaran.id, "diterima")}
-                            className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs transition cursor-pointer disabled:opacity-75"
+                            className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs transition cursor-pointer disabled:opacity-75 flex items-center gap-1"
                           >
-                            Setujui Sah
+                            <Check className="w-3.5 h-3.5" />
+                            <span>Setujui Sah</span>
                           </button>
 
                           <button
@@ -3562,9 +3589,10 @@ export default function AdminCMSDashboardPage() {
                               setRejectingPembayaran(pembayaran);
                               setRejectPembayaranNote("");
                             }}
-                            className="px-3.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg font-bold text-xs transition cursor-pointer disabled:opacity-75"
+                            className="px-3.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-lg font-bold text-xs transition cursor-pointer disabled:opacity-75 flex items-center gap-1.5"
                           >
-                            Tolak Bukti
+                            <RotateCcw className="w-3.5 h-3.5 text-amber-700" />
+                            <span>Minta Revisi</span>
                           </button>
                         </div>
                       </div>
@@ -3576,55 +3604,36 @@ export default function AdminCMSDashboardPage() {
                   )}
                 </div>
 
-                {/* Section 4: Ringkasan Verifikasi Administrasi & Penerusan ke Seleksi */}
-                <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                  <div>
-                    <span className="font-extrabold text-slate-900 block">Status Administrasi &amp; Berkas:</span>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold border ${
-                        selectedPendaftar.status_pendaftaran === "berkas_diverifikasi"
-                          ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                          : selectedPendaftar.status_pendaftaran === "ditolak_perlu_perbaikan"
-                          ? "bg-rose-50 text-rose-800 border-rose-200"
-                          : "bg-amber-50 text-amber-800 border-amber-200"
-                      }`}>
-                        {selectedPendaftar.status_pendaftaran === "berkas_diverifikasi"
-                          ? "Berkas Terverifikasi Sah (Siap Masuk Seleksi)"
-                          : selectedPendaftar.status_pendaftaran === "ditolak_perlu_perbaikan"
-                          ? "Perlu Revisi / Perbaikan Berkas"
-                          : "Menunggu Verifikasi Berkas & Pembayaran"}
-                      </span>
-                    </div>
+                {/* Section 4: Ringkasan Verifikasi Administrasi */}
+                <div className="pt-4 border-t border-slate-100 space-y-1.5 text-xs">
+                  <span className="font-extrabold text-slate-900 block">Status Administrasi &amp; Berkas:</span>
+                  <div className="flex items-center gap-2">
+                    <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold border ${
+                      selectedPendaftar.status_pendaftaran === "berkas_diverifikasi"
+                        ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                        : selectedPendaftar.status_pendaftaran === "belum_lengkap" || selectedPendaftar.status_pendaftaran === "ditolak_perlu_perbaikan"
+                        ? "bg-amber-50 text-amber-800 border-amber-200"
+                        : "bg-blue-50 text-blue-800 border-blue-200"
+                    }`}>
+                      {selectedPendaftar.status_pendaftaran === "berkas_diverifikasi"
+                        ? "Berkas & Pembayaran Terverifikasi Sah"
+                        : selectedPendaftar.status_pendaftaran === "belum_lengkap" || selectedPendaftar.status_pendaftaran === "ditolak_perlu_perbaikan"
+                        ? "Perlu Revisi / Perbaikan Berkas"
+                        : "Menunggu Verifikasi Berkas & Pembayaran"}
+                    </span>
                   </div>
 
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {selectedPendaftar.status_pendaftaran !== "berkas_diverifikasi" ? (
-                      <button
-                        type="button"
-                        disabled={isProcessing}
-                        onClick={handleVerifikasiSemuaDokumen}
-                        className="px-4 py-2 bg-[#0d3830] hover:bg-[#165349] text-white rounded-xl font-bold text-xs transition cursor-pointer disabled:opacity-75 flex items-center gap-1.5 shadow-xs"
-                      >
-                        <CheckCircle2 className="w-4 h-4 text-emerald-300" />
-                        <span>Sahkan Seluruh Berkas &amp; Loloskan Administrasi</span>
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const p = selectedPendaftar;
-                          setIsDetailOpen(false);
-                          setSelectedPendaftar(null);
-                          setActiveTab("seleksi");
-                          handleOpenSeleksiModal(p);
-                        }}
-                        className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-bold text-xs transition cursor-pointer flex items-center gap-1.5 shadow-xs"
-                      >
-                        <Award className="w-4 h-4" />
-                        <span>Buka Penilaian Seleksi &amp; Kelulusan →</span>
-                      </button>
-                    )}
-                  </div>
+                  {selectedPendaftar.catatan_revisi && (
+                    <p className="text-[11px] text-amber-800 font-medium">
+                      Catatan Revisi Terakhir: <span className="font-semibold">{selectedPendaftar.catatan_revisi}</span>
+                    </p>
+                  )}
+
+                  {selectedPendaftar.status_pendaftaran === "berkas_diverifikasi" && (
+                    <p className="text-[11px] text-slate-500">
+                      Seluruh berkas dan pembayaran calon mahasiswa ini telah sah. Silakan buka menu <strong>Seleksi &amp; Penerimaan</strong> pada sidebar untuk menentukan status kelolosan.
+                    </p>
+                  )}
                 </div>
 
                 {/* Footer Modal */}
@@ -3853,8 +3862,8 @@ export default function AdminCMSDashboardPage() {
               <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 p-6 space-y-4 animate-scaleUp">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                   <h4 className="font-extrabold text-slate-900 text-sm flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4 text-rose-600" />
-                    <span>Tolak &amp; Minta Revisi Berkas</span>
+                    <RotateCcw className="w-4 h-4 text-amber-600" />
+                    <span>Minta Revisi &amp; Unggah Ulang Berkas</span>
                   </h4>
                   <button
                     type="button"
@@ -3865,14 +3874,44 @@ export default function AdminCMSDashboardPage() {
                   </button>
                 </div>
 
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 space-y-1">
+                  <p className="font-bold flex items-center gap-1.5">
+                    <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                    <span>Dokumen: {rejectingBerkas.file_name || rejectingBerkas.jenis_dokumen}</span>
+                  </p>
+                  <p className="text-[11px] text-amber-800">
+                    Status calon mahasiswa akan otomatis berubah menjadi <strong>Belum Lengkap / Perlu Revisi</strong>, dan kunci pengisian formulir akan dibuka kembali agar mahasiswa dapat mengunggah berkas pengganti yang sah.
+                  </p>
+                </div>
+
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-700 block">
-                    Alasan / Catatan Revisi untuk Mahasiswa <span className="text-rose-600">*</span>
+                    Instruksi / Catatan Revisi untuk Mahasiswa <span className="text-rose-600">*</span>
                   </label>
+
+                  {/* Template Pilihan Cepat */}
+                  <div className="flex flex-wrap gap-1.5 pb-1">
+                    {[
+                      "Foto/Scan dokumen buram dan terpotong",
+                      "Dokumen tidak terbaca dengan jelas",
+                      "Dokumen salah / tidak sesuai ketentuan",
+                      "Mohon unggah dokumen asli",
+                    ].map((tpl) => (
+                      <button
+                        key={tpl}
+                        type="button"
+                        onClick={() => setRejectNote(tpl)}
+                        className="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md text-[10px] font-medium transition cursor-pointer"
+                      >
+                        + {tpl}
+                      </button>
+                    ))}
+                  </div>
+
                   <textarea
                     rows={4}
                     required
-                    placeholder="Contoh: Foto KTP buram dan terpotong. Mohon unggah ulang foto yang jelas dan terbaca..."
+                    placeholder="Contoh: Foto dokumen buram dan terpotong. Mohon unggah ulang scan asli yang jelas..."
                     value={rejectNote}
                     onChange={(e) => setRejectNote(e.target.value)}
                     className="w-full p-3 bg-white border border-slate-300 rounded-xl text-xs focus:outline-none focus:border-[#0d3830]"
@@ -3893,24 +3932,31 @@ export default function AdminCMSDashboardPage() {
                   <button
                     type="button"
                     disabled={isProcessing || !rejectNote.trim()}
-                    onClick={() => handleVerifikasiDokumen(rejectingBerkas.id, "invalid", rejectNote)}
-                    className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold cursor-pointer disabled:opacity-50"
+                    onClick={() => {
+                      if (rejectingBerkas.id === 0) {
+                        handleMintaRevisiGlobal(rejectNote);
+                        setRejectingBerkas(null);
+                      } else {
+                        handleVerifikasiDokumen(rejectingBerkas.id, "invalid", rejectNote);
+                      }
+                    }}
+                    className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold cursor-pointer disabled:opacity-50"
                   >
-                    {isProcessing ? "Menyimpan..." : "Kirim Catatan Revisi"}
+                    {isProcessing ? "Menyimpan..." : "Kirim Permintaan Revisi"}
                   </button>
                 </div>
               </div>
             </div>
           )}
 
-          {/* MODAL: INPUT ALASAN PENOLAKAN PEMBAYARAN */}
+          {/* MODAL: MINTA REVISI BUKTI PEMBAYARAN */}
           {rejectingPembayaran && (
             <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
               <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 p-6 space-y-4 animate-scaleUp">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                   <h4 className="font-extrabold text-slate-900 text-sm flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4 text-rose-600" />
-                    <span>Tolak Bukti Pembayaran</span>
+                    <RotateCcw className="w-4 h-4 text-amber-600" />
+                    <span>Minta Revisi Bukti Pembayaran</span>
                   </h4>
                   <button
                     type="button"
@@ -3921,14 +3967,43 @@ export default function AdminCMSDashboardPage() {
                   </button>
                 </div>
 
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 space-y-1">
+                  <p className="font-bold">
+                    Pendaftar: {getUserName(selectedPendaftar)} ({selectedPendaftar.nomor_pendaftaran || `PMB-2026-00${selectedPendaftar.id}`})
+                  </p>
+                  <p className="text-[11px] text-amber-800">
+                    Status bukti pembayaran akan diubah menjadi <strong>Perlu Revisi</strong>, dan calon mahasiswa diminta mengunggah ulang bukti transfer yang sah melalui portal akun mereka.
+                  </p>
+                </div>
+
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-700 block">
-                    Alasan Penolakan Pembayaran <span className="text-rose-600">*</span>
+                    Instruksi / Catatan Revisi Pembayaran <span className="text-rose-600">*</span>
                   </label>
+
+                  {/* Template Pilihan Cepat */}
+                  <div className="flex flex-wrap gap-1.5 pb-1">
+                    {[
+                      "Nominal transfer tidak sesuai",
+                      "Foto struk buram / terpotong",
+                      "Rekening tujuan salah",
+                      "Mohon upload bukti transfer sah",
+                    ].map((tpl) => (
+                      <button
+                        key={tpl}
+                        type="button"
+                        onClick={() => setRejectPembayaranNote(tpl)}
+                        className="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md text-[10px] font-medium transition cursor-pointer"
+                      >
+                        + {tpl}
+                      </button>
+                    ))}
+                  </div>
+
                   <textarea
                     rows={4}
                     required
-                    placeholder="Contoh: Nominal transfer kurang dari Rp 250.000 / Rekening tujuan tidak sesuai..."
+                    placeholder="Contoh: Nominal transfer kurang dari ketentuan / Foto bukti struk tidak terbaca, silakan unggah ulang bukti transfer yang jelas..."
                     value={rejectPembayaranNote}
                     onChange={(e) => setRejectPembayaranNote(e.target.value)}
                     className="w-full p-3 bg-white border border-slate-300 rounded-xl text-xs focus:outline-none focus:border-[#0d3830]"
@@ -3947,9 +4022,9 @@ export default function AdminCMSDashboardPage() {
                     type="button"
                     disabled={isProcessing || !rejectPembayaranNote.trim()}
                     onClick={() => handleVerifikasiPembayaran(rejectingPembayaran.id, "ditolak", rejectPembayaranNote)}
-                    className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold cursor-pointer disabled:opacity-50"
+                    className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold cursor-pointer disabled:opacity-50"
                   >
-                    {isProcessing ? "Menyimpan..." : "Tolak Pembayaran"}
+                    {isProcessing ? "Menyimpan..." : "Kirim Permintaan Revisi"}
                   </button>
                 </div>
               </div>
