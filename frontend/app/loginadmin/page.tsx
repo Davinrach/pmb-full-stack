@@ -11,7 +11,6 @@ import {
   EyeOff,
   Building2,
   AlertCircle,
-  Sparkles,
   ArrowRight,
   GraduationCap,
   KeyRound,
@@ -21,8 +20,8 @@ import { api, authStorage } from "@/lib/api";
 
 export default function LoginAdminPage() {
   const router = useRouter();
-  const [identifier, setIdentifier] = useState("admin");
-  const [password, setPassword] = useState("adminpmb123");
+  const [identifier, setIdentifier] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -246,18 +245,6 @@ export default function LoginAdminPage() {
                   </>
                 )}
               </button>
-
-              {/* Default Admin Credentials Notice Card */}
-              <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3.5 space-y-1.5 text-xs text-slate-800">
-                <div className="flex items-center gap-1.5 font-bold text-amber-900">
-                  <Sparkles className="w-4 h-4 text-amber-600 flex-shrink-0" />
-                  <span>Kredensial Default Admin PMB:</span>
-                </div>
-                <div className="bg-white/90 rounded-lg p-2 font-mono text-[11px] text-slate-800 border border-amber-200/80 flex items-center justify-between">
-                  <span>Username: <strong className="text-slate-900">admin</strong></span>
-                  <span>Password: <strong className="text-slate-900">adminpmb123</strong></span>
-                </div>
-              </div>
             </form>
           </div>
 

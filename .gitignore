@@ -15,7 +15,8 @@ dist/
 *.so
 *.dylib
 
-# Backend
+# Backend & Uploads
+uploads/
 backend/uploads/
 backend/bin/
 

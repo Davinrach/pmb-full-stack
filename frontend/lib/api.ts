@@ -73,6 +73,7 @@ export async function apiRequest<T = any>(
   }
 
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    cache: 'no-store',
     ...options,
     headers,
   });
@@ -88,10 +89,16 @@ export async function apiRequest<T = any>(
       resJson?.error?.message ||
       resJson?.message ||
       `Terjadi kesalahan pada server (Status: ${response.status})`;
+    const method = options.method || 'GET';
+    if (typeof window !== 'undefined') {
+      console.warn(`[API ${method} ${endpoint}] Status ${response.status}: ${errorMsg}`, resJson);
+    }
     const err = new Error(errorMsg) as any;
     err.status = response.status;
     err.code = resJson?.error?.code;
     err.data = resJson?.data;
+    err.endpoint = endpoint;
+    err.method = method;
     err.resJson = resJson;
     throw err;
   }

@@ -68,15 +68,20 @@ type User struct {
 }
 
 type ProgramStudi struct {
-	ID        uint           `gorm:"primaryKey" json:"id"`
-	Kode      string         `gorm:"type:varchar(20);uniqueIndex;not null" json:"kode"` // MPI, AS, KPI
-	Nama      string         `gorm:"type:varchar(191);not null" json:"nama"`
-	Jenjang   string         `gorm:"type:varchar(10);default:'S1'" json:"jenjang"`
-	Deskripsi string         `gorm:"type:text" json:"deskripsi"`
-	IsAktif   bool           `gorm:"default:true" json:"is_aktif"`
-	CreatedAt time.Time      `json:"created_at"`
-	UpdatedAt time.Time      `json:"updated_at"`
-	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
+	ID                  uint           `gorm:"primaryKey" json:"id"`
+	Kode                string         `gorm:"type:varchar(20);uniqueIndex;not null" json:"kode"` // MPI, AS, KPI
+	Nama                string         `gorm:"type:varchar(191);not null" json:"nama"`
+	Jenjang             string         `gorm:"type:varchar(10);default:'S1'" json:"jenjang"`
+	GelarAkademik       string         `gorm:"type:varchar(255)" json:"gelar_akademik"`
+	Deskripsi           string         `gorm:"type:text" json:"deskripsi"`
+	ProfilLulusanIntro  string         `gorm:"type:text" json:"profil_lulusan_intro"`
+	ProfilLulusan       string         `gorm:"type:longtext" json:"profil_lulusan"`        // JSON string of [{title, desc}]
+	CapaianPembelajaran string         `gorm:"type:longtext" json:"capaian_pembelajaran"` // JSON string of [{title, desc}]
+	AlurPendaftaran     string         `gorm:"type:text" json:"alur_pendaftaran"`
+	IsAktif             bool           `gorm:"default:true" json:"is_aktif"`
+	CreatedAt           time.Time      `json:"created_at"`
+	UpdatedAt           time.Time      `json:"updated_at"`
+	DeletedAt           gorm.DeletedAt `gorm:"index" json:"-"`
 }
 
 type Gelombang struct {
@@ -102,6 +107,7 @@ type Pendaftar struct {
 	ProgramStudiID     *uint             `gorm:"index" json:"program_studi_id"`
 	ProgramStudi       *ProgramStudi     `gorm:"foreignKey:ProgramStudiID" json:"program_studi,omitempty"`
 	NomorPendaftaran   *string           `gorm:"type:varchar(50);uniqueIndex" json:"nomor_pendaftaran"` // format: PMB-2026-0001
+	JalurPendaftaran   string            `gorm:"type:varchar(50);default:'Reguler'" json:"jalur_pendaftaran"` // Reguler / KIP-Kuliah
 	StatusPendaftaran  StatusPendaftaran `gorm:"type:varchar(40);default:'akun_terdaftar'" json:"status_pendaftaran"`
 	CatatanRevisi      string            `gorm:"type:text" json:"catatan_revisi,omitempty"`
 	IsLocked           bool              `gorm:"default:false" json:"is_locked"` // kunci data setelah submit
@@ -236,6 +242,8 @@ type PengaturanSistem struct {
 	NoWhatsappCS           string    `gorm:"type:varchar(50)" json:"no_whatsapp_cs"`
 	EmailCS                string    `gorm:"type:varchar(100)" json:"email_cs"`
 	AlamatKampus           string    `gorm:"type:text" json:"alamat_kampus"`
+	JamOperasional         string    `gorm:"type:varchar(150)" json:"jam_operasional"`
+	HomepageProdiList      string    `gorm:"type:longtext" json:"homepage_prodi_list"`
 	UpdatedAt              time.Time `json:"updated_at"`
 }
 
@@ -248,6 +256,80 @@ type FAQ struct {
 	IsAktif   bool      `gorm:"default:true" json:"is_aktif"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+}
+
+// RekeningPembayaran mendukung multi-rekening bank PMB (BSI, BRI, Bank Jatim, dll.)
+type RekeningPembayaran struct {
+	ID                uint      `gorm:"primaryKey" json:"id"`
+	NamaBank          string    `gorm:"type:varchar(100);not null" json:"nama_bank"`
+	NomorRekening     string    `gorm:"type:varchar(50);not null" json:"nomor_rekening"`
+	AtasNama          string    `gorm:"type:varchar(100);not null" json:"atas_nama"`
+	Cabang            string    `gorm:"type:varchar(100)" json:"cabang"`
+	InstruksiTransfer string    `gorm:"type:text" json:"instruksi_transfer"`
+	IsUtama           bool      `gorm:"default:false" json:"is_utama"`
+	IsAktif           bool      `gorm:"default:true" json:"is_aktif"`
+	Urutan            int       `gorm:"default:0" json:"urutan"`
+	CreatedAt         time.Time `json:"created_at"`
+	UpdatedAt         time.Time `json:"updated_at"`
+}
+
+// JalurPendaftaran model untuk manajemen jalur seleksi yang dinamis (Reguler, KIP-Kuliah, dll.)
+type JalurPendaftaran struct {
+	ID               uint      `gorm:"primaryKey" json:"id"`
+	Kode             string    `gorm:"type:varchar(50);uniqueIndex;not null" json:"kode"`
+	Nama             string    `gorm:"type:varchar(100);not null" json:"nama"`
+	BadgeText        string    `gorm:"type:varchar(50)" json:"badge_text"`
+	Deskripsi        string    `gorm:"type:text" json:"deskripsi"`
+	SyaratKhusus     string    `gorm:"type:text" json:"syarat_khusus"`
+	BebasBiaya       bool      `gorm:"default:false" json:"bebas_biaya"`
+	TampilDiHomepage bool      `gorm:"default:true" json:"tampil_di_homepage"`
+	IsAktif          bool      `gorm:"default:true" json:"is_aktif"`
+	Urutan           int       `gorm:"default:0" json:"urutan"`
+	CreatedAt        time.Time `json:"created_at"`
+	UpdatedAt        time.Time `json:"updated_at"`
+}
+
+// TataCaraPendaftaran model untuk alur langkah pendaftaran PMB terpusat tingkat kampus
+type TataCaraPendaftaran struct {
+	ID           uint      `gorm:"primaryKey" json:"id"`
+	NomorLangkah int       `gorm:"default:1" json:"nomor_langkah"`
+	Judul        string    `gorm:"type:varchar(191);not null" json:"judul"`
+	Deskripsi    string    `gorm:"type:text" json:"deskripsi"`
+	Icon         string    `gorm:"type:varchar(50);default:'CheckCircle2'" json:"icon"`
+	IsAktif      bool      `gorm:"default:true" json:"is_aktif"`
+	Urutan       int       `gorm:"default:0" json:"urutan"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+}
+
+// KontakHotline model untuk multi-narahubung dan CS PMB
+type KontakHotline struct {
+	ID             uint      `gorm:"primaryKey" json:"id"`
+	NamaLayanan    string    `gorm:"type:varchar(100);not null" json:"nama_layanan"`
+	TipeKontak     string    `gorm:"type:varchar(30);default:'whatsapp'" json:"tipe_kontak"` // whatsapp, telepon, email
+	NomorAtauEmail string    `gorm:"type:varchar(100);not null" json:"nomor_atau_email"`
+	NamaPetugas    string    `gorm:"type:varchar(100)" json:"nama_petugas"`
+	JamLayanan     string    `gorm:"type:varchar(100)" json:"jam_layanan"`
+	IsAktif        bool      `gorm:"default:true" json:"is_aktif"`
+	Urutan         int       `gorm:"default:0" json:"urutan"`
+	CreatedAt      time.Time `json:"created_at"`
+	UpdatedAt      time.Time `json:"updated_at"`
+}
+
+// PersyaratanDokumen model untuk master dokumen persyaratan pendaftaran
+type PersyaratanDokumen struct {
+	ID          uint      `gorm:"primaryKey" json:"id"`
+	Kode        string    `gorm:"type:varchar(50);not null" json:"kode"`
+	NamaDokumen string    `gorm:"type:varchar(191);not null" json:"nama_dokumen"`
+	Deskripsi   string    `gorm:"type:text" json:"deskripsi"`
+	IsWajib     bool      `gorm:"default:true" json:"is_wajib"`
+	JalurKhusus string    `gorm:"type:varchar(50);default:'semua'" json:"jalur_khusus"` // semua / kip-kuliah / reguler
+	TipeFile    string    `gorm:"type:varchar(100);default:'jpg,jpeg,png,pdf'" json:"tipe_file"`
+	MaxSizeMB   int       `gorm:"default:2" json:"max_size_mb"`
+	IsAktif     bool      `gorm:"default:true" json:"is_aktif"`
+	Urutan      int       `gorm:"default:0" json:"urutan"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
 }
 
 

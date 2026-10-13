@@ -42,19 +42,32 @@ func (h *PembayaranHandler) GetInfoRekening(c *gin.Context) {
 	var settings model.PengaturanSistem
 	database.DB.First(&settings)
 
+	var listRekening []model.RekeningPembayaran
+	database.DB.Where("is_aktif = ?", true).Order("is_utama desc, urutan asc, id asc").Find(&listRekening)
+
 	bankName := settings.BankName
+	noRek := settings.NomorRekening
+	atasNama := settings.AtasNama
+	petunjuk := settings.PetunjukPembayaran
+
+	if len(listRekening) > 0 {
+		bankName = listRekening[0].NamaBank
+		noRek = listRekening[0].NomorRekening
+		atasNama = listRekening[0].AtasNama
+		if listRekening[0].InstruksiTransfer != "" {
+			petunjuk = listRekening[0].InstruksiTransfer
+		}
+	}
+
 	if bankName == "" {
 		bankName = "Bank Syariah Indonesia (BSI)"
 	}
-	noRek := settings.NomorRekening
 	if noRek == "" {
 		noRek = "7148899012"
 	}
-	atasNama := settings.AtasNama
 	if atasNama == "" {
 		atasNama = "STAI Cendekia Insani PMB"
 	}
-	petunjuk := settings.PetunjukPembayaran
 	if petunjuk == "" {
 		petunjuk = "Harap cantumkan Nomor Registrasi PMB pada berita transfer atau simpan struk transfer untuk diunggah sebagai bukti bayar."
 	}
@@ -63,6 +76,7 @@ func (h *PembayaranHandler) GetInfoRekening(c *gin.Context) {
 		"bank_name":              bankName,
 		"nomor_rekening":         noRek,
 		"atas_nama":              atasNama,
+		"daftar_rekening":        listRekening,
 		"biaya_pendaftaran":      biaya,
 		"nomor_pendaftaran":      pendaftar.NomorPendaftaran,
 		"kode_pembayaran_unik":   fmt.Sprintf("PMB-%04d", pendaftar.ID),

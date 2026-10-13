@@ -69,8 +69,9 @@ type UpdateOrangTuaRequest struct {
 }
 
 type UpdateProdiGelombangRequest struct {
-	ProgramStudiID uint `json:"program_studi_id" binding:"required"`
-	GelombangID    uint `json:"gelombang_id" binding:"required"`
+	ProgramStudiID   uint   `json:"program_studi_id" binding:"required"`
+	GelombangID      uint   `json:"gelombang_id" binding:"required"`
+	JalurPendaftaran string `json:"jalur_pendaftaran"`
 }
 
 func getPendaftarByUserID(userID uint) (*model.Pendaftar, error) {
@@ -286,6 +287,11 @@ func (h *PendaftarHandler) UpdatePilihanProdi(c *gin.Context) {
 
 	pendaftar.ProgramStudiID = &req.ProgramStudiID
 	pendaftar.GelombangID = &req.GelombangID
+	if req.JalurPendaftaran != "" {
+		pendaftar.JalurPendaftaran = req.JalurPendaftaran
+	} else if pendaftar.JalurPendaftaran == "" {
+		pendaftar.JalurPendaftaran = "Reguler"
+	}
 
 	if pendaftar.StatusPendaftaran == model.StatusAkunTerdaftar || pendaftar.StatusPendaftaran == model.StatusDraft {
 		pendaftar.StatusPendaftaran = model.StatusBelumLengkap

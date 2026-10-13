@@ -4,6 +4,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"net/http"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -117,6 +118,9 @@ func (h *AdminHandler) ListPendaftar(c *gin.Context) {
 	status := strings.TrimSpace(c.Query("status"))
 	prodiID := strings.TrimSpace(c.Query("prodi_id"))
 	gelombangID := strings.TrimSpace(c.Query("gelombang_id"))
+	tahunAkademik := strings.TrimSpace(c.Query("tahun_akademik"))
+	jalur := strings.TrimSpace(c.Query("jalur"))
+	statusBayar := strings.TrimSpace(c.Query("status_pembayaran"))
 
 	query := database.DB.Model(&model.Pendaftar{}).
 		Preload("User").
@@ -133,6 +137,10 @@ func (h *AdminHandler) ListPendaftar(c *gin.Context) {
 				searchTerm, searchTerm, searchTerm, searchTerm)
 	}
 
+	if jalur != "" {
+		query = query.Where("pendaftars.jalur_pendaftaran = ?", jalur)
+	}
+
 	if status != "" {
 		if strings.Contains(status, ",") {
 			parts := strings.Split(status, ",")
@@ -147,7 +155,24 @@ func (h *AdminHandler) ListPendaftar(c *gin.Context) {
 				query = query.Where("pendaftars.status_pendaftaran IN (?)", validParts)
 			}
 		} else {
-			query = query.Where("pendaftars.status_pendaftaran = ?", status)
+			if status == "belum_lengkap" {
+				query = query.Where("pendaftars.status_pendaftaran IN ('belum_lengkap', 'ditolak_perlu_perbaikan')")
+			} else {
+				query = query.Where("pendaftars.status_pendaftaran = ?", status)
+			}
+		}
+	}
+
+	if statusBayar != "" {
+		switch statusBayar {
+		case "diterima", "lunas":
+			query = query.Where("EXISTS (SELECT 1 FROM pembayarans WHERE pembayarans.pendaftar_id = pendaftars.id AND pembayarans.status = 'diterima')")
+		case "menunggu_verifikasi", "menunggu":
+			query = query.Where("EXISTS (SELECT 1 FROM pembayarans WHERE pembayarans.pendaftar_id = pendaftars.id AND pembayarans.status = 'menunggu_verifikasi')")
+		case "ditolak", "revisi":
+			query = query.Where("EXISTS (SELECT 1 FROM pembayarans WHERE pembayarans.pendaftar_id = pendaftars.id AND pembayarans.status = 'ditolak')")
+		case "belum_bayar", "menunggu_pembayaran":
+			query = query.Where("(NOT EXISTS (SELECT 1 FROM pembayarans WHERE pembayarans.pendaftar_id = pendaftars.id) OR pendaftars.status_pendaftaran = 'menunggu_pembayaran')")
 		}
 	}
 
@@ -157,6 +182,9 @@ func (h *AdminHandler) ListPendaftar(c *gin.Context) {
 
 	if gelombangID != "" {
 		query = query.Where("pendaftars.gelombang_id = ?", gelombangID)
+	} else if tahunAkademik != "" {
+		query = query.Joins("LEFT JOIN gelombangs ON gelombangs.id = pendaftars.gelombang_id").
+			Where("gelombangs.tahun_akademik = ?", tahunAkademik)
 	}
 
 	var total int64
@@ -247,16 +275,8 @@ func (h *AdminHandler) VerifikasiBerkas(c *gin.Context) {
 		RecordAdminLog(c, "Menolak Berkas Pendaftar", fmt.Sprintf("Admin menolak berkas %s pendaftar %s (%s). Alasan: %s",
 			berkas.JenisDokumen, pendaftar.DisplayNomorPendaftaran(), pendaftar.User.NamaLengkap, req.CatatanAdmin))
 	} else if req.Status == string(model.StatusBerkasValid) {
-		// Periksa apakah semua berkas sudah diverifikasi valid
-		var totalBerkas int64
-		var totalValid int64
-		database.DB.Model(&model.Berkas{}).Where("pendaftar_id = ?", pendaftar.ID).Count(&totalBerkas)
-		database.DB.Model(&model.Berkas{}).Where("pendaftar_id = ? AND status_verifikasi = ?", pendaftar.ID, model.StatusBerkasValid).Count(&totalValid)
-
-		if totalBerkas > 0 && totalBerkas == totalValid {
-			pendaftar.StatusPendaftaran = model.StatusBerkasDiverifikasi
-			database.DB.Save(&pendaftar)
-		}
+		updatePendaftarOverallStatus(&pendaftar)
+		database.DB.Save(&pendaftar)
 
 		RecordAdminLog(c, "Menyetujui Berkas Pendaftar", fmt.Sprintf("Admin menyetujui berkas %s pendaftar %s (%s)",
 			berkas.JenisDokumen, pendaftar.DisplayNomorPendaftaran(), pendaftar.User.NamaLengkap))
@@ -266,6 +286,73 @@ func (h *AdminHandler) VerifikasiBerkas(c *gin.Context) {
 		"berkas":              berkas,
 		"status_pendaftaran": pendaftar.StatusPendaftaran,
 	})
+}
+
+// updatePendaftarOverallStatus evaluates both berkas and payment to determine the applicant's overall StatusPendaftaran
+func updatePendaftarOverallStatus(pendaftar *model.Pendaftar) {
+	// Jangan ubah status pendaftar yang sudah berada di tahap seleksi akhir atau daftar ulang
+	if pendaftar.StatusPendaftaran == model.StatusLolosSeleksi ||
+		pendaftar.StatusPendaftaran == model.StatusTidakLolos ||
+		pendaftar.StatusPendaftaran == model.StatusMengikutiUjian ||
+		pendaftar.StatusPendaftaran == model.StatusDaftarUlang {
+		return
+	}
+
+	var allBerkas []model.Berkas
+	database.DB.Where("pendaftar_id = ?", pendaftar.ID).Find(&allBerkas)
+
+	validMap := make(map[string]bool)
+	hasInvalidBerkas := false
+	for _, b := range allBerkas {
+		key := strings.ToLower(b.JenisDokumen)
+		if b.StatusVerifikasi == model.StatusBerkasValid {
+			validMap[key] = true
+		} else if b.StatusVerifikasi == model.StatusBerkasInvalid {
+			hasInvalidBerkas = true
+		}
+	}
+
+	var pembayaranList []model.Pembayaran
+	database.DB.Where("pendaftar_id = ?", pendaftar.ID).Order("id desc").Find(&pembayaranList)
+
+	isPaymentApproved := false
+	isPaymentRejected := false
+	if len(pembayaranList) > 0 {
+		latestPayment := pembayaranList[0]
+		if latestPayment.Status == model.StatusBayarDiterima {
+			isPaymentApproved = true
+		} else if latestPayment.Status == model.StatusBayarDitolak {
+			isPaymentRejected = true
+		}
+	}
+
+	// 1. Jika ada berkas yang ditolak (invalid), status kembali ke belum_lengkap (perlu revisi)
+	if hasInvalidBerkas {
+		pendaftar.StatusPendaftaran = model.StatusBelumLengkap
+		return
+	}
+
+	// 2. Jika bukti pembayaran ditolak, status menunggu pembayaran ulang
+	if isPaymentRejected && !isPaymentApproved {
+		pendaftar.StatusPendaftaran = model.StatusMenungguPembayaran
+		return
+	}
+
+	// 3. Evaluasi kelengkapan berkas wajib
+	isMandatoryValid := validMap["kk"] && validMap["ktp"] && validMap["ijazah"] && validMap["foto"]
+	if strings.EqualFold(pendaftar.JalurPendaftaran, "KIP-Kuliah") {
+		isMandatoryValid = isMandatoryValid && validMap["kip"]
+	}
+
+	// 4. Syarat mutlak 'berkas_diverifikasi' (Sah & Siap Seleksi):
+	// Berkas wajib HARUS VALID SEMUA dan Pembayaran HARUS SUDAH DISETUJUI!
+	if isMandatoryValid && isPaymentApproved {
+		pendaftar.StatusPendaftaran = model.StatusBerkasDiverifikasi
+		pendaftar.CatatanRevisi = ""
+	} else {
+		// Jika salah satu atau keduanya belum tuntas diverifikasi, tetap 'menunggu_verifikasi'
+		pendaftar.StatusPendaftaran = model.StatusMenungguVerifikasi
+	}
 }
 
 type VerifikasiPembayaranRequest struct {
@@ -314,7 +401,7 @@ func (h *AdminHandler) VerifikasiPembayaran(c *gin.Context) {
 		RecordAdminLog(c, "Menolak Pembayaran Pendaftar", fmt.Sprintf("Admin menolak pembayaran pendaftar %s (%s). Alasan: %s",
 			pendaftar.DisplayNomorPendaftaran(), pendaftar.User.NamaLengkap, req.AlasanPenolakan))
 	} else if req.Status == string(model.StatusBayarDiterima) {
-		pendaftar.StatusPendaftaran = model.StatusBerkasDiverifikasi
+		updatePendaftarOverallStatus(&pendaftar)
 		database.DB.Save(&pendaftar)
 
 		RecordAdminLog(c, "Menyetujui Pembayaran Pendaftar", fmt.Sprintf("Admin menyetujui pembayaran pendaftar %s (%s)",
@@ -397,6 +484,13 @@ func (h *AdminHandler) CreateGelombang(c *gin.Context) {
 		return
 	}
 
+	req.TahunAkademik = strings.TrimSpace(req.TahunAkademik)
+	matched, _ := regexp.MatchString(`^\d{4}/\d{4}$`, req.TahunAkademik)
+	if !matched {
+		response.BadRequest(c, "Format tahun akademik harus YYYY/YYYY (contoh: 2026/2027)", "Format tahun akademik tidak valid")
+		return
+	}
+
 	tglBuka, _ := time.Parse("2006-01-02", req.TanggalBuka)
 	tglTutup, _ := time.Parse("2006-01-02", req.TanggalTutup)
 
@@ -435,6 +529,13 @@ func (h *AdminHandler) UpdateGelombang(c *gin.Context) {
 		return
 	}
 
+	req.TahunAkademik = strings.TrimSpace(req.TahunAkademik)
+	matched, _ := regexp.MatchString(`^\d{4}/\d{4}$`, req.TahunAkademik)
+	if !matched {
+		response.BadRequest(c, "Format tahun akademik harus YYYY/YYYY (contoh: 2026/2027)", "Format tahun akademik tidak valid")
+		return
+	}
+
 	tglBuka, _ := time.Parse("2006-01-02", req.TanggalBuka)
 	tglTutup, _ := time.Parse("2006-01-02", req.TanggalTutup)
 
@@ -459,11 +560,16 @@ func (h *AdminHandler) ListProgramStudi(c *gin.Context) {
 }
 
 type ProgramStudiRequest struct {
-	Kode      string `json:"kode" binding:"required"`
-	Nama      string `json:"nama" binding:"required"`
-	Jenjang   string `json:"jenjang" binding:"required"`
-	Deskripsi string `json:"deskripsi"`
-	IsAktif   bool   `json:"is_aktif"`
+	Kode                string `json:"kode" binding:"required"`
+	Nama                string `json:"nama" binding:"required"`
+	Jenjang             string `json:"jenjang" binding:"required"`
+	GelarAkademik       string `json:"gelar_akademik"`
+	Deskripsi           string `json:"deskripsi"`
+	ProfilLulusanIntro  string `json:"profil_lulusan_intro"`
+	ProfilLulusan       string `json:"profil_lulusan"`
+	CapaianPembelajaran string `json:"capaian_pembelajaran"`
+	AlurPendaftaran     string `json:"alur_pendaftaran"`
+	IsAktif             bool   `json:"is_aktif"`
 }
 
 func (h *AdminHandler) CreateProgramStudi(c *gin.Context) {
@@ -474,11 +580,16 @@ func (h *AdminHandler) CreateProgramStudi(c *gin.Context) {
 	}
 
 	prodi := model.ProgramStudi{
-		Kode:      strings.ToUpper(req.Kode),
-		Nama:      req.Nama,
-		Jenjang:   req.Jenjang,
-		Deskripsi: req.Deskripsi,
-		IsAktif:   req.IsAktif,
+		Kode:                strings.ToUpper(req.Kode),
+		Nama:                req.Nama,
+		Jenjang:             req.Jenjang,
+		GelarAkademik:       req.GelarAkademik,
+		Deskripsi:           req.Deskripsi,
+		ProfilLulusanIntro:  req.ProfilLulusanIntro,
+		ProfilLulusan:       req.ProfilLulusan,
+		CapaianPembelajaran: req.CapaianPembelajaran,
+		AlurPendaftaran:     req.AlurPendaftaran,
+		IsAktif:             req.IsAktif,
 	}
 
 	if err := database.DB.Create(&prodi).Error; err != nil {
@@ -509,12 +620,48 @@ func (h *AdminHandler) UpdateProgramStudi(c *gin.Context) {
 	prodi.Kode = strings.ToUpper(req.Kode)
 	prodi.Nama = req.Nama
 	prodi.Jenjang = req.Jenjang
+	prodi.GelarAkademik = req.GelarAkademik
 	prodi.Deskripsi = req.Deskripsi
+	prodi.ProfilLulusanIntro = req.ProfilLulusanIntro
+	prodi.ProfilLulusan = req.ProfilLulusan
+	prodi.CapaianPembelajaran = req.CapaianPembelajaran
+	prodi.AlurPendaftaran = req.AlurPendaftaran
 	prodi.IsAktif = req.IsAktif
 
 	database.DB.Save(&prodi)
 	RecordAdminLog(c, "Memperbarui Program Studi", fmt.Sprintf("Admin memperbarui prodi: %s (%s)", prodi.Nama, prodi.Kode))
 	response.Success(c, http.StatusOK, "Program studi berhasil diperbarui", prodi)
+}
+
+func (h *AdminHandler) DeleteProgramStudi(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 32)
+	if err != nil {
+		response.BadRequest(c, "ID program studi tidak valid", err.Error())
+		return
+	}
+
+	var prodi model.ProgramStudi
+	if err := database.DB.First(&prodi, id).Error; err != nil {
+		response.NotFound(c, "Program studi tidak ditemukan")
+		return
+	}
+
+	// Cek apakah ada pendaftar yang memilih program studi ini
+	var applicantCount int64
+	database.DB.Model(&model.Pendaftar{}).Where("program_studi_id = ?", id).Count(&applicantCount)
+	if applicantCount > 0 {
+		response.BadRequest(c, fmt.Sprintf("Tidak dapat menghapus program studi ini karena terdapat %d calon mahasiswa yang memilih prodi ini. Silakan nonaktifkan status program studi jika tidak ingin membuka pendaftaran.", applicantCount), "active_applicants_exist")
+		return
+	}
+
+	if err := database.DB.Unscoped().Delete(&prodi).Error; err != nil {
+		response.InternalServerError(c, err.Error())
+		return
+	}
+
+	RecordAdminLog(c, "Menghapus Program Studi", fmt.Sprintf("Admin menghapus prodi: %s (%s)", prodi.Nama, prodi.Kode))
+	response.Success(c, http.StatusOK, "Program studi berhasil dihapus", nil)
 }
 
 // GetLogs returns audit trail logs (FR-8.14)
@@ -539,6 +686,8 @@ type SettingsRequest struct {
 	NoWhatsappCS           string `json:"no_whatsapp_cs"`
 	EmailCS                string `json:"email_cs"`
 	AlamatKampus           string `json:"alamat_kampus"`
+	JamOperasional         string `json:"jam_operasional"`
+	HomepageProdiList      string `json:"homepage_prodi_list"`
 }
 
 func (h *AdminHandler) GetSettings(c *gin.Context) {
@@ -564,20 +713,54 @@ func (h *AdminHandler) UpdateSettings(c *gin.Context) {
 		settings = model.PengaturanSistem{}
 	}
 
-	settings.BannerTitle = req.BannerTitle
-	settings.BannerSubtitle = req.BannerSubtitle
-	settings.AnnouncementText = req.AnnouncementText
-	settings.BankName = req.BankName
-	settings.NomorRekening = req.NomorRekening
-	settings.AtasNama = req.AtasNama
-	settings.PetunjukPembayaran = req.PetunjukPembayaran
-	settings.RegulasiBuktiBayar = req.RegulasiBuktiBayar
-	settings.BatasWaktuKonfirmasi = req.BatasWaktuKonfirmasi
-	settings.PersyaratanPendaftaran = req.PersyaratanPendaftaran
-	settings.JalurPendaftaranInfo = req.JalurPendaftaranInfo
-	settings.NoWhatsappCS = req.NoWhatsappCS
-	settings.EmailCS = req.EmailCS
-	settings.AlamatKampus = req.AlamatKampus
+	if req.BannerTitle != "" {
+		settings.BannerTitle = req.BannerTitle
+	}
+	if req.BannerSubtitle != "" {
+		settings.BannerSubtitle = req.BannerSubtitle
+	}
+	if req.AnnouncementText != "" {
+		settings.AnnouncementText = req.AnnouncementText
+	}
+	if req.BankName != "" {
+		settings.BankName = req.BankName
+	}
+	if req.NomorRekening != "" {
+		settings.NomorRekening = req.NomorRekening
+	}
+	if req.AtasNama != "" {
+		settings.AtasNama = req.AtasNama
+	}
+	if req.PetunjukPembayaran != "" {
+		settings.PetunjukPembayaran = req.PetunjukPembayaran
+	}
+	if req.RegulasiBuktiBayar != "" {
+		settings.RegulasiBuktiBayar = req.RegulasiBuktiBayar
+	}
+	if req.BatasWaktuKonfirmasi != "" {
+		settings.BatasWaktuKonfirmasi = req.BatasWaktuKonfirmasi
+	}
+	if req.PersyaratanPendaftaran != "" {
+		settings.PersyaratanPendaftaran = req.PersyaratanPendaftaran
+	}
+	if req.JalurPendaftaranInfo != "" {
+		settings.JalurPendaftaranInfo = req.JalurPendaftaranInfo
+	}
+	if req.NoWhatsappCS != "" {
+		settings.NoWhatsappCS = req.NoWhatsappCS
+	}
+	if req.EmailCS != "" {
+		settings.EmailCS = req.EmailCS
+	}
+	if req.AlamatKampus != "" {
+		settings.AlamatKampus = req.AlamatKampus
+	}
+	if req.JamOperasional != "" {
+		settings.JamOperasional = req.JamOperasional
+	}
+	if req.HomepageProdiList != "" {
+		settings.HomepageProdiList = req.HomepageProdiList
+	}
 	settings.UpdatedAt = time.Now()
 
 	database.DB.Save(&settings)
@@ -725,9 +908,9 @@ func (h *AdminHandler) ExportPendaftar(c *gin.Context) {
 		return
 	}
 
-	RecordAdminLog(c, "Export Data Pendaftar", fmt.Sprintf("Admin mengekspor %d data calon mahasiswa", len(pendaftars)))
-
 	if format == "csv" {
+		RecordAdminLog(c, "Export Data Pendaftar", fmt.Sprintf("Admin mengunduh file export %d data calon mahasiswa (.csv)", len(pendaftars)))
+
 		fileName := fmt.Sprintf("Data_Pendaftar_PMB_STAICI_%s.csv", time.Now().Format("20060102_150405"))
 		c.Header("Content-Disposition", "attachment; filename="+fileName)
 		c.Header("Content-Type", "text/csv; charset=utf-8")

@@ -23,13 +23,29 @@ func (h *PublicHandler) GetInfoPMB(c *gin.Context) {
 	database.DB.Where("is_aktif = ?", true).Order("id asc").Find(&listProdi)
 
 	var activeGelombang []model.Gelombang
-	database.DB.Where("is_aktif = ?", true).Order("tanggal_buka asc").Find(&activeGelombang)
+	database.DB.Order("tanggal_buka asc, id asc").Find(&activeGelombang)
 
 	var faqs []model.FAQ
 	database.DB.Where("is_aktif = ?", true).Order("urutan asc, id asc").Find(&faqs)
 
 	var settings model.PengaturanSistem
 	database.DB.First(&settings)
+
+	// Normalized CMS dynamic tables
+	var rekeningList []model.RekeningPembayaran
+	database.DB.Where("is_aktif = ?", true).Order("urutan asc, id asc").Find(&rekeningList)
+
+	var jalurList []model.JalurPendaftaran
+	database.DB.Where("is_aktif = ?", true).Order("urutan asc, id asc").Find(&jalurList)
+
+	var tataCaraList []model.TataCaraPendaftaran
+	database.DB.Where("is_aktif = ?", true).Order("nomor_langkah asc, urutan asc, id asc").Find(&tataCaraList)
+
+	var hotlineList []model.KontakHotline
+	database.DB.Where("is_aktif = ?", true).Order("urutan asc, id asc").Find(&hotlineList)
+
+	var persyaratanDokumenList []model.PersyaratanDokumen
+	database.DB.Where("is_aktif = ?", true).Order("urutan asc, id asc").Find(&persyaratanDokumenList)
 
 	// Persyaratan list (fallback if empty)
 	persyaratanList := []string{
@@ -40,7 +56,17 @@ func (h *PublicHandler) GetInfoPMB(c *gin.Context) {
 		"Bukti Transfer Pembayaran Biaya Pendaftaran PMB yang sah",
 		"Scan Kartu KIP / KIP-Kuliah (Khusus Pendaftar Jalur Beasiswa KIP)",
 	}
-	if settings.PersyaratanPendaftaran != "" {
+	if len(persyaratanDokumenList) > 0 {
+		var docList []string
+		for _, doc := range persyaratanDokumenList {
+			label := doc.NamaDokumen
+			if doc.Deskripsi != "" {
+				label += " (" + doc.Deskripsi + ")"
+			}
+			docList = append(docList, label)
+		}
+		persyaratanList = docList
+	} else if settings.PersyaratanPendaftaran != "" {
 		lines := strings.Split(settings.PersyaratanPendaftaran, "\n")
 		var customList []string
 		for _, line := range lines {
@@ -65,12 +91,17 @@ func (h *PublicHandler) GetInfoPMB(c *gin.Context) {
 			"akreditasi":    "Terakreditasi BAN-PT & Kemenag RI",
 			"website_url":   "https://staicisitubondo.ac.id/pmb",
 		},
-		"program_studi": listProdi,
-		"gelombang":     activeGelombang,
+		"program_studi":          listProdi,
+		"gelombang":              activeGelombang,
 		"jalur_pendaftaran_info": settings.JalurPendaftaranInfo,
-		"persyaratan":   persyaratanList,
-		"faq":           faqs,
-		"settings":      settings,
+		"jalur_pendaftaran":      jalurList,
+		"persyaratan":            persyaratanList,
+		"persyaratan_dokumen":    persyaratanDokumenList,
+		"tata_cara":              tataCaraList,
+		"rekening":               rekeningList,
+		"hotline":                hotlineList,
+		"faq":                    faqs,
+		"settings":               settings,
 	})
 }
 

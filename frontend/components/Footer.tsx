@@ -3,10 +3,32 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { useState, useEffect } from "react";
 import { useLanguage } from "@/lib/LanguageContext";
+import { api } from "@/lib/api";
 
 export default function Footer() {
   const { t } = useLanguage();
+  const [dynamicProdis, setDynamicProdis] = useState<any[]>([]);
+
+  useEffect(() => {
+    api.get("/program-studi")
+      .then((res) => {
+        const val = (res as any)?.data?.data || (res as any)?.data;
+        if (Array.isArray(val) && val.length > 0) {
+          setDynamicProdis(
+            val.map((p: any) => ({
+              id: (p.kode || String(p.id)).toLowerCase(),
+              nama: p.nama,
+              badge: p.jenjang || "S1",
+            }))
+          );
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const activeProdiList = dynamicProdis.length > 0 ? dynamicProdis : t.prodiList;
 
   return (
     <footer className="bg-[#08221c] text-slate-300 pt-14 pb-8 border-t border-emerald-950 mt-12">
@@ -53,7 +75,7 @@ export default function Footer() {
               {t.footer.prodiTitle}
             </h4>
             <ul className="space-y-2 text-xs text-emerald-100/80">
-              {t.prodiList.map((prodi) => (
+              {activeProdiList.map((prodi) => (
                 <li key={prodi.id}>
                   <Link
                     href={`/program-studi/${prodi.id}`}

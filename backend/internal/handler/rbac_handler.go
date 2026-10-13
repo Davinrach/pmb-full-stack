@@ -1,12 +1,14 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
 	"pmb-staici-backend/internal/database"
 	"pmb-staici-backend/internal/model"
 	"pmb-staici-backend/internal/response"
+	"pmb-staici-backend/internal/util"
 
 	"github.com/gin-gonic/gin"
 )
@@ -17,11 +19,24 @@ func NewRBACHandler() *RBACHandler {
 	return &RBACHandler{}
 }
 
+func getRoleFromContext(c *gin.Context) string {
+	if roleVal, exists := c.Get("role"); exists {
+		switch v := roleVal.(type) {
+		case model.Role:
+			return string(v)
+		case string:
+			return v
+		}
+	}
+	return ""
+}
+
 // GetNavMenus returns dynamic menu groups & allowed menus for the current user's role
 func (h *RBACHandler) GetNavMenus(c *gin.Context) {
-	roleStr := c.GetString("role")
+	roleStr := getRoleFromContext(c)
 	if roleStr == "" {
-		roleStr = string(model.RoleSuperAdmin)
+		response.Unauthorized(c, "Role pengguna tidak terautentikasi")
+		return
 	}
 
 	// Fetch all active menu groups ordered by 'urutan'
@@ -67,8 +82,9 @@ func (h *RBACHandler) GetNavMenus(c *gin.Context) {
 
 		var groupMenus []MenuResp
 		for _, m := range menus {
-			// Super admin gets all active menus, other roles get allowed menus
-			if roleStr == string(model.RoleSuperAdmin) || allowedMenuIDs[m.ID] {
+			// Super admin gets all active menus.
+			// Non-super-admin can NEVER access 'rbac' menu, and only gets explicitly allowed menus
+			if roleStr == string(model.RoleSuperAdmin) {
 				groupMenus = append(groupMenus, MenuResp{
 					ID:          m.ID,
 					MenuGroupID: m.MenuGroupID,
@@ -79,6 +95,22 @@ func (h *RBACHandler) GetNavMenus(c *gin.Context) {
 					BadgeText:   m.BadgeText,
 					Urutan:      m.Urutan,
 				})
+			} else {
+				if m.Key == "rbac" {
+					continue // Non-super-admin can NEVER receive rbac menu
+				}
+				if allowedMenuIDs[m.ID] {
+					groupMenus = append(groupMenus, MenuResp{
+						ID:          m.ID,
+						MenuGroupID: m.MenuGroupID,
+						Nama:        m.Nama,
+						Key:         m.Key,
+						Icon:        m.Icon,
+						URL:         m.URL,
+						BadgeText:   m.BadgeText,
+						Urutan:      m.Urutan,
+					})
+				}
 			}
 		}
 
@@ -231,6 +263,35 @@ func (h *RBACHandler) UpdateMenuGroup(c *gin.Context) {
 	response.Success(c, http.StatusOK, "Menu group berhasil diperbarui", group)
 }
 
+// DeleteMenuGroup deletes a menu group and its associated menus
+func (h *RBACHandler) DeleteMenuGroup(c *gin.Context) {
+	id := c.Param("id")
+	var group model.MenuGroup
+	if err := database.DB.First(&group, id).Error; err != nil {
+		response.NotFound(c, "Menu group tidak ditemukan")
+		return
+	}
+
+	// Safety check: Prevent deleting group containing 'rbac' menu
+	var rbacChild model.Menu
+	if err := database.DB.Where("menu_group_id = ? AND `key` = ?", group.ID, "rbac").First(&rbacChild).Error; err == nil {
+		response.BadRequest(c, "Menu group ini memuat modul 'rbac' inti sistem dan tidak boleh dihapus", "")
+		return
+	}
+
+	// Find and remove all child menus and their role associations permanently
+	var childMenus []model.Menu
+	database.DB.Unscoped().Where("menu_group_id = ?", group.ID).Find(&childMenus)
+	for _, m := range childMenus {
+		database.DB.Unscoped().Where("menu_id = ?", m.ID).Delete(&model.RoleMenu{})
+		database.DB.Unscoped().Delete(&m)
+	}
+
+	database.DB.Unscoped().Delete(&group)
+	RecordAdminLog(c, "Hapus Menu Group", "Menghapus menu group: "+group.Nama)
+	response.Success(c, http.StatusOK, "Menu group beserta menu di dalamnya berhasil dihapus", nil)
+}
+
 // ListMenus returns all menus
 func (h *RBACHandler) ListMenus(c *gin.Context) {
 	var menus []model.Menu
@@ -275,6 +336,85 @@ func (h *RBACHandler) CreateMenu(c *gin.Context) {
 	response.Success(c, http.StatusCreated, "Menu berhasil dibuat", menu)
 }
 
+// UpdateMenu updates an existing menu item
+func (h *RBACHandler) UpdateMenu(c *gin.Context) {
+	id := c.Param("id")
+	var menu model.Menu
+	if err := database.DB.First(&menu, id).Error; err != nil {
+		response.NotFound(c, "Menu tidak ditemukan")
+		return
+	}
+
+	var req struct {
+		MenuGroupID uint   `json:"menu_group_id"`
+		Nama        string `json:"nama"`
+		Key         string `json:"key"`
+		Icon        string `json:"icon"`
+		URL         string `json:"url"`
+		BadgeText   string `json:"badge_text"`
+		Urutan      int    `json:"urutan"`
+		IsAktif     *bool  `json:"is_aktif"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Data menu tidak valid", err.Error())
+		return
+	}
+
+	if req.MenuGroupID > 0 {
+		menu.MenuGroupID = req.MenuGroupID
+	}
+	if req.Nama != "" {
+		menu.Nama = req.Nama
+	}
+	// Prevent changing key if it's the core system 'rbac' menu
+	if req.Key != "" && menu.Key != "rbac" {
+		cleanKey := strings.ToLower(strings.TrimSpace(req.Key))
+		menu.Key = cleanKey
+		menu.URL = cleanKey
+	}
+	if req.Icon != "" {
+		menu.Icon = req.Icon
+	}
+	if req.URL != "" && menu.Key != "rbac" {
+		menu.URL = req.URL
+	}
+	menu.BadgeText = req.BadgeText
+	if req.Urutan > 0 {
+		menu.Urutan = req.Urutan
+	}
+	if req.IsAktif != nil {
+		menu.IsAktif = *req.IsAktif
+	}
+
+	database.DB.Save(&menu)
+	RecordAdminLog(c, "Update Menu", "Memperbarui menu: "+menu.Nama)
+	response.Success(c, http.StatusOK, "Menu berhasil diperbarui", menu)
+}
+
+// DeleteMenu deletes a menu item
+func (h *RBACHandler) DeleteMenu(c *gin.Context) {
+	id := c.Param("id")
+	var menu model.Menu
+	if err := database.DB.First(&menu, id).Error; err != nil {
+		response.NotFound(c, "Menu tidak ditemukan")
+		return
+	}
+
+	// Safety check: 'rbac' menu cannot be deleted
+	if menu.Key == "rbac" || menu.URL == "rbac" {
+		response.BadRequest(c, "Menu 'rbac' adalah menu sistem inti dan tidak boleh dihapus", "")
+		return
+	}
+
+	// Hard delete role permissions for this menu and the menu itself
+	database.DB.Unscoped().Where("menu_id = ?", menu.ID).Delete(&model.RoleMenu{})
+	database.DB.Unscoped().Delete(&menu)
+
+	RecordAdminLog(c, "Hapus Menu", "Menghapus menu permanen: "+menu.Nama)
+	response.Success(c, http.StatusOK, "Menu berhasil dihapus permanen", nil)
+}
+
 // GetRolePermissions returns allowed menu IDs for a role
 func (h *RBACHandler) GetRolePermissions(c *gin.Context) {
 	roleKode := c.Param("role_kode")
@@ -306,6 +446,20 @@ func (h *RBACHandler) UpdateRolePermissions(c *gin.Context) {
 		return
 	}
 
+	// Safety check: 'rbac' menu ID should NEVER be assigned to non-super_admin roles!
+	var rbacMenu model.Menu
+	if err := database.DB.Where("`key` = ?", "rbac").First(&rbacMenu).Error; err == nil {
+		if req.RoleKode != string(model.RoleSuperAdmin) {
+			var filteredIDs []uint
+			for _, id := range req.MenuIDs {
+				if id != rbacMenu.ID {
+					filteredIDs = append(filteredIDs, id)
+				}
+			}
+			req.MenuIDs = filteredIDs
+		}
+	}
+
 	// Remove old permissions
 	database.DB.Where("role_kode = ?", req.RoleKode).Delete(&model.RoleMenu{})
 
@@ -320,4 +474,102 @@ func (h *RBACHandler) UpdateRolePermissions(c *gin.Context) {
 
 	RecordAdminLog(c, "Update Permisi RBAC", "Memperbarui hak akses menu untuk role: "+req.RoleKode)
 	response.Success(c, http.StatusOK, "Hak akses menu role berhasil diperbarui", nil)
+}
+
+// ListAdminUsers returns all non-student admin users
+func (h *RBACHandler) ListAdminUsers(c *gin.Context) {
+	var users []model.User
+	database.DB.Where("role != ?", model.RoleCalonMahasiswa).Order("id ASC").Find(&users)
+	response.Success(c, http.StatusOK, "Daftar pengguna administrator", users)
+}
+
+// UpdateUserRole updates an admin's role
+func (h *RBACHandler) UpdateUserRole(c *gin.Context) {
+	id := c.Param("id")
+	var user model.User
+	if err := database.DB.First(&user, id).Error; err != nil {
+		response.NotFound(c, "Pengguna tidak ditemukan")
+		return
+	}
+
+	var req struct {
+		Role model.Role `json:"role" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Role tidak valid", err.Error())
+		return
+	}
+
+	// Prevent demoting the last super admin
+	if user.Role == model.RoleSuperAdmin && req.Role != model.RoleSuperAdmin {
+		var saCount int64
+		database.DB.Model(&model.User{}).Where("role = ?", model.RoleSuperAdmin).Count(&saCount)
+		if saCount <= 1 {
+			response.BadRequest(c, "Tidak dapat mengubah role Super Admin terakhir dalam sistem", "Sistem membutuhkan minimal 1 akun Super Admin")
+			return
+		}
+	}
+
+	oldRole := user.Role
+	user.Role = req.Role
+	database.DB.Save(&user)
+
+	RecordAdminLog(c, "Ubah Role Admin", fmt.Sprintf("Admin %s (ID %d) diubah dari %s ke %s", user.NamaLengkap, user.ID, oldRole, user.Role))
+	response.Success(c, http.StatusOK, "Role pengguna berhasil diperbarui", user)
+}
+
+// CreateAdminUser creates a new admin user
+func (h *RBACHandler) CreateAdminUser(c *gin.Context) {
+	var req struct {
+		NamaLengkap string     `json:"nama_lengkap" binding:"required"`
+		NIK         string     `json:"nik" binding:"required"`
+		Email       string     `json:"email" binding:"required"`
+		Password    string     `json:"password" binding:"required"`
+		NoHP        string     `json:"no_hp"`
+		Role        model.Role `json:"role" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Data pengguna tidak valid", err.Error())
+		return
+	}
+
+	var countNIK int64
+	database.DB.Model(&model.User{}).Where("nik = ?", req.NIK).Count(&countNIK)
+	if countNIK > 0 {
+		response.BadRequest(c, "Username / NIK sudah terdaftar", "Gunakan NIK atau username lain")
+		return
+	}
+
+	var countEmail int64
+	database.DB.Model(&model.User{}).Where("email = ?", req.Email).Count(&countEmail)
+	if countEmail > 0 {
+		response.BadRequest(c, "Email sudah terdaftar", "Gunakan email lain")
+		return
+	}
+
+	hash, err := util.HashPassword(req.Password)
+	if err != nil {
+		response.InternalServerError(c, "Gagal mengenkripsi kata sandi")
+		return
+	}
+
+	newUser := model.User{
+		NamaLengkap:     req.NamaLengkap,
+		NIK:             req.NIK,
+		Email:           req.Email,
+		NoHP:            req.NoHP,
+		PasswordHash:    hash,
+		Role:            req.Role,
+		IsEmailVerified: true,
+	}
+
+	if err := database.DB.Create(&newUser).Error; err != nil {
+		response.InternalServerError(c, err.Error())
+		return
+	}
+
+	RecordAdminLog(c, "Tambah Akun Admin", fmt.Sprintf("Membuat akun admin baru: %s (%s)", newUser.NamaLengkap, newUser.Role))
+	response.Success(c, http.StatusCreated, "Akun administrator baru berhasil dibuat", newUser)
 }

@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"os"
+	"strings"
 
 	"pmb-staici-backend/internal/config"
 	"pmb-staici-backend/internal/database"
@@ -52,6 +53,7 @@ func main() {
 	pembayaranHandler := handler.NewPembayaranHandler(cfg)
 	adminHandler := handler.NewAdminHandler()
 	publicHandler := handler.NewPublicHandler()
+	cmsHandler := handler.NewCMSHandler()
 
 	// 7. Route Groups
 	api := r.Group("/api/v1")
@@ -61,11 +63,28 @@ func main() {
 		api.GET("/info-pmb", publicHandler.GetInfoPMB)
 		api.GET("/public/settings", publicHandler.GetSettings)
 		api.GET("/faqs", publicHandler.GetPublicFAQs)
+		api.GET("/rekening", cmsHandler.ListPublicRekening)
+		api.GET("/jalur", cmsHandler.ListPublicJalur)
+		api.GET("/tata-cara", cmsHandler.ListPublicTataCara)
+		api.GET("/hotline", cmsHandler.ListPublicHotline)
+		api.GET("/persyaratan", cmsHandler.ListPublicPersyaratan)
 
 		api.GET("/program-studi", func(c *gin.Context) {
 			var results []model.ProgramStudi
 			database.DB.Where("is_aktif = ?", true).Order("id asc").Find(&results)
 			c.JSON(200, gin.H{"success": true, "data": results})
+		})
+
+		api.GET("/program-studi/:slug", func(c *gin.Context) {
+			rawSlug := c.Param("slug")
+			slug := strings.ToLower(strings.TrimSpace(rawSlug))
+			var result model.ProgramStudi
+			err := database.DB.Where("LOWER(kode) = ? OR id = ? OR LOWER(REPLACE(REPLACE(nama, ' ', '-'), '/', '-')) = ?", slug, slug, slug).First(&result).Error
+			if err != nil {
+				c.JSON(404, gin.H{"success": false, "message": "Program studi tidak ditemukan"})
+				return
+			}
+			c.JSON(200, gin.H{"success": true, "data": result})
 		})
 
 		// Auth Public Routes
@@ -116,7 +135,7 @@ func main() {
 
 			// Admin CMS Routes (FR-8.1 s/d FR-8.15)
 			adminGroup := authRequired.Group("/admin")
-			adminGroup.Use(middleware.RequireRoles(model.RoleAdminPMB, model.RoleSuperAdmin))
+			adminGroup.Use(middleware.RequireAdminStaff())
 			{
 				adminGroup.GET("/dashboard/stats", adminHandler.GetDashboardStats)
 				adminGroup.GET("/pendaftar", adminHandler.ListPendaftar)
@@ -134,6 +153,7 @@ func main() {
 				adminGroup.GET("/program-studi", adminHandler.ListProgramStudi)
 				adminGroup.POST("/program-studi", adminHandler.CreateProgramStudi)
 				adminGroup.PUT("/program-studi/:id", adminHandler.UpdateProgramStudi)
+				adminGroup.DELETE("/program-studi/:id", adminHandler.DeleteProgramStudi)
 
 				// Audit Logs & Settings
 				adminGroup.GET("/logs", adminHandler.GetLogs)
@@ -147,19 +167,62 @@ func main() {
 				adminGroup.DELETE("/faqs/:id", adminHandler.DeleteFAQ)
 				adminGroup.PATCH("/faqs/:id/toggle", adminHandler.ToggleFAQStatus)
 
-				// Dynamic RBAC Navigation & Role Management Endpoints
+				// CMS Modular Management (Rekening, Jalur, Tata Cara, Hotline, Persyaratan)
+				adminGroup.GET("/rekening", cmsHandler.ListRekening)
+				adminGroup.POST("/rekening", cmsHandler.CreateRekening)
+				adminGroup.PUT("/rekening/:id", cmsHandler.UpdateRekening)
+				adminGroup.DELETE("/rekening/:id", cmsHandler.DeleteRekening)
+				adminGroup.PATCH("/rekening/:id/toggle", cmsHandler.ToggleRekening)
+
+				adminGroup.GET("/jalur", cmsHandler.ListJalur)
+				adminGroup.POST("/jalur", cmsHandler.CreateJalur)
+				adminGroup.PUT("/jalur/:id", cmsHandler.UpdateJalur)
+				adminGroup.DELETE("/jalur/:id", cmsHandler.DeleteJalur)
+				adminGroup.PATCH("/jalur/:id/toggle", cmsHandler.ToggleJalur)
+
+				adminGroup.GET("/tata-cara", cmsHandler.ListTataCara)
+				adminGroup.POST("/tata-cara", cmsHandler.CreateTataCara)
+				adminGroup.PUT("/tata-cara/:id", cmsHandler.UpdateTataCara)
+				adminGroup.DELETE("/tata-cara/:id", cmsHandler.DeleteTataCara)
+				adminGroup.POST("/tata-cara/bulk", cmsHandler.BulkSaveTataCara)
+
+				adminGroup.GET("/hotline", cmsHandler.ListHotline)
+				adminGroup.POST("/hotline", cmsHandler.CreateHotline)
+				adminGroup.PUT("/hotline/:id", cmsHandler.UpdateHotline)
+				adminGroup.DELETE("/hotline/:id", cmsHandler.DeleteHotline)
+
+				adminGroup.GET("/persyaratan", cmsHandler.ListPersyaratan)
+				adminGroup.POST("/persyaratan", cmsHandler.CreatePersyaratan)
+				adminGroup.PUT("/persyaratan/:id", cmsHandler.UpdatePersyaratan)
+				adminGroup.DELETE("/persyaratan/:id", cmsHandler.DeletePersyaratan)
+
+				// Dynamic RBAC Navigation (Accessible by any authorized admin role)
 				rbacHandler := handler.NewRBACHandler()
 				adminGroup.GET("/rbac/nav-menus", rbacHandler.GetNavMenus)
-				adminGroup.GET("/rbac/roles", rbacHandler.ListRoles)
-				adminGroup.POST("/rbac/roles", rbacHandler.CreateRole)
-				adminGroup.PUT("/rbac/roles/:id", rbacHandler.UpdateRole)
-				adminGroup.GET("/rbac/menu-groups", rbacHandler.ListMenuGroups)
-				adminGroup.POST("/rbac/menu-groups", rbacHandler.CreateMenuGroup)
-				adminGroup.PUT("/rbac/menu-groups/:id", rbacHandler.UpdateMenuGroup)
-				adminGroup.GET("/rbac/menus", rbacHandler.ListMenus)
-				adminGroup.POST("/rbac/menus", rbacHandler.CreateMenu)
-				adminGroup.GET("/rbac/role-permissions/:role_kode", rbacHandler.GetRolePermissions)
-				adminGroup.POST("/rbac/role-permissions", rbacHandler.UpdateRolePermissions)
+
+				// RBAC Configuration & Admin User Management (RESTRICTED TO SUPER ADMIN ONLY!)
+				rbacSuperAdminGroup := adminGroup.Group("/rbac")
+				rbacSuperAdminGroup.Use(middleware.RequireRoles(model.RoleSuperAdmin))
+				{
+					rbacSuperAdminGroup.GET("/roles", rbacHandler.ListRoles)
+					rbacSuperAdminGroup.POST("/roles", rbacHandler.CreateRole)
+					rbacSuperAdminGroup.PUT("/roles/:id", rbacHandler.UpdateRole)
+					rbacSuperAdminGroup.GET("/menu-groups", rbacHandler.ListMenuGroups)
+					rbacSuperAdminGroup.POST("/menu-groups", rbacHandler.CreateMenuGroup)
+					rbacSuperAdminGroup.PUT("/menu-groups/:id", rbacHandler.UpdateMenuGroup)
+					rbacSuperAdminGroup.DELETE("/menu-groups/:id", rbacHandler.DeleteMenuGroup)
+					rbacSuperAdminGroup.GET("/menus", rbacHandler.ListMenus)
+					rbacSuperAdminGroup.POST("/menus", rbacHandler.CreateMenu)
+					rbacSuperAdminGroup.PUT("/menus/:id", rbacHandler.UpdateMenu)
+					rbacSuperAdminGroup.DELETE("/menus/:id", rbacHandler.DeleteMenu)
+					rbacSuperAdminGroup.GET("/role-permissions/:role_kode", rbacHandler.GetRolePermissions)
+					rbacSuperAdminGroup.POST("/role-permissions", rbacHandler.UpdateRolePermissions)
+
+					// Super Admin User Management
+					rbacSuperAdminGroup.GET("/users", rbacHandler.ListAdminUsers)
+					rbacSuperAdminGroup.POST("/users", rbacHandler.CreateAdminUser)
+					rbacSuperAdminGroup.PUT("/users/:id/role", rbacHandler.UpdateUserRole)
+				}
 			}
 		}
 	}

@@ -7,6 +7,7 @@ import (
 
 	"pmb-staici-backend/internal/config"
 	"pmb-staici-backend/internal/model"
+	"pmb-staici-backend/internal/response"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -53,7 +54,8 @@ func AuthMiddleware(cfg *config.Config) gin.HandlerFunc {
 
 		c.Set("user_id", claims.UserID)
 		c.Set("email", claims.Email)
-		c.Set("role", claims.Role)
+		c.Set("role", string(claims.Role))
+		c.Set("role_model", claims.Role)
 		c.Next()
 	}
 }
@@ -63,12 +65,23 @@ func RequireRoles(roles ...model.Role) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		roleVal, exists := c.Get("role")
 		if !exists {
-			c.JSON(http.StatusForbidden, gin.H{"error": "Akses ditolak: role tidak ditemukan"})
+			response.Forbidden(c, "Akses ditolak: sesi login Anda tidak memiliki peran (role) yang valid")
 			c.Abort()
 			return
 		}
 
-		userRole := roleVal.(model.Role)
+		var userRole model.Role
+		switch v := roleVal.(type) {
+		case model.Role:
+			userRole = v
+		case string:
+			userRole = model.Role(v)
+		default:
+			response.Forbidden(c, "Akses ditolak: format role tidak valid")
+			c.Abort()
+			return
+		}
+
 		for _, r := range roles {
 			if userRole == r {
 				c.Next()
@@ -76,7 +89,28 @@ func RequireRoles(roles ...model.Role) gin.HandlerFunc {
 			}
 		}
 
-		c.JSON(http.StatusForbidden, gin.H{"error": "Akses ditolak: Anda tidak memiliki wewenang untuk aksi ini"})
+		response.Forbidden(c, fmt.Sprintf("Akses ditolak: Anda login sebagai '%s', tindakan ini khusus untuk Super Administrator", userRole))
 		c.Abort()
+	}
+}
+
+// RequireAdminStaff memastikan pengguna memiliki peran pengelola/admin (bukan calon mahasiswa)
+func RequireAdminStaff() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		roleVal, exists := c.Get("role")
+		if !exists {
+			response.Forbidden(c, "Akses ditolak: sesi login tidak valid")
+			c.Abort()
+			return
+		}
+
+		roleStr := fmt.Sprintf("%v", roleVal)
+		if roleStr == string(model.RoleCalonMahasiswa) || roleStr == "" {
+			response.Forbidden(c, "Akses ditolak: Portal ini khusus untuk Administrator dan Pengelola PMB")
+			c.Abort()
+			return
+		}
+
+		c.Next()
 	}
 }
