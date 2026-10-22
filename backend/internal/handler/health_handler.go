@@ -17,9 +17,13 @@ func NewHealthHandler() *HealthHandler {
 
 func (h *HealthHandler) Check(c *gin.Context) {
 	dbStatus := "connected"
-	sqlDB, err := database.DB.DB()
-	if err != nil || sqlDB.Ping() != nil {
+	if database.DB == nil {
 		dbStatus = "disconnected"
+	} else {
+		sqlDB, err := database.DB.DB()
+		if err != nil || sqlDB.Ping() != nil {
+			dbStatus = "disconnected"
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{

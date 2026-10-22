@@ -130,10 +130,11 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	// Buat draft record Pendaftar otomatis
+	// Buat draft record Pendaftar otomatis (Jalur kosong sampai dipilih di formulir)
 	newPendaftar := model.Pendaftar{
 		UserID:            newUser.ID,
 		StatusPendaftaran: model.StatusAkunTerdaftar,
+		JalurPendaftaran:  "",
 		Agama:             "Islam",
 		StatusWargaNegara: "WNI",
 	}

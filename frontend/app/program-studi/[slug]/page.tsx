@@ -341,7 +341,7 @@ export default function DetailProdiPage({ params }: PageProps) {
             {/* Centered CTA Button */}
             <div className="pt-6 sm:pt-10 flex justify-center">
               <Link
-                href="/pendaftaran"
+                href="/dashboard"
                 className="px-8 py-3.5 bg-[#0e3831] hover:bg-[#165349] text-white font-bold text-sm sm:text-base rounded-xl shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5 inline-flex items-center justify-center gap-2 cursor-pointer"
               >
                 <span>{lang === "eng" ? "Apply Now" : "Daftar Sekarang"}</span>

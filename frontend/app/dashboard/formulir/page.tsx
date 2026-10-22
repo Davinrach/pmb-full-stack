@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
   ArrowRight,
@@ -21,6 +21,8 @@ import {
   Trash2,
   Eye,
   RefreshCw,
+  Calendar,
+  Sparkles,
 } from "lucide-react";
 import { api, authStorage } from "@/lib/api";
 
@@ -70,13 +72,42 @@ const STEPS = [
   { id: 1, title: "Identitas Diri", icon: User },
   { id: 2, title: "Asal Sekolah", icon: GraduationCap },
   { id: 3, title: "Data Orang Tua", icon: Users },
-  { id: 4, title: "Pilihan Prodi", icon: BookOpen },
+  { id: 4, title: "Pilihan Prodi & Jalur", icon: BookOpen },
   { id: 5, title: "Upload Berkas", icon: UploadCloud },
   { id: 6, title: "Review & Submit", icon: FileCheck },
 ];
 
-export default function FormulirPendaftaranPage() {
+const getGelombangStatus = (g: any) => {
+  const now = new Date();
+  const buka = g?.tanggal_buka ? new Date(g.tanggal_buka) : null;
+  const tutup = g?.tanggal_tutup ? new Date(g.tanggal_tutup) : null;
+
+  if (g?.is_aktif === false) {
+    return { status: "tutup", label: "Ditutup Panitia", selectable: false };
+  }
+  if (buka && !isNaN(buka.getTime()) && now < buka) {
+    return { status: "belum_buka", label: "Belum Dibuka", selectable: false };
+  }
+  if (tutup && !isNaN(tutup.getTime()) && now > tutup) {
+    return { status: "tutup", label: "Pendaftaran Ditutup", selectable: false };
+  }
+  return { status: "buka", label: "Pendaftaran Dibuka", selectable: true };
+};
+
+const formatTanggalIndo = (dateStr?: string) => {
+  if (!dateStr) return "-";
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    return d.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
+  } catch {
+    return dateStr;
+  }
+};
+
+function FormulirPendaftaranContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -135,7 +166,8 @@ export default function FormulirPendaftaranPage() {
     no_hp_orang_tua_wali: "",
   });
 
-  // Step 4: Prodi & Gelombang
+  // Step 4: Jalur, Prodi & Gelombang
+  const [jalurPendaftaran, setJalurPendaftaran] = useState("Reguler");
   const [prodiGelombang, setProdiGelombang] = useState({
     program_studi_id: 0,
     gelombang_id: 0,
@@ -150,6 +182,15 @@ export default function FormulirPendaftaranPage() {
         api.get("/auth/me"),
         api.get("/info-pmb"),
       ]);
+
+      const availableGelombangs = pmbRes.data?.gelombang || [];
+      const availableProdis = pmbRes.data?.program_studi || [];
+
+      setProgramStudis(availableProdis);
+      setGelombangs(availableGelombangs);
+
+      // Cari gelombang yang aktif & terbuka sebagai default
+      const defaultActiveWave = availableGelombangs.find((g: any) => getGelombangStatus(g).selectable) || availableGelombangs[0];
 
       if (meRes.data && meRes.data.pendaftar) {
         const p = meRes.data.pendaftar;
@@ -208,22 +249,38 @@ export default function FormulirPendaftaranPage() {
           });
         }
 
+        // Jalur Pendaftaran
+        if (p.jalur_pendaftaran) {
+          setJalurPendaftaran(p.jalur_pendaftaran);
+        } else {
+          const jalurParam = searchParams.get("jalur");
+          if (jalurParam && jalurParam.toLowerCase().includes("kip")) {
+            setJalurPendaftaran("KIP-Kuliah");
+          } else {
+            setJalurPendaftaran("Reguler");
+          }
+        }
+
         if (p.program_studi_id) {
           setProdiGelombang({
             program_studi_id: p.program_studi_id,
-            gelombang_id: p.gelombang_id || (pmbRes.data.gelombang[0]?.id || 1),
+            gelombang_id: p.gelombang_id || defaultActiveWave?.id || 1,
           });
-        } else if (pmbRes.data) {
+        } else {
           setProdiGelombang({
-            program_studi_id: pmbRes.data.program_studi[0]?.id || 1,
-            gelombang_id: pmbRes.data.gelombang[0]?.id || 1,
+            program_studi_id: availableProdis[0]?.id || 1,
+            gelombang_id: defaultActiveWave?.id || 1,
           });
         }
-      }
-
-      if (pmbRes.data) {
-        setProgramStudis(pmbRes.data.program_studi || []);
-        setGelombangs(pmbRes.data.gelombang || []);
+      } else {
+        const jalurParam = searchParams.get("jalur");
+        if (jalurParam && jalurParam.toLowerCase().includes("kip")) {
+          setJalurPendaftaran("KIP-Kuliah");
+        }
+        setProdiGelombang({
+          program_studi_id: availableProdis[0]?.id || 1,
+          gelombang_id: defaultActiveWave?.id || 1,
+        });
       }
     } catch (err: any) {
       setErrorMessage(err.message || "Gagal memuat formulir");
@@ -233,6 +290,11 @@ export default function FormulirPendaftaranPage() {
   };
 
   useEffect(() => {
+    const token = authStorage.getToken();
+    if (!token) {
+      router.push("/login?redirect=/dashboard/formulir");
+      return;
+    }
     const currentUser = authStorage.getUser();
     if (currentUser && (currentUser.role === "admin_pmb" || currentUser.role === "super_admin")) {
       router.replace("/admincms");
@@ -245,7 +307,8 @@ export default function FormulirPendaftaranPage() {
     setIsSaving(true);
     setErrorMessage("");
     try {
-      await api.put("/pendaftar/identitas", identitas);
+      const res = await api.put("/pendaftar/identitas", identitas);
+      if (res.data) setPendaftar((prev: any) => ({ ...prev, ...identitas }));
       setSuccessMessage("Identitas diri berhasil disimpan");
       setCurrentStep(2);
     } catch (err: any) {
@@ -259,11 +322,13 @@ export default function FormulirPendaftaranPage() {
     setIsSaving(true);
     setErrorMessage("");
     try {
-      await api.put("/pendaftar/asal-sekolah", {
+      const payload = {
         ...asalSekolah,
         nilai_rata_rata: parseFloat(asalSekolah.nilai_rata_rata) || 0,
         tahun_lulus: parseInt(String(asalSekolah.tahun_lulus)) || new Date().getFullYear(),
-      });
+      };
+      await api.put("/pendaftar/asal-sekolah", payload);
+      setPendaftar((prev: any) => ({ ...prev, ...payload }));
       setSuccessMessage("Data asal sekolah berhasil disimpan");
       setCurrentStep(3);
     } catch (err: any) {
@@ -278,6 +343,7 @@ export default function FormulirPendaftaranPage() {
     setErrorMessage("");
     try {
       await api.put("/pendaftar/orang-tua", orangTua);
+      setPendaftar((prev: any) => ({ ...prev, data_orang_tua: orangTua }));
       setSuccessMessage("Data orang tua & kontak berhasil disimpan");
       setCurrentStep(4);
     } catch (err: any) {
@@ -291,17 +357,95 @@ export default function FormulirPendaftaranPage() {
     setIsSaving(true);
     setErrorMessage("");
     try {
-      await api.put("/pendaftar/prodi-gelombang", {
+      const res = await api.put("/pendaftar/prodi-gelombang", {
         program_studi_id: Number(prodiGelombang.program_studi_id),
         gelombang_id: Number(prodiGelombang.gelombang_id),
+        jalur_pendaftaran: jalurPendaftaran,
       });
-      setSuccessMessage("Pilihan program studi berhasil disimpan");
+      if (res.data) {
+        setPendaftar((prev: any) => ({
+          ...prev,
+          ...res.data,
+          program_studi_id: Number(prodiGelombang.program_studi_id),
+          gelombang_id: Number(prodiGelombang.gelombang_id),
+          jalur_pendaftaran: jalurPendaftaran,
+        }));
+      }
+      setSuccessMessage("Pilihan jalur, program studi, dan gelombang berhasil disimpan");
       setCurrentStep(5);
     } catch (err: any) {
-      setErrorMessage(err.message || "Gagal menyimpan pilihan prodi");
+      setErrorMessage(err.message || "Gagal menyimpan pilihan prodi & gelombang");
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const isStep1Valid = () => {
+    return Boolean(
+      identitas.jenis_kelamin &&
+      identitas.alamat?.trim() &&
+      identitas.tempat_lahir?.trim() &&
+      identitas.tanggal_lahir &&
+      identitas.agama
+    );
+  };
+
+  const isStep2Valid = () => {
+    return Boolean(
+      asalSekolah.nama_sekolah?.trim() &&
+      asalSekolah.jurusan_sekolah?.trim() &&
+      asalSekolah.nilai_rata_rata &&
+      asalSekolah.tahun_lulus
+    );
+  };
+
+  const isStep3Valid = () => {
+    return Boolean(
+      orangTua.nama_ayah?.trim() &&
+      orangTua.nama_ibu?.trim() &&
+      orangTua.no_hp_orang_tua_wali?.trim()
+    );
+  };
+
+  const isStep4Valid = () => {
+    return Boolean(
+      prodiGelombang.program_studi_id &&
+      prodiGelombang.gelombang_id &&
+      jalurPendaftaran
+    );
+  };
+
+  const isStep5Valid = () => {
+    const berkasArr = pendaftar?.berkas || [];
+    const map: Record<string, boolean> = {};
+    berkasArr.forEach((b: any) => {
+      if (b.jenis_dokumen) map[b.jenis_dokumen.toLowerCase()] = true;
+    });
+    const mandatoryBase = map["kk"] && map["ktp"] && map["ijazah"] && map["foto"];
+    if (jalurPendaftaran === "KIP-Kuliah") {
+      return Boolean(mandatoryBase && map["kip"]);
+    }
+    return Boolean(mandatoryBase);
+  };
+
+  const isStepValid = (stepId: number) => {
+    switch (stepId) {
+      case 1: return isStep1Valid();
+      case 2: return isStep2Valid();
+      case 3: return isStep3Valid();
+      case 4: return isStep4Valid();
+      case 5: return isStep5Valid();
+      case 6: return isStep1Valid() && isStep2Valid() && isStep3Valid() && isStep4Valid() && isStep5Valid();
+      default: return false;
+    }
+  };
+
+  const canNavigateToStep = (targetStep: number) => {
+    if (targetStep <= currentStep) return true;
+    for (let i = 1; i < targetStep; i++) {
+      if (!isStepValid(i)) return false;
+    }
+    return true;
   };
 
   const handleFileUpload = async (
@@ -355,7 +499,7 @@ export default function FormulirPendaftaranPage() {
     try {
       const res = await api.post("/pendaftar/submit");
       alert(`Pendaftaran Berhasil Disubmit!\nNomor Registrasi Anda: ${res.data.nomor_pendaftaran}`);
-      router.push("/dashboard");
+      router.push("/dashboard/pembayaran");
     } catch (err: any) {
       setErrorMessage(err.message || "Gagal melakukan submit final pendaftaran");
     } finally {
@@ -424,26 +568,36 @@ export default function FormulirPendaftaranPage() {
         {/* Step Indicator Navigation */}
         <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-xs overflow-x-auto">
           <div className="flex items-center justify-between min-w-[640px] gap-2">
-            {STEPS.map((s, idx) => {
+            {STEPS.map((s) => {
               const Icon = s.icon;
               const isActive = currentStep === s.id;
-              const isDone = currentStep > s.id;
+              const isDone = isStepValid(s.id);
+              const isClickable = canNavigateToStep(s.id);
 
               return (
                 <button
                   key={s.id}
                   type="button"
-                  onClick={() => setCurrentStep(s.id)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex-1 ${
+                  onClick={() => {
+                    if (isClickable) {
+                      setErrorMessage("");
+                      setCurrentStep(s.id);
+                    } else {
+                      setErrorMessage(`Harap lengkapi dan simpan tahapan sebelum melanjutkan ke ${s.title}.`);
+                    }
+                  }}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition flex-1 ${
                     isActive
                       ? "bg-[#0d3830] text-white shadow-xs"
                       : isDone
-                      ? "bg-emerald-50 text-[#0d3830] hover:bg-emerald-100/70"
-                      : "text-slate-500 hover:bg-slate-100"
+                      ? "bg-emerald-50 text-[#0d3830] hover:bg-emerald-100/70 cursor-pointer"
+                      : isClickable
+                      ? "text-slate-700 hover:bg-slate-100 cursor-pointer"
+                      : "text-slate-400 opacity-60 cursor-not-allowed"
                   }`}
                 >
                   <div
-                    className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-xs ${
+                    className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold ${
                       isActive
                         ? "bg-white text-[#0d3830]"
                         : isDone
@@ -1032,19 +1186,104 @@ export default function FormulirPendaftaranPage() {
           </div>
         )}
 
-        {/* STEP 4: PILIHAN PROGRAM STUDI & GELOMBANG */}
+        {/* STEP 4: PILIHAN JALUR, PROGRAM STUDI & GELOMBANG */}
         {currentStep === 4 && (
-          <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-8 shadow-xs space-y-6">
+          <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-8 shadow-xs space-y-8">
             <div className="border-b border-slate-100 pb-4">
               <h2 className="text-lg sm:text-xl font-bold text-slate-900 font-serif">
-                Bagian 4: Pilihan Program Studi &amp; Gelombang PMB
+                Bagian 4: Pilihan Jalur, Program Studi &amp; Gelombang PMB
               </h2>
               <p className="text-xs text-slate-500 mt-1">
-                Pilih salah satu dari 3 Program Studi resmi STAI Cendekia Insani Situbondo.
+                Tentukan jalur pendaftaran, program studi yang diminati, dan gelombang PMB aktif.
               </p>
             </div>
 
-            <div className="space-y-4">
+            {/* 1. Pilihan Jalur Pendaftaran */}
+            <div className="space-y-3">
+              <div>
+                <label className="font-bold text-slate-900 text-xs sm:text-sm block">
+                  Pilih Jalur Pendaftaran *
+                </label>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Tentukan jalur masuk yang sesuai dengan kualifikasi dan berkas pendukung Anda.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Card Reguler */}
+                <div
+                  onClick={() => !isLocked && setJalurPendaftaran("Reguler")}
+                  className={`p-5 rounded-2xl border-2 transition cursor-pointer flex flex-col justify-between ${
+                    jalurPendaftaran === "Reguler"
+                      ? "border-[#0d3830] bg-[#e8f8f2]/40 shadow-xs ring-1 ring-[#0d3830]"
+                      : "border-slate-200 bg-white hover:border-slate-300"
+                  } ${isLocked ? "cursor-default" : ""}`}
+                >
+                  <div className="space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-extrabold px-2.5 py-1 rounded-md bg-indigo-50 text-indigo-800 border border-indigo-200">
+                        Jalur Reguler (Mandiri)
+                      </span>
+                      {jalurPendaftaran === "Reguler" && (
+                        <CheckCircle2 className="w-5 h-5 text-[#0d3830]" />
+                      )}
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-slate-900 text-sm sm:text-base">
+                        Seleksi Prestasi &amp; Nilai Rapor
+                      </h4>
+                      <p className="text-xs text-slate-600 leading-relaxed mt-1">
+                        Terbuka untuk seluruh lulusan SMA, SMK, MA, atau Pondok Pesantren sederajat. Seleksi berdasarkan kelayakan dokumen nilai rapor dan ijazah SLTA.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="pt-4 mt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                    <span className="text-slate-500 font-medium">Biaya Formulir:</span>
+                    <strong className="text-slate-900 font-bold">Tarif Normal Gelombang</strong>
+                  </div>
+                </div>
+
+                {/* Card KIP-Kuliah */}
+                <div
+                  onClick={() => !isLocked && setJalurPendaftaran("KIP-Kuliah")}
+                  className={`p-5 rounded-2xl border-2 transition cursor-pointer flex flex-col justify-between ${
+                    jalurPendaftaran === "KIP-Kuliah"
+                      ? "border-[#0d3830] bg-[#e8f8f2]/40 shadow-xs ring-1 ring-[#0d3830]"
+                      : "border-slate-200 bg-white hover:border-slate-300"
+                  } ${isLocked ? "cursor-default" : ""}`}
+                >
+                  <div className="space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-extrabold px-2.5 py-1 rounded-md bg-amber-100 text-amber-900 border border-amber-300">
+                        Beasiswa KIP-Kuliah (Pemerintah)
+                      </span>
+                      {jalurPendaftaran === "KIP-Kuliah" && (
+                        <CheckCircle2 className="w-5 h-5 text-[#0d3830]" />
+                      )}
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-slate-900 text-sm sm:text-base">
+                        Beasiswa Bebas Biaya Kuliah Penuh
+                      </h4>
+                      <p className="text-xs text-slate-600 leading-relaxed mt-1">
+                        Khusus bagi calon mahasiswa pemegang Kartu Indonesia Pintar (KIP), KKS, PKH, atau terdata dalam DTKS Kemensos RI. Wajib melampirkan berkas KIP di Bagian 5.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="pt-4 mt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                    <span className="text-slate-500 font-medium">Biaya Formulir:</span>
+                    <span className="font-extrabold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                      Rp 0 (Bebas Biaya)
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 2. Pilihan Program Studi */}
+            <div className="space-y-3 pt-2">
               <label className="font-bold text-slate-900 text-xs sm:text-sm block">
                 Pilih Program Studi *
               </label>
@@ -1057,7 +1296,7 @@ export default function FormulirPendaftaranPage() {
                       onClick={() => !isLocked && setProdiGelombang({ ...prodiGelombang, program_studi_id: prodi.id })}
                       className={`p-5 rounded-2xl border-2 transition cursor-pointer flex flex-col justify-between ${
                         isSelected
-                          ? "border-[#0d3830] bg-[#e8f8f2]/40 shadow-xs"
+                          ? "border-[#0d3830] bg-[#e8f8f2]/40 shadow-xs ring-1 ring-[#0d3830]"
                           : "border-slate-200 bg-white hover:border-slate-300"
                       }`}
                     >
@@ -1078,22 +1317,101 @@ export default function FormulirPendaftaranPage() {
               </div>
             </div>
 
+            {/* 3. Pilihan Gelombang Pendaftaran Dinamis */}
             <div className="space-y-3 pt-2">
-              <label className="font-bold text-slate-900 text-xs sm:text-sm block">
-                Gelombang Pendaftaran Aktif
-              </label>
-              <select
-                disabled={isLocked}
-                value={prodiGelombang.gelombang_id}
-                onChange={(e) => setProdiGelombang({ ...prodiGelombang, gelombang_id: Number(e.target.value) })}
-                className="w-full p-3 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-800"
-              >
-                {gelombangs.map((g) => (
-                  <option key={g.id} value={g.id}>
-                    {g.nama} — Biaya: Rp {Number(g.biaya_pendaftaran).toLocaleString("id-ID")}
-                  </option>
-                ))}
-              </select>
+              <div>
+                <label className="font-bold text-slate-900 text-xs sm:text-sm block">
+                  Pilih Gelombang PMB *
+                </label>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Gelombang pendaftaran yang terdaftar di sistem. Anda hanya dapat memilih gelombang yang berstatus <strong>Pendaftaran Dibuka</strong>.
+                </p>
+              </div>
+
+              {gelombangs.length === 0 ? (
+                <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl text-center text-xs text-slate-500">
+                  Belum ada gelombang pendaftaran yang tersedia saat ini.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {gelombangs.map((g) => {
+                    const waveStatus = getGelombangStatus(g);
+                    const isSelected = Number(prodiGelombang.gelombang_id) === g.id;
+                    const canSelect = waveStatus.selectable && !isLocked;
+
+                    return (
+                      <div
+                        key={g.id}
+                        onClick={() => {
+                          if (canSelect) {
+                            setProdiGelombang({ ...prodiGelombang, gelombang_id: g.id });
+                          }
+                        }}
+                        className={`p-5 rounded-2xl border-2 transition flex flex-col justify-between ${
+                          isSelected
+                            ? "border-[#0d3830] bg-[#e8f8f2]/40 shadow-xs ring-1 ring-[#0d3830]"
+                            : canSelect
+                            ? "border-slate-200 bg-white hover:border-slate-300 cursor-pointer"
+                            : "border-slate-200 bg-slate-50/70 opacity-70 cursor-not-allowed"
+                        }`}
+                      >
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between gap-1">
+                            <span className="text-[10px] font-mono font-bold text-slate-500 uppercase tracking-wider">
+                              TA {g.tahun_akademik || "2026/2027"}
+                            </span>
+                            <span
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                waveStatus.status === "buka"
+                                  ? "bg-emerald-100 text-[#0d3830] border border-emerald-300"
+                                  : waveStatus.status === "belum_buka"
+                                  ? "bg-blue-50 text-blue-700 border border-blue-200"
+                                  : "bg-slate-200 text-slate-600 border border-slate-300"
+                              }`}
+                            >
+                              {waveStatus.label}
+                            </span>
+                          </div>
+
+                          <h4 className="font-bold text-slate-900 text-sm">{g.nama}</h4>
+
+                          <div className="flex items-center gap-1.5 text-slate-500 text-[11px]">
+                            <Calendar className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                            <span>
+                              {formatTanggalIndo(g.tanggal_buka)} – {formatTanggalIndo(g.tanggal_tutup)}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="pt-4 mt-3 border-t border-slate-100 flex items-center justify-between">
+                          <div>
+                            <span className="text-[10px] text-slate-400 block">Biaya Formulir</span>
+                            {jalurPendaftaran === "KIP-Kuliah" ? (
+                              <span className="text-xs font-bold text-emerald-800">
+                                Rp 0 (Bebas Biaya)
+                              </span>
+                            ) : (
+                              <span className="text-xs font-bold text-slate-900 font-mono">
+                                Rp {Number(g.biaya_pendaftaran || 0).toLocaleString("id-ID")}
+                              </span>
+                            )}
+                          </div>
+
+                          {isSelected ? (
+                            <div className="w-6 h-6 rounded-full bg-[#0d3830] text-white flex items-center justify-center">
+                              <Check className="w-3.5 h-3.5 stroke-[3]" />
+                            </div>
+                          ) : canSelect ? (
+                            <span className="text-[11px] font-bold text-[#0d3830]">Pilih</span>
+                          ) : (
+                            <span className="text-[10px] text-slate-400 italic">Nonaktif</span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             <div className="pt-4 flex items-center justify-between">
@@ -1130,13 +1448,23 @@ export default function FormulirPendaftaranPage() {
               </p>
             </div>
 
+            {/* Alert Jalur KIP jika dipilih */}
+            {jalurPendaftaran === "KIP-Kuliah" && (
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-3 text-amber-900 text-xs">
+                <AlertCircle className="w-4 h-4 flex-shrink-0 text-amber-600 mt-0.5" />
+                <p>
+                  <strong>Perhatian Pendaftar KIP-Kuliah:</strong> Dokumen <strong>Kartu KIP / KKS / PKH / Bukti DTKS</strong> bersifat <strong>wajib diunggah</strong> untuk proses verifikasi beasiswa kuliah bebas biaya oleh panitia PMB.
+                </p>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {[
                 { key: "kk", label: "Kartu Keluarga (KK)", wajib: true },
                 { key: "ktp", label: "KTP Calon Mahasiswa", wajib: true },
                 { key: "ijazah", label: "Ijazah / SKL SLTA", wajib: true },
                 { key: "foto", label: "Pas Foto 3x4 Berwarna", wajib: true },
-                { key: "kip", label: "Kartu KIP (Khusus Beasiswa KIP)", wajib: false },
+                { key: "kip", label: "Kartu KIP / KKS / PKH / DTKS", wajib: jalurPendaftaran === "KIP-Kuliah" },
                 { key: "lainnya", label: "Dokumen Pendukung Lainnya", wajib: false },
               ].map((doc) => {
                 const uploaded = getUploadedBerkas(doc.key);
@@ -1227,7 +1555,18 @@ export default function FormulirPendaftaranPage() {
               </button>
               <button
                 type="button"
-                onClick={() => setCurrentStep(6)}
+                onClick={() => {
+                  if (isStep5Valid()) {
+                    setErrorMessage("");
+                    setCurrentStep(6);
+                  } else {
+                    setErrorMessage(
+                      jalurPendaftaran === "KIP-Kuliah"
+                        ? "Harap unggah seluruh berkas wajib (KK, KTP, Ijazah, Pas Foto, dan Kartu KIP/KKS/PKH) sebelum melanjutkan."
+                        : "Harap unggah seluruh berkas wajib (KK, KTP, Ijazah, dan Pas Foto 3x4) sebelum melanjutkan."
+                    );
+                  }
+                }}
                 className="px-6 py-3 bg-[#0d3830] hover:bg-[#165349] text-white font-bold text-xs sm:text-sm rounded-xl shadow-sm transition flex items-center gap-2 cursor-pointer"
               >
                 <span>Lanjut ke Review &amp; Submit</span>
@@ -1260,15 +1599,29 @@ export default function FormulirPendaftaranPage() {
                   <strong className="text-slate-900 font-mono font-bold">{pendaftar?.user?.nik}</strong>
                 </div>
                 <div>
+                  <span className="text-slate-500 block text-xs">Jalur Pendaftaran</span>
+                  <strong className="text-[#0d3830] font-bold">
+                    {jalurPendaftaran === "KIP-Kuliah" ? "Beasiswa KIP-Kuliah (Pemerintah)" : "Jalur Reguler (Mandiri)"}
+                  </strong>
+                </div>
+                <div>
                   <span className="text-slate-500 block text-xs">Program Studi Pilihan</span>
                   <strong className="text-[#0d3830] font-bold">
-                    {pendaftar?.program_studi?.nama || "Belum dipilih"}
+                    {programStudis.find((p) => p.id === Number(prodiGelombang.program_studi_id))?.nama || pendaftar?.program_studi?.nama || "Belum dipilih"}
                   </strong>
                 </div>
                 <div>
                   <span className="text-slate-500 block text-xs">Gelombang Pendaftaran</span>
                   <strong className="text-slate-900 font-bold">
-                    {pendaftar?.gelombang?.nama || "Gelombang 1"}
+                    {gelombangs.find((g) => g.id === Number(prodiGelombang.gelombang_id))?.nama || pendaftar?.gelombang?.nama || "Gelombang 1"}
+                  </strong>
+                </div>
+                <div>
+                  <span className="text-slate-500 block text-xs">Biaya Pendaftaran PMB</span>
+                  <strong className="text-slate-900 font-bold">
+                    {jalurPendaftaran === "KIP-Kuliah"
+                      ? "Rp 0 (Bebas Biaya - Beasiswa KIP)"
+                      : `Rp ${Number(gelombangs.find((g) => g.id === Number(prodiGelombang.gelombang_id))?.biaya_pendaftaran || 250000).toLocaleString("id-ID")}`}
                   </strong>
                 </div>
               </div>
@@ -1314,7 +1667,7 @@ export default function FormulirPendaftaranPage() {
             ) : (
               <div className="pt-4 space-y-4">
                 <p className="text-xs text-slate-600 leading-relaxed">
-                  Dengan menekan tombol <strong>&quot;Submit Pendaftaran Final&quot;</strong>, sistem akan membuat Nomor Registrasi PMB otomatis (format: <code className="font-mono bg-slate-100 px-1 py-0.5 rounded">PMB-2026-XXXX</code>) dan mengunci formulir dari perubahan lebih lanjut.
+                  Dengan menekan tombol <strong>&quot;Submit Pendaftaran Final&quot;</strong>, sistem akan membuat Nomor Registrasi PMB resmi (format: <code className="font-mono bg-slate-100 px-1 py-0.5 rounded">PMB-2026-XXXX</code>) dan mengunci formulir. Anda akan langsung diarahkan ke instruksi pembayaran / konfirmasi administrasi.
                 </p>
 
                 <div className="flex items-center justify-between">
@@ -1341,5 +1694,22 @@ export default function FormulirPendaftaranPage() {
         )}
       </main>
     </div>
+  );
+}
+
+export default function FormulirPendaftaranPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center font-sans">
+          <div className="flex items-center gap-3 text-slate-600 font-semibold text-sm">
+            <RefreshCw className="w-5 h-5 animate-spin text-[#0d3830]" />
+            <span>Memuat formulir pendaftaran...</span>
+          </div>
+        </div>
+      }
+    >
+      <FormulirPendaftaranContent />
+    </Suspense>
   );
 }

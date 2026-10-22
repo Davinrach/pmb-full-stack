@@ -220,7 +220,7 @@ export default function Navbar({ activePage = "beranda" }: NavbarProps) {
 
             {/* Pendaftaran (Tombol Hijau Resmi) */}
             <Link
-              href="/pendaftaran"
+              href="/dashboard"
               className={`inline-flex items-center px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-xs ${
                 activePage === "pendaftaran"
                   ? "bg-[#0d3830] text-white ring-2 ring-emerald-600/30 shadow-sm"
@@ -426,7 +426,7 @@ export default function Navbar({ activePage = "beranda" }: NavbarProps) {
 
             {/* Mobile Pendaftaran */}
             <Link
-              href="/pendaftaran"
+              href="/dashboard"
               onClick={() => setMobileMenuOpen(false)}
               className="flex items-center justify-between p-2.5 rounded-xl bg-[#0d3830] text-white text-xs font-bold shadow-xs transition-all"
             >

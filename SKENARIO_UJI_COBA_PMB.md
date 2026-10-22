@@ -65,7 +65,7 @@ Dokumen ini disusun sebagai panduan pengujian terstruktur (*Quality Assurance & 
 | 5.2 | **Tahap 1**: Isi Data Diri (NIK, Tempat/Tgl Lahir, Jenis Kelamin, Alamat KTP). | Data Diri Lengkap | Data tersimpan via `PUT /api/v1/pendaftar/identitas`. | Sanitasi karakter input anti-XSS. | [ ] |
 | 5.3 | **Tahap 2**: Isi Data Asal Sekolah (NPSN, Nama Sekolah, NISN, Tahun Lulus). | Data Sekolah | Data tersimpan via `PUT /api/v1/pendaftar/asal-sekolah`. | Validasi format numerik NISN/NPSN. | [ ] |
 | 5.4 | **Tahap 3**: Isi Data Orang Tua / Wali (Nama Ayah, Ibu, Pekerjaan, No HP Ortu). | Data Ortu | Data tersimpan via `PUT /api/v1/pendaftar/orang-tua`. | Validation binding pada Golang Gin. | [ ] |
-| 5.5 | **Tahap 4**: Pilih Program Studi & Gelombang Pendaftaran. | Prodi: MPI<br>Gelombang: Gelombang 1 | Data tersimpan via `PUT /api/v1/pendaftar/prodi-gelombang`. | Konsistensi data kuota gelombang. | [ ] |
+| 5.5 | **Tahap 4**: Pilih Program Studi, Gelombang, dan **Jalur Pendaftaran (Reguler vs KIP-Kuliah)**. | Prodi: MPI<br>Gelombang: Gelombang 1<br>Jalur: KIP-Kuliah | Data tersimpan via `PUT /api/v1/pendaftar/prodi-gelombang`. Sistem mengenali jalur KIP-Kuliah dan mewajibkan unggah berkas KIP. | Konsistensi data kuota gelombang & aturan jalur. | [ ] |
 | 5.6 | Klik **Final Submit / Kunci Formulir**. | - | Status pendaftaran berubah menjadi `terkunci`, formulir tidak dapat diubah lagi oleh user. | **Keamanan**: Immutability setelah submit akhir. | [ ] |
 
 ---
@@ -76,14 +76,16 @@ Dokumen ini disusun sebagai panduan pengujian terstruktur (*Quality Assurance & 
 | 6.1 | Unggah berkas KTP/Ijazah dengan format non-gambar/PDF (cth: `.exe` atau `.php`). | File: `virus.php` | Backend menolak file dengan pesan "Format file tidak diizinkan". | **Keamanan**: Extension & MIME Type Whitelisting. | [ ] |
 | 6.2 | Unggah berkas ukuran > 2MB. | File: `foto_5mb.jpg` | Upload ditolak karena melebihi batas ukuran 2MB. | **Keamanan**: Max Body Payload Size Limit. | [ ] |
 | 6.3 | Unggah berkas KTP, Ijazah, KK format `.jpg` / `.pdf` ukuran < 2MB. | File: `ktp_valid.pdf` | Berkas berhasil diunggah dan disimpan ke folder privat terenkripsi. | **Keamanan**: Obfuscated Unique Filename (UUID). | [ ] |
+| 6.4 | Unggah Kartu KIP-Kuliah bagi pendaftar jalur KIP-Kuliah. | File: `kartu_kip.pdf` | Berkas kartu KIP tersimpan dan checklist berkas wajib terpenuhi. | **Aturan Bisnis**: Wajib ada untuk verifikasi jalur KIP. | [ ] |
 
 ---
 
 ### **TC-07: Konfirmasi & Pembayaran Biaya Pendaftaran**
 | No | Langkah Pengujian | Data Uji | Ekspektasi Hasil | Tingkat Keamanan / Catatan | Status |
 | :-: | :--- | :--- | :--- | :--- | :-: |
-| 7.1 | Akses rute `/dashboard/pembayaran`. | - | Menampilkan nomor Virtual Account / Rekening Bank resmi kampus & nominal biaya. | Anti-tampering nominal biaya. | [ ] |
-| 7.2 | Unggah Bukti Transfer & Konfirmasi Pembayaran. | File: `bukti_tf.png`<br>Bank: BCA | Bukti transfer terunggah dan status berubah menjadi `Menunggu Verifikasi Admin`. | Audit log pencatatan tanggal transaksi. | [ ] |
+| 7.1 | Akses rute `/dashboard/pembayaran` untuk **Jalur Reguler**. | - | Menampilkan nomor rekening resmi kampus & nominal biaya gelombang (Rp 250.000). | Anti-tampering nominal biaya. | [ ] |
+| 7.2 | Unggah Bukti Transfer & Konfirmasi Pembayaran Jalur Reguler. | File: `bukti_tf.png`<br>Bank: BRI | Bukti transfer terunggah dan status berubah menjadi `Menunggu Verifikasi Admin`. | Audit log pencatatan tanggal transaksi. | [ ] |
+| 7.3 | Akses rute `/dashboard/pembayaran` untuk **Jalur KIP-Kuliah**. | Jalur: KIP-Kuliah | Sistem otomatis menetapkan Biaya Pendaftaran **Rp 0 (Gratis)** dengan keterangan jalur beasiswa KIP-Kuliah. Tidak wajib unggah struk bank. | **Aturan Bisnis**: Otomatisasi pembebasan biaya KIP. | [ ] |
 
 ---
 
@@ -148,6 +150,14 @@ Dokumen ini disusun sebagai panduan pengujian terstruktur (*Quality Assurance & 
 
 ---
 
+### **TC-15: Database Resilience & System Health Assessment**
+| No | Langkah Pengujian | Data Uji | Ekspektasi Hasil | Tingkat Keamanan / Catatan | Status |
+| :-: | :--- | :--- | :--- | :--- | :-: |
+| 15.1 | Akses endpoint `GET /api/v1/health` saat MySQL berjalan normal. | - | Response HTTP 200 OK, JSON status `{"status": "ok", "database": "connected"}`. | Liveness & Readiness probe. | [ ] |
+| 15.2 | Akses endpoint `GET /api/v1/health` saat layanan MySQL dimatikan sementara (`database.DB == nil` / down). | - | Response HTTP 503 Service Unavailable, JSON status `{"status": "degraded", "database": "disconnected"}` tanpa crash/panic. | **Keamanan / Resilience**: Graceful error handling anti-DDoS crash. | [ ] |
+
+---
+
 ## 🔒 3. MATRIKS EVALUASI KEAMANAN SISTEM (SECURITY ASSESSMENT MATRIX)
 
 | Kode Uji | Kategori Keamanan | Parameter Pengujian | Tingkat Risiko | Ekspektasi Keamanan & Hasil Evaluasi | Status |
@@ -161,6 +171,7 @@ Dokumen ini disusun sebagai panduan pengujian terstruktur (*Quality Assurance & 
 | **SEC-07** | **Password Storage Hashing** | Memeriksa tabel `users` pada basis data MySQL. | **CRITICAL** | Password tidak disimpan dalam teks polos (plain text), melainkan di-hash menggunakan algoritma **bcrypt** dengan salt cost aman. | [ ] |
 | **SEC-08** | **Cross-Site Scripting (XSS)** | Memasukkan script `<script>alert('xss')</script>` pada nama lengkap pendaftar atau formulir CMS. | **HIGH** | React secara otomatis melakukan HTML-entity escaping saat merender variabel ke DOM, mencegah eksekusi script. | [ ] |
 | **SEC-09** | **CORS & Header Security** | Memeriksa response header API pada browser. | **MEDIUM** | Response memuat `Access-Control-Allow-Origin` terkonfigurasi, `X-Content-Type-Options: nosniff`, dan `X-Frame-Options: DENY`. | [ ] |
+| **SEC-10** | **Resilience & Nil-Safety** | Memutus koneksi database atau mensimulasikan kegagalan koneksi MySQL (`database.DB == nil`). | **HIGH** | Database resilience middleware menangkap kegagalan secara anggun (graceful), mengembalikan HTTP 503 tanpa crash/nil panic. | [ ] |
 
 ---
 

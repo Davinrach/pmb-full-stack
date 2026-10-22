@@ -35,7 +35,10 @@ func (h *PembayaranHandler) GetInfoRekening(c *gin.Context) {
 	}
 
 	biaya := float64(250000) // Default Rp 250.000 jika gelombang belum diatur
-	if pendaftar.Gelombang != nil && pendaftar.Gelombang.BiayaPendaftaran > 0 {
+	isKip := strings.Contains(strings.ToLower(pendaftar.JalurPendaftaran), "kip")
+	if isKip {
+		biaya = 0
+	} else if pendaftar.Gelombang != nil && pendaftar.Gelombang.BiayaPendaftaran > 0 {
 		biaya = pendaftar.Gelombang.BiayaPendaftaran
 	}
 
@@ -78,6 +81,8 @@ func (h *PembayaranHandler) GetInfoRekening(c *gin.Context) {
 		"atas_nama":              atasNama,
 		"daftar_rekening":        listRekening,
 		"biaya_pendaftaran":      biaya,
+		"jalur_pendaftaran":      pendaftar.JalurPendaftaran,
+		"is_kip":                 isKip,
 		"nomor_pendaftaran":      pendaftar.NomorPendaftaran,
 		"kode_pembayaran_unik":   fmt.Sprintf("PMB-%04d", pendaftar.ID),
 		"instruksi":              petunjuk,

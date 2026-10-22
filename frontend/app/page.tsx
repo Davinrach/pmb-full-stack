@@ -571,7 +571,7 @@ export default function HomePage() {
                       Status: <span className="text-emerald-700 font-bold">Pendaftaran Aktif</span>
                     </span>
                     <Link
-                      href={`/pendaftaran?jalur=${isKip ? "kip-kuliah" : (jalur.kode || "reguler")}`}
+                      href="/dashboard"
                       className={`px-4 py-2 text-xs font-bold rounded-lg transition inline-flex items-center gap-1.5 shadow-xs ${
                         isKip
                           ? "bg-amber-700 hover:bg-amber-800 text-white"
@@ -732,7 +732,7 @@ export default function HomePage() {
                 {t.prodiSection.tutup}
               </button>
               <Link
-                href="/pendaftaran"
+                href="/dashboard"
                 onClick={() => setSelectedProdi(null)}
                 className="w-full sm:w-auto px-5 py-2 text-sm font-bold text-white bg-[#0e3831] hover:bg-[#165349] rounded-lg shadow-sm transition inline-flex items-center justify-center gap-2 cursor-pointer"
               >

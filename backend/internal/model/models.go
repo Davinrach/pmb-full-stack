@@ -107,7 +107,7 @@ type Pendaftar struct {
 	ProgramStudiID     *uint             `gorm:"index" json:"program_studi_id"`
 	ProgramStudi       *ProgramStudi     `gorm:"foreignKey:ProgramStudiID" json:"program_studi,omitempty"`
 	NomorPendaftaran   *string           `gorm:"type:varchar(50);uniqueIndex" json:"nomor_pendaftaran"` // format: PMB-2026-0001
-	JalurPendaftaran   string            `gorm:"type:varchar(50);default:'Reguler'" json:"jalur_pendaftaran"` // Reguler / KIP-Kuliah
+	JalurPendaftaran   string            `gorm:"type:varchar(50)" json:"jalur_pendaftaran"` // Reguler / KIP-Kuliah
 	StatusPendaftaran  StatusPendaftaran `gorm:"type:varchar(40);default:'akun_terdaftar'" json:"status_pendaftaran"`
 	CatatanRevisi      string            `gorm:"type:text" json:"catatan_revisi,omitempty"`
 	IsLocked           bool              `gorm:"default:false" json:"is_locked"` // kunci data setelah submit

@@ -916,11 +916,11 @@ func seedBasicPendaftar(db *gorm.DB, uploadDir string) {
 		"status_pendaftaran": model.StatusMenungguVerifikasi,
 		"is_locked":          true,
 	})
-	db.Model(&model.Berkas{}).Where("deleted_at IS NULL").Updates(map[string]interface{}{
+	db.Model(&model.Berkas{}).Where("id > 0").Updates(map[string]interface{}{
 		"status_verifikasi": model.StatusBerkasPending,
 		"catatan_admin":     "",
 	})
-	db.Model(&model.Pembayaran{}).Where("deleted_at IS NULL").Updates(map[string]interface{}{
+	db.Model(&model.Pembayaran{}).Where("id > 0").Updates(map[string]interface{}{
 		"status":           model.StatusBayarMenungguVerifikasi,
 		"alasan_penolakan": "",
 	})

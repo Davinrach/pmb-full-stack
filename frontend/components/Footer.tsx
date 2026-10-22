@@ -95,7 +95,7 @@ export default function Footer() {
             </h4>
             <ul className="space-y-2 text-xs text-emerald-100/80">
               <li>
-                <Link href="/pendaftaran" className="hover:text-white transition block">
+                <Link href="/dashboard" className="hover:text-white transition block">
                   {t.footer.tautanPendaftaran}
                 </Link>
               </li>

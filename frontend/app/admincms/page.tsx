@@ -201,22 +201,41 @@ function isKipApplicant(p: any): boolean {
 }
 
 function getJalurBadge(p: any) {
+  const jalur = p?.jalur_pendaftaran || p?.jalur;
+  if (!jalur) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md font-bold text-[10px] bg-slate-100 text-slate-500 border border-slate-200">
+        Belum Memilih
+      </span>
+    );
+  }
+
   const isKip = isKipApplicant(p);
   if (isKip) {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-bold text-[10px] bg-emerald-100 text-[#0d3830] border border-emerald-300">
+      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md font-bold text-[10px] bg-amber-100 text-amber-900 border border-amber-300">
         KIP-Kuliah
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-bold text-[10px] bg-slate-100 text-slate-700 border border-slate-200">
-      Reguler
+    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md font-bold text-[10px] bg-indigo-50 text-indigo-800 border border-indigo-200">
+      {jalur}
     </span>
   );
 }
 
 function getPembayaranBadge(p: any) {
+  const isKip = isKipApplicant(p);
+  if (isKip) {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-800 font-bold rounded-full text-[11px] border border-emerald-200 whitespace-nowrap">
+        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+        Bebas Biaya (KIP)
+      </span>
+    );
+  }
+
   const pay = Array.isArray(p?.pembayaran) && p.pembayaran.length > 0
     ? p.pembayaran[p.pembayaran.length - 1]
     : null;
@@ -3952,13 +3971,7 @@ export default function AdminCMSDashboardPage() {
 
                               {/* Jalur */}
                               <td className="p-4">
-                                <span className={`px-2.5 py-1 rounded-md text-[11px] font-bold ${
-                                  p.jalur_pendaftaran === "KIP-Kuliah" || p.jalur === "KIP-Kuliah"
-                                    ? "bg-amber-100 text-amber-900 border border-amber-200"
-                                    : "bg-indigo-50 text-indigo-800 border border-indigo-100"
-                                }`}>
-                                  {p.jalur_pendaftaran === "KIP-Kuliah" || p.jalur === "KIP-Kuliah" ? "KIP-Kuliah" : "Reguler"}
-                                </span>
+                                {getJalurBadge(p)}
                               </td>
 
                               {/* Status Dokumen Individual */}
@@ -4124,15 +4137,7 @@ export default function AdminCMSDashboardPage() {
                             {/* Jalur */}
                             <td className="py-3.5 px-3 align-middle">
                               <div className="flex flex-col items-start gap-1">
-                                {p.jalur_pendaftaran === "KIP-Kuliah" || p.jalur === "KIP-Kuliah" ? (
-                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-300 shadow-xs whitespace-nowrap">
-                                    <span>KIP-Kuliah</span>
-                                  </span>
-                                ) : (
-                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-indigo-50 text-indigo-800 border border-indigo-200 whitespace-nowrap">
-                                    <span>Reguler</span>
-                                  </span>
-                                )}
+                                {getJalurBadge(p)}
                                 {gelombangMain && (
                                   <span className="text-[10px] text-slate-500 font-mono whitespace-nowrap">
                                     {gelombangMain}
@@ -6565,15 +6570,7 @@ export default function AdminCMSDashboardPage() {
                     <div>
                       <span className="text-slate-500 block text-[11px]">Jalur Pendaftaran:</span>
                       <div className="mt-1">
-                        {selectedPendaftar.jalur_pendaftaran === "KIP-Kuliah" || selectedPendaftar.jalur === "KIP-Kuliah" ? (
-                          <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-black bg-amber-100 text-amber-900 border border-amber-300 shadow-xs">
-                            <span>Jalur KIP-Kuliah</span>
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-black bg-indigo-50 text-indigo-800 border border-indigo-200">
-                            <span>Jalur Reguler</span>
-                          </span>
-                        )}
+                        {getJalurBadge(selectedPendaftar)}
                       </div>
                     </div>
                     <div>
@@ -6836,15 +6833,14 @@ export default function AdminCMSDashboardPage() {
                   )}
                 </div>
 
-                {/* Section 4: Ringkasan Verifikasi Administrasi */}
                 {(() => {
-                  const isPayApproved = Array.isArray(selectedPendaftar.pembayaran) && selectedPendaftar.pembayaran.some((payItem: any) => payItem.status === "diterima");
+                  const isKip = selectedPendaftar.jalur_pendaftaran === "KIP-Kuliah" || selectedPendaftar.jalur === "KIP-Kuliah";
+                  const isPayApproved = isKip || (Array.isArray(selectedPendaftar.pembayaran) && selectedPendaftar.pembayaran.some((payItem: any) => payItem.status === "diterima"));
                   const berkasArr = Array.isArray(selectedPendaftar.berkas) ? selectedPendaftar.berkas : [];
                   const validMap: Record<string, boolean> = {};
                   berkasArr.forEach((b: any) => {
                     if (b.status_verifikasi === "valid") validMap[b.jenis_dokumen?.toLowerCase()] = true;
                   });
-                  const isKip = selectedPendaftar.jalur_pendaftaran === "KIP-Kuliah" || selectedPendaftar.jalur === "KIP-Kuliah";
                   const isBerkasComplete = validMap["kk"] && validMap["ktp"] && validMap["ijazah"] && validMap["foto"] && (!isKip || validMap["kip"]);
 
                   return (
@@ -6862,6 +6858,8 @@ export default function AdminCMSDashboardPage() {
                             ? "Berkas & Pembayaran Terverifikasi Sah"
                             : selectedPendaftar.status_pendaftaran === "belum_lengkap" || selectedPendaftar.status_pendaftaran === "ditolak_perlu_perbaikan"
                             ? "Perlu Revisi / Perbaikan Berkas"
+                            : isKip && isBerkasComplete
+                            ? "Berkas Terverifikasi Sah (Bebas Biaya KIP)"
                             : isPayApproved && !isBerkasComplete
                             ? "Pembayaran Sah — Menunggu Verifikasi Berkas"
                             : isBerkasComplete && !isPayApproved
@@ -6873,6 +6871,10 @@ export default function AdminCMSDashboardPage() {
                       {selectedPendaftar.status_pendaftaran === "berkas_diverifikasi" ? (
                         <p className="text-[11px] text-slate-500">
                           Seluruh berkas dan pembayaran calon mahasiswa ini telah sah. Silakan buka menu <strong>Seleksi &amp; Penerimaan</strong> pada sidebar untuk menentukan status kelolosan.
+                        </p>
+                      ) : isKip ? (
+                        <p className="text-[11px] text-slate-500">
+                          Pendaftar jalur <strong>KIP-Kuliah bebas biaya pendaftaran</strong>. Pendaftar berstatus sah dan siap seleksi apabila <strong>seluruh berkas wajib valid</strong>.
                         </p>
                       ) : (
                         <p className="text-[11px] text-slate-500">

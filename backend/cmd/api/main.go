@@ -42,6 +42,26 @@ func main() {
 	r.Use(middleware.CORSMiddleware())
 	r.Use(middleware.StructuredLogger())
 
+	// Database Resilience Middleware: Auto-reconnect if DB was offline at startup, and return clean 503 instead of nil panic
+	r.Use(func(c *gin.Context) {
+		if strings.HasPrefix(c.Request.URL.Path, "/uploads") || c.Request.URL.Path == "/api/v1/health" {
+			c.Next()
+			return
+		}
+
+		if database.DB == nil {
+			if _, err := database.InitDB(cfg); err != nil {
+				c.AbortWithStatusJSON(503, gin.H{
+					"success": false,
+					"message": "Basis data MySQL belum terhubung. Pastikan layanan MySQL (XAMPP / Laragon) sudah berjalan.",
+					"error":   err.Error(),
+				})
+				return
+			}
+		}
+		c.Next()
+	})
+
 	// Static file serving for uploads (Avatars, etc.)
 	r.Static("/uploads", cfg.UploadDir)
 
@@ -61,6 +81,7 @@ func main() {
 		// Public Routes (FR-10.1, FR-1.1, FR-1.6)
 		api.GET("/health", healthHandler.Check)
 		api.GET("/info-pmb", publicHandler.GetInfoPMB)
+		api.GET("/info/pmb", publicHandler.GetInfoPMB)
 		api.GET("/public/settings", publicHandler.GetSettings)
 		api.GET("/faqs", publicHandler.GetPublicFAQs)
 		api.GET("/rekening", cmsHandler.ListPublicRekening)
