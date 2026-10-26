@@ -382,3 +382,16 @@ type RoleMenu struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
+// SiteTranslation menyimpan teks terjemahan yang dikelola oleh admin CMS secara dinamis.
+// Setiap baris mewakili satu kunci teks dengan nilai Bahasa Indonesia (TextID) dan Bahasa Inggris (TextEN).
+type SiteTranslation struct {
+	ID             uint      `gorm:"primaryKey" json:"id"`
+	GroupName      string    `gorm:"type:varchar(50);not null;uniqueIndex:idx_group_key" json:"group_name"`      // e.g. navbar, hero, footer, cta, alur, sidebar, pendaftaranPage
+	TranslationKey string    `gorm:"type:varchar(100);not null;uniqueIndex:idx_group_key" json:"translation_key"` // e.g. beranda, badge, title
+	TextID         string    `gorm:"type:text;not null" json:"text_id"`                                          // Bahasa Indonesia
+	TextEN         string    `gorm:"type:text;not null" json:"text_en"`                                          // Bahasa Inggris (English)
+	Urutan         int       `gorm:"default:0" json:"urutan"`
+	CreatedAt      time.Time `json:"created_at"`
+	UpdatedAt      time.Time `json:"updated_at"`
+}
+

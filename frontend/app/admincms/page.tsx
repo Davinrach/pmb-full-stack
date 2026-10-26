@@ -72,6 +72,8 @@ import {
   BookOpen,
   Home,
   Headphones,
+  Globe,
+  Languages,
 } from "lucide-react";
 import { api, authStorage, getFileUrl } from "@/lib/api";
 
@@ -87,6 +89,7 @@ const LUCIDE_ICON_MAP: Record<string, React.ComponentType<{ className?: string }
   Home, Building2, Phone, Mail, Headphones, MessageSquare,
   CheckCircle2, AlertCircle, HelpCircle, Sparkles, Zap,
   Search, Eye, MapPin, Share2, FolderPlus, ListChecks, Info,
+  Globe, Languages,
 };
 
 // Curated Lucide Icon list with tags and keywords for instant search
@@ -744,8 +747,25 @@ export default function AdminCMSDashboardPage() {
   const [isSavingTataCara, setIsSavingTataCara] = useState(false);
   const [isTataCaraDirty, setIsTataCaraDirty] = useState(false);
 
+  // 6. BAHASA & TERJEMAHAN (i18n) STATE
+  const [translationsList, setTranslationsList] = useState<any[]>([]);
+  const [translationGroups, setTranslationGroups] = useState<string[]>([]);
+  const [selectedTranslationGroup, setSelectedTranslationGroup] = useState<string>("all");
+  const [translationSearch, setTranslationSearch] = useState<string>("");
+  const [isLoadingTranslations, setIsLoadingTranslations] = useState<boolean>(false);
+  const [isSavingTranslations, setIsSavingTranslations] = useState<boolean>(false);
+  const [editedTranslations, setEditedTranslations] = useState<Record<number, { text_id: string; text_en: string }>>({});
+  const [isAddTranslationModalOpen, setIsAddTranslationModalOpen] = useState<boolean>(false);
+  const [newTranslationForm, setNewTranslationForm] = useState({
+    group_name: "navbar",
+    translation_key: "",
+    text_id: "",
+    text_en: "",
+    description: "",
+  });
+
   // Sub-tab pendaftaran
-  const [pendaftaranSubTab, setPendaftaranSubTab] = useState<"gelombang" | "jalur" | "dokumen" | "rekening">("gelombang");
+  const [pendaftaranSubTab, setPendaftaranSubTab] = useState<"gelombang" | "jalur" | "dokumen" | "rekening" | "teks_formulir">("gelombang");
 
   const checkAuth = () => {
     const token = authStorage.getToken();
@@ -945,6 +965,181 @@ export default function AdminCMSDashboardPage() {
       setIsTataCaraDirty(false);
     } catch (err) {
       console.error("Gagal memuat tata cara:", err);
+    }
+  };
+
+  // ── TRANSLATIONS / i18n METHODS ──
+  const loadTranslations = async () => {
+    setIsLoadingTranslations(true);
+    try {
+      const res: any = await api.get("/admin/translations");
+      const data = res?.data || res;
+      if (data?.translations) {
+        setTranslationsList(data.translations);
+        setTranslationGroups(data.groups || []);
+      }
+    } catch (err: any) {
+      console.error("Gagal memuat daftar terjemahan:", err);
+    } finally {
+      setIsLoadingTranslations(false);
+    }
+  };
+
+  const handleTranslationChange = (id: number, field: "text_id" | "text_en", value: string) => {
+    const original = translationsList.find((t) => t.id === id);
+    if (!original) return;
+    setEditedTranslations((prev) => {
+      const current = prev[id] || { text_id: original.text_id, text_en: original.text_en };
+      return {
+        ...prev,
+        [id]: {
+          ...current,
+          [field]: value,
+        },
+      };
+    });
+  };
+
+  const handleSaveAllTranslations = async () => {
+    const editKeys = Object.keys(editedTranslations);
+    if (editKeys.length === 0) return;
+
+    setIsSavingTranslations(true);
+    try {
+      const payload = {
+        translations: editKeys.map((idStr) => {
+          const id = Number(idStr);
+          return {
+            id,
+            text_id: editedTranslations[id].text_id,
+            text_en: editedTranslations[id].text_en,
+          };
+        }),
+      };
+      await api.put("/admin/translations/bulk", payload);
+      alert(`Berhasil menyimpan ${editKeys.length} perubahan teks terjemahan!`);
+      setEditedTranslations({});
+      loadTranslations();
+    } catch (err: any) {
+      alert(err.message || "Gagal menyimpan terjemahan");
+    } finally {
+      setIsSavingTranslations(false);
+    }
+  };
+
+  const handleSaveSingleTranslation = async (item: any) => {
+    const edits = editedTranslations[item.id];
+    if (!edits) return;
+
+    try {
+      await api.put(`/admin/translations/${item.id}`, {
+        group_name: item.group_name,
+        translation_key: item.translation_key,
+        text_id: edits.text_id,
+        text_en: edits.text_en,
+      });
+      alert(`Teks '${item.group_name}.${item.translation_key}' berhasil disimpan!`);
+      setEditedTranslations((prev) => {
+        const copy = { ...prev };
+        delete copy[item.id];
+        return copy;
+      });
+      loadTranslations();
+    } catch (err: any) {
+      alert(err.message || "Gagal menyimpan teks terjemahan");
+    }
+  };
+
+  const handleCreateTranslation = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTranslationForm.group_name || !newTranslationForm.translation_key || !newTranslationForm.text_id) {
+      alert("Grup, Kunci, dan Teks Bahasa Indonesia wajib diisi!");
+      return;
+    }
+    try {
+      await api.post("/admin/translations", newTranslationForm);
+      alert(`Teks '${newTranslationForm.group_name}.${newTranslationForm.translation_key}' berhasil ditambahkan!`);
+      setIsAddTranslationModalOpen(false);
+      setNewTranslationForm({
+        group_name: "navbar",
+        translation_key: "",
+        text_id: "",
+        text_en: "",
+        description: "",
+      });
+      loadTranslations();
+    } catch (err: any) {
+      alert(err.message || "Gagal menambah teks terjemahan");
+    }
+  };
+
+  const handleDeleteTranslation = async (item: any) => {
+    if (!confirm(`Yakin ingin menghapus teks '${item.group_name}.${item.translation_key}'?`)) {
+      return;
+    }
+    try {
+      await api.delete(`/admin/translations/${item.id}`);
+      alert("Teks berhasil dihapus!");
+      setEditedTranslations((prev) => {
+        const copy = { ...prev };
+        delete copy[item.id];
+        return copy;
+      });
+      loadTranslations();
+    } catch (err: any) {
+      alert(err.message || "Gagal menghapus teks terjemahan");
+    }
+  };
+
+  // ── CONTEXTUAL TRANSLATION CMS HELPERS ──
+  const getTransVal = (group: string, key: string, field: "text_id" | "text_en", fallback = ""): string => {
+    const item = translationsList.find((t) => t.group_name === group && t.translation_key === key);
+    if (!item) return fallback;
+    const edited = editedTranslations[item.id];
+    if (edited && edited[field] !== undefined) {
+      return edited[field];
+    }
+    return item[field] || fallback;
+  };
+
+  const updateTransVal = (group: string, key: string, field: "text_id" | "text_en", value: string) => {
+    const item = translationsList.find((t) => t.group_name === group && t.translation_key === key);
+    if (!item) return;
+    handleTranslationChange(item.id, field, value);
+  };
+
+  const isGroupDirty = (group: string): boolean => {
+    const itemsInGroup = translationsList.filter((t) => t.group_name === group);
+    return itemsInGroup.some((it) => !!editedTranslations[it.id]);
+  };
+
+  const saveGroupTranslations = async (group: string, successMessage?: string): Promise<boolean> => {
+    const itemsInGroup = translationsList.filter((t) => t.group_name === group);
+    const dirtyItems = itemsInGroup.filter((t) => editedTranslations[t.id]);
+    if (dirtyItems.length === 0) return true;
+
+    try {
+      const payload = {
+        translations: dirtyItems.map((item) => ({
+          id: item.id,
+          text_id: editedTranslations[item.id]?.text_id ?? item.text_id,
+          text_en: editedTranslations[item.id]?.text_en ?? item.text_en,
+        })),
+      };
+      await api.put("/admin/translations/bulk", payload);
+      setEditedTranslations((prev) => {
+        const next = { ...prev };
+        dirtyItems.forEach((it) => delete next[it.id]);
+        return next;
+      });
+      loadTranslations();
+      if (successMessage) {
+        alert(successMessage);
+      }
+      return true;
+    } catch (err: any) {
+      alert(err.message || `Gagal menyimpan teks terjemahan untuk ${group}`);
+      return false;
     }
   };
 
@@ -1177,6 +1372,7 @@ export default function AdminCMSDashboardPage() {
     loadPersyaratanDocList();
     loadHotlineList();
     loadTataCaraList();
+    loadTranslations();
   }, []);
 
   useEffect(() => {
@@ -1186,10 +1382,12 @@ export default function AdminCMSDashboardPage() {
       loadJalurList();
       loadPersyaratanDocList();
       loadRekeningList();
+      loadTranslations();
     }
     if (activeTab === "prodi") {
       loadProdis();
       loadTataCaraList();
+      loadTranslations();
     }
     if (activeTab === "hotline") {
       loadHotlineList();
@@ -1202,6 +1400,7 @@ export default function AdminCMSDashboardPage() {
       loadFaqs();
       loadJalurList();
       loadProdis();
+      loadTranslations();
     }
     if (activeTab === "rbac") {
       const user = currentUser || authStorage.getUser();
@@ -1420,7 +1619,9 @@ export default function AdminCMSDashboardPage() {
       await api.put("/admin/settings", payload);
       setSettings(payload);
       setIsBannerDirty(false);
-      alert("Pengaturan Teks Banner & Pengumuman berhasil disimpan!");
+      await saveGroupTranslations("hero");
+      await saveGroupTranslations("cta");
+      alert("Pengaturan Teks Banner, Tombol & Pengumuman Homepage (Indonesia & Inggris) berhasil disimpan!");
     } catch (err: any) {
       alert(err.message || "Gagal menyimpan banner");
     } finally {
@@ -4518,6 +4719,22 @@ export default function AdminCMSDashboardPage() {
                       {rekeningList.length}
                     </span>
                   </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setPendaftaranSubTab("teks_formulir")}
+                    className={`px-3.5 py-2 font-bold rounded-xl transition whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
+                      pendaftaranSubTab === "teks_formulir"
+                        ? "bg-[#0d3830] text-white shadow-xs"
+                        : "text-slate-600 hover:bg-slate-100"
+                    }`}
+                  >
+                    <Globe className="w-4 h-4" />
+                    <span>5. Teks &amp; Tombol Formulir (i18n)</span>
+                    {isGroupDirty("pendaftaranPage") && (
+                      <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                    )}
+                  </button>
                 </div>
               </div>
 
@@ -4943,18 +5160,500 @@ export default function AdminCMSDashboardPage() {
                   </div>
                 </div>
               )}
+
+              {/* SUB-TAB 5: TEKS & TOMBOL FORMULIR (i18n) */}
+              {pendaftaranSubTab === "teks_formulir" && (
+                <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 space-y-6 shadow-xs animate-fadeIn">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+                    <div>
+                      <h4 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                        <Globe className="w-5 h-5 text-emerald-700" />
+                        <span>Teks Formulir Pendaftaran &amp; Tombol Navigasi (Multi-Bahasa)</span>
+                      </h4>
+                      <p className="text-xs text-slate-500 mt-1">
+                        Atur teks judul formulir, nama tahapan pendaftaran (Step Wizard), serta teks tombol aksi formulir (Simpan Draft, Lanjut, Submit) dalam Bahasa Indonesia dan Bahasa Inggris.
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => saveGroupTranslations("pendaftaranPage", "Teks dan tombol formulir pendaftaran berhasil disimpan!")}
+                      disabled={isSavingTranslations || !isGroupDirty("pendaftaranPage")}
+                      className={`px-4 py-2 font-bold text-xs rounded-xl transition flex items-center gap-1.5 ${
+                        isGroupDirty("pendaftaranPage")
+                          ? "bg-[#0d3830] hover:bg-[#165349] text-white cursor-pointer"
+                          : "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
+                      }`}
+                    >
+                      {isGroupDirty("pendaftaranPage") ? (
+                        <>
+                          <Save className="w-3.5 h-3.5 text-amber-400" />
+                          <span>Simpan Teks &amp; Tombol Formulir</span>
+                        </>
+                      ) : (
+                        <>
+                          <Check className="w-3.5 h-3.5 text-slate-400" />
+                          <span>Teks &amp; Tombol Tersimpan</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  <div className="space-y-5">
+                    {/* 1. Header Formulir Pendaftaran */}
+                    <div className="p-4 bg-slate-50/70 rounded-2xl border border-slate-200/80 space-y-3">
+                      <span className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                        <span>Header Halaman Formulir Pendaftaran</span>
+                      </span>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                            <span>🇮🇩</span>
+                            <span>Judul Formulir (ID)</span>
+                          </label>
+                          <input
+                            type="text"
+                            value={getTransVal("pendaftaranPage", "title", "text_id", "Formulir Pendaftaran Mahasiswa Baru")}
+                            onChange={(e) => updateTransVal("pendaftaranPage", "title", "text_id", e.target.value)}
+                            className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:border-[#0d3830]"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                            <span>🇬🇧</span>
+                            <span>Judul Formulir English (EN)</span>
+                          </label>
+                          <input
+                            type="text"
+                            value={getTransVal("pendaftaranPage", "title", "text_en", "New Student Admission Form")}
+                            onChange={(e) => updateTransVal("pendaftaranPage", "title", "text_en", e.target.value)}
+                            className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:border-[#0d3830]"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+                        <div className="space-y-1">
+                          <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                            <span>🇮🇩</span>
+                            <span>Subjudul Formulir (ID)</span>
+                          </label>
+                          <input
+                            type="text"
+                            value={getTransVal("pendaftaranPage", "subtitle", "text_id", "Tahun Akademik 2026/2027 • STAI Cendekia Insani Situbondo")}
+                            onChange={(e) => updateTransVal("pendaftaranPage", "subtitle", "text_id", e.target.value)}
+                            className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:border-[#0d3830]"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                            <span>🇬🇧</span>
+                            <span>Subjudul Formulir English (EN)</span>
+                          </label>
+                          <input
+                            type="text"
+                            value={getTransVal("pendaftaranPage", "subtitle", "text_en", "Academic Year 2026/2027 • STAI Cendekia Insani Situbondo")}
+                            onChange={(e) => updateTransVal("pendaftaranPage", "subtitle", "text_en", e.target.value)}
+                            className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:border-[#0d3830]"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 2. Judul Langkah Tahapan Pendaftaran (Step Wizard) */}
+                    <div className="p-4 bg-slate-50/70 rounded-2xl border border-slate-200/80 space-y-3">
+                      <span className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                        <span>Nama Langkah / Tahapan Pendaftaran (Step Wizard)</span>
+                      </span>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div className="p-3 bg-white rounded-xl border border-slate-200/80 space-y-1.5">
+                          <span className="text-[11px] font-extrabold text-slate-700 block">Tahap 1 (Pilihan &amp; Biodata)</span>
+                          <input
+                            type="text"
+                            placeholder="Teks ID"
+                            value={getTransVal("pendaftaranPage", "step1Title", "text_id", "1. Pilihan Prodi & Biodata")}
+                            onChange={(e) => updateTransVal("pendaftaranPage", "step1Title", "text_id", e.target.value)}
+                            className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Teks EN"
+                            value={getTransVal("pendaftaranPage", "step1Title", "text_en", "1. Program Choice & Identity")}
+                            onChange={(e) => updateTransVal("pendaftaranPage", "step1Title", "text_en", e.target.value)}
+                            className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
+                          />
+                        </div>
+
+                        <div className="p-3 bg-white rounded-xl border border-slate-200/80 space-y-1.5">
+                          <span className="text-[11px] font-extrabold text-slate-700 block">Tahap 2 (Sekolah &amp; Ortu)</span>
+                          <input
+                            type="text"
+                            placeholder="Teks ID"
+                            value={getTransVal("pendaftaranPage", "step2Title", "text_id", "2. Sekolah & Keluarga")}
+                            onChange={(e) => updateTransVal("pendaftaranPage", "step2Title", "text_id", e.target.value)}
+                            className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Teks EN"
+                            value={getTransVal("pendaftaranPage", "step2Title", "text_en", "2. School & Family")}
+                            onChange={(e) => updateTransVal("pendaftaranPage", "step2Title", "text_en", e.target.value)}
+                            className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
+                          />
+                        </div>
+
+                        <div className="p-3 bg-white rounded-xl border border-slate-200/80 space-y-1.5">
+                          <span className="text-[11px] font-extrabold text-slate-700 block">Tahap 3 (Berkas &amp; Submit)</span>
+                          <input
+                            type="text"
+                            placeholder="Teks ID"
+                            value={getTransVal("pendaftaranPage", "step3Title", "text_id", "3. Unggah Berkas & Submit")}
+                            onChange={(e) => updateTransVal("pendaftaranPage", "step3Title", "text_id", e.target.value)}
+                            className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Teks EN"
+                            value={getTransVal("pendaftaranPage", "step3Title", "text_en", "3. Document Upload & Submit")}
+                            onChange={(e) => updateTransVal("pendaftaranPage", "step3Title", "text_en", e.target.value)}
+                            className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 3. Tombol Aksi Navigasi Formulir */}
+                    <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-200/80 space-y-3">
+                      <span className="text-xs font-black text-emerald-950 uppercase tracking-wider flex items-center gap-1.5">
+                        <span>Teks Tombol Aksi Navigasi Formulir</span>
+                      </span>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                        {/* Tombol Simpan Draft */}
+                        <div className="p-3 bg-white rounded-xl border border-emerald-200/60 space-y-1.5">
+                          <span className="text-[11px] font-extrabold text-slate-700 block">Tombol &ldquo;Simpan Draft&rdquo;</span>
+                          <input
+                            type="text"
+                            placeholder="Teks ID"
+                            value={getTransVal("pendaftaranPage", "btnDraft", "text_id", "Simpan Draft")}
+                            onChange={(e) => updateTransVal("pendaftaranPage", "btnDraft", "text_id", e.target.value)}
+                            className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Teks EN"
+                            value={getTransVal("pendaftaranPage", "btnDraft", "text_en", "Save Draft")}
+                            onChange={(e) => updateTransVal("pendaftaranPage", "btnDraft", "text_en", e.target.value)}
+                            className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
+                          />
+                        </div>
+
+                        {/* Tombol Lanjut */}
+                        <div className="p-3 bg-white rounded-xl border border-emerald-200/60 space-y-1.5">
+                          <span className="text-[11px] font-extrabold text-slate-700 block">Tombol &ldquo;Lanjut&rdquo;</span>
+                          <input
+                            type="text"
+                            placeholder="Teks ID"
+                            value={getTransVal("pendaftaranPage", "btnNext", "text_id", "Lanjut ke Tahap Berikutnya →")}
+                            onChange={(e) => updateTransVal("pendaftaranPage", "btnNext", "text_id", e.target.value)}
+                            className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Teks EN"
+                            value={getTransVal("pendaftaranPage", "btnNext", "text_en", "Proceed to Next Step →")}
+                            onChange={(e) => updateTransVal("pendaftaranPage", "btnNext", "text_en", e.target.value)}
+                            className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
+                          />
+                        </div>
+
+                        {/* Tombol Kembali */}
+                        <div className="p-3 bg-white rounded-xl border border-emerald-200/60 space-y-1.5">
+                          <span className="text-[11px] font-extrabold text-slate-700 block">Tombol &ldquo;Kembali&rdquo;</span>
+                          <input
+                            type="text"
+                            placeholder="Teks ID"
+                            value={getTransVal("pendaftaranPage", "btnPrev", "text_id", "← Kembali ke Tahap Sebelumnya")}
+                            onChange={(e) => updateTransVal("pendaftaranPage", "btnPrev", "text_id", e.target.value)}
+                            className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Teks EN"
+                            value={getTransVal("pendaftaranPage", "btnPrev", "text_en", "← Back to Previous Step")}
+                            onChange={(e) => updateTransVal("pendaftaranPage", "btnPrev", "text_en", e.target.value)}
+                            className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
+                          />
+                        </div>
+
+                        {/* Tombol Submit */}
+                        <div className="p-3 bg-white rounded-xl border border-emerald-200/60 space-y-1.5">
+                          <span className="text-[11px] font-extrabold text-slate-700 block">Tombol &ldquo;Submit Final&rdquo;</span>
+                          <input
+                            type="text"
+                            placeholder="Teks ID"
+                            value={getTransVal("pendaftaranPage", "btnSubmit", "text_id", "Submit Pendaftaran Sekarang")}
+                            onChange={(e) => updateTransVal("pendaftaranPage", "btnSubmit", "text_id", e.target.value)}
+                            className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Teks EN"
+                            value={getTransVal("pendaftaranPage", "btnSubmit", "text_en", "Submit Registration Now")}
+                            onChange={(e) => updateTransVal("pendaftaranPage", "btnSubmit", "text_en", e.target.value)}
+                            className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
           {/* TAB CONTENT: CMS PROGRAM STUDI */}
           {activeTab === "prodi" && (
             <div className="space-y-6 animate-fadeIn">
+              {/* CARD 1: TEKS HEADER & TOMBOL AKSI PROGRAM STUDI (BILINGUAL ID & EN) */}
+              <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-7 space-y-5 shadow-xs">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                  <div>
+                    <h4 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                      <Globe className="w-4 h-4 text-emerald-700" />
+                      <span>1. Teks Pengantar &amp; Tombol Kartu Program Studi (Multi-Bahasa)</span>
+                    </h4>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Atur teks judul pengantar bagian program studi di landing page, serta tombol aksi <strong>&ldquo;Lihat Detail&rdquo;</strong>, <strong>&ldquo;Daftar&rdquo;</strong>, dan label karir.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => saveGroupTranslations("prodiSection", "Teks pengantar dan tombol Program Studi berhasil disimpan!")}
+                    disabled={isSavingTranslations || !isGroupDirty("prodiSection")}
+                    className={`px-4 py-2 font-bold text-xs rounded-xl transition flex items-center gap-1.5 ${
+                      isGroupDirty("prodiSection")
+                        ? "bg-[#0d3830] hover:bg-[#165349] text-white cursor-pointer"
+                        : "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
+                    }`}
+                  >
+                    {isGroupDirty("prodiSection") ? (
+                      <>
+                        <Save className="w-3.5 h-3.5 text-amber-400" />
+                        <span>Simpan Teks &amp; Tombol Prodi</span>
+                      </>
+                    ) : (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-slate-400" />
+                        <span>Teks &amp; Tombol Tersimpan</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4">
+                  {/* Judul & Subjudul Section */}
+                  <div className="p-4 bg-slate-50/70 rounded-2xl border border-slate-200/80 space-y-3">
+                    <span className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                      <span>Judul &amp; Badge Pengantar Section Program Studi</span>
+                    </span>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                          <span>🇮🇩</span>
+                          <span>Badge Section (ID)</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={getTransVal("prodiSection", "badge", "text_id", "Informasi Program Studi")}
+                          onChange={(e) => updateTransVal("prodiSection", "badge", "text_id", e.target.value)}
+                          className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:border-[#0d3830]"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                          <span>🇬🇧</span>
+                          <span>Badge Section English (EN)</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={getTransVal("prodiSection", "badge", "text_en", "Study Program Information")}
+                          onChange={(e) => updateTransVal("prodiSection", "badge", "text_en", e.target.value)}
+                          className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:border-[#0d3830]"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                          <span>🇮🇩</span>
+                          <span>Judul Section (ID)</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={getTransVal("prodiSection", "title", "text_id", "Program Studi Unggulan")}
+                          onChange={(e) => updateTransVal("prodiSection", "title", "text_id", e.target.value)}
+                          className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:border-[#0d3830]"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                          <span>🇬🇧</span>
+                          <span>Judul Section English (EN)</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={getTransVal("prodiSection", "title", "text_en", "Featured Study Programs")}
+                          onChange={(e) => updateTransVal("prodiSection", "title", "text_en", e.target.value)}
+                          className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:border-[#0d3830]"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                          <span>🇮🇩</span>
+                          <span>Subjudul Section (ID)</span>
+                        </label>
+                        <textarea
+                          rows={2}
+                          value={getTransVal("prodiSection", "subtitle", "text_id", "STAI Cendekia Insani menyelenggarakan pendidikan sarjana terakreditasi...")}
+                          onChange={(e) => updateTransVal("prodiSection", "subtitle", "text_id", e.target.value)}
+                          className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:border-[#0d3830]"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                          <span>🇬🇧</span>
+                          <span>Subjudul Section English (EN)</span>
+                        </label>
+                        <textarea
+                          rows={2}
+                          value={getTransVal("prodiSection", "subtitle", "text_en", "STAI Cendekia Insani provides accredited bachelor education...")}
+                          onChange={(e) => updateTransVal("prodiSection", "subtitle", "text_en", e.target.value)}
+                          className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:border-[#0d3830]"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Tombol & Label Interaktif Kartu Prodi */}
+                  <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-200/80 space-y-3">
+                    <span className="text-xs font-black text-emerald-950 uppercase tracking-wider flex items-center gap-1.5">
+                      <span>Teks Tombol Aksi &amp; Label Kartu Program Studi</span>
+                    </span>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      {/* Tombol Lihat Detail */}
+                      <div className="p-3 bg-white rounded-xl border border-emerald-200/60 space-y-1.5">
+                        <span className="text-[11px] font-extrabold text-slate-700 block">Tombol &ldquo;Lihat Detail&rdquo;</span>
+                        <input
+                          type="text"
+                          placeholder="Teks ID"
+                          value={getTransVal("prodiSection", "lihatDetail", "text_id", "Lihat Detail")}
+                          onChange={(e) => updateTransVal("prodiSection", "lihatDetail", "text_id", e.target.value)}
+                          className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Teks EN"
+                          value={getTransVal("prodiSection", "lihatDetail", "text_en", "View Details")}
+                          onChange={(e) => updateTransVal("prodiSection", "lihatDetail", "text_en", e.target.value)}
+                          className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
+                        />
+                      </div>
+
+                      {/* Tombol Daftar Program Studi Ini */}
+                      <div className="p-3 bg-white rounded-xl border border-emerald-200/60 space-y-1.5">
+                        <span className="text-[11px] font-extrabold text-slate-700 block">Tombol &ldquo;Daftar Prodi Ini&rdquo;</span>
+                        <input
+                          type="text"
+                          placeholder="Teks ID"
+                          value={getTransVal("prodiSection", "daftarProdiIni", "text_id", "Daftar Program Studi Ini")}
+                          onChange={(e) => updateTransVal("prodiSection", "daftarProdiIni", "text_id", e.target.value)}
+                          className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Teks EN"
+                          value={getTransVal("prodiSection", "daftarProdiIni", "text_en", "Apply for this Program")}
+                          onChange={(e) => updateTransVal("prodiSection", "daftarProdiIni", "text_en", e.target.value)}
+                          className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
+                        />
+                      </div>
+
+                      {/* Tombol Tutup */}
+                      <div className="p-3 bg-white rounded-xl border border-emerald-200/60 space-y-1.5">
+                        <span className="text-[11px] font-extrabold text-slate-700 block">Tombol &ldquo;Tutup Modal&rdquo;</span>
+                        <input
+                          type="text"
+                          placeholder="Teks ID"
+                          value={getTransVal("prodiSection", "tutup", "text_id", "Tutup")}
+                          onChange={(e) => updateTransVal("prodiSection", "tutup", "text_id", e.target.value)}
+                          className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Teks EN"
+                          value={getTransVal("prodiSection", "tutup", "text_en", "Close")}
+                          onChange={(e) => updateTransVal("prodiSection", "tutup", "text_en", e.target.value)}
+                          className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+                      <div className="p-3 bg-white rounded-xl border border-emerald-200/60 space-y-1.5">
+                        <span className="text-[11px] font-extrabold text-slate-700 block">Label &ldquo;Prospek Karir &amp; Profil Lulusan&rdquo;</span>
+                        <div className="grid grid-cols-2 gap-2">
+                          <input
+                            type="text"
+                            placeholder="Teks ID"
+                            value={getTransVal("prodiSection", "prospekKarir", "text_id", "Prospek Karir & Profil Lulusan")}
+                            onChange={(e) => updateTransVal("prodiSection", "prospekKarir", "text_id", e.target.value)}
+                            className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Teks EN"
+                            value={getTransVal("prodiSection", "prospekKarir", "text_en", "Career Prospects & Graduate Profiles")}
+                            onChange={(e) => updateTransVal("prodiSection", "prospekKarir", "text_en", e.target.value)}
+                            className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="p-3 bg-white rounded-xl border border-emerald-200/60 space-y-1.5">
+                        <span className="text-[11px] font-extrabold text-slate-700 block">Label &ldquo;Mata Kuliah &amp; Keilmuan Unggulan&rdquo;</span>
+                        <div className="grid grid-cols-2 gap-2">
+                          <input
+                            type="text"
+                            placeholder="Teks ID"
+                            value={getTransVal("prodiSection", "mataKuliah", "text_id", "Mata Kuliah & Keilmuan Unggulan")}
+                            onChange={(e) => updateTransVal("prodiSection", "mataKuliah", "text_id", e.target.value)}
+                            className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Teks EN"
+                            value={getTransVal("prodiSection", "mataKuliah", "text_en", "Core & Featured Courses")}
+                            onChange={(e) => updateTransVal("prodiSection", "mataKuliah", "text_en", e.target.value)}
+                            className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* CARD 2: MASTER PROGRAM STUDI */}
               <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 space-y-6 shadow-xs">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
                   <div>
                     <h3 className="text-lg font-black text-slate-900 font-serif flex items-center gap-2">
                       <Layers className="w-5 h-5 text-emerald-700" />
-                      <span>Manajemen Informasi Program Studi</span>
+                      <span>2. Manajemen Informasi &amp; Profil Program Studi</span>
                     </h3>
                     <p className="text-xs text-slate-500 mt-1">
                       Atur seluruh informasi lengkap program studi yang ditampilkan kepada calon mahasiswa: profil lulusan &amp; prospek karir, capaian pembelajaran, gelar akademik, serta panduan pendaftaran.
@@ -5631,75 +6330,320 @@ export default function AdminCMSDashboardPage() {
                   <div>
                     <h4 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2">
                       <Megaphone className="w-4 h-4 text-[#0d3830]" />
-                      <span>1. Teks Banner Utama &amp; Pengumuman (Hero Section)</span>
+                      <span>1. Teks Banner Utama, Tombol &amp; Pengumuman (Hero Section)</span>
                     </h4>
-                    <p className="text-xs text-slate-500 mt-0.5">Teks headline utama dan pengumuman yang langsung dilihat calon mahasiswa di bagian atas landing page.</p>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Kelola teks headline utama, subjudul, badge pengumuman, dan tombol aksi dalam <strong>Bahasa Indonesia</strong> dan <strong>Bahasa Inggris</strong>.
+                    </p>
                   </div>
                   <button
                     type="button"
                     onClick={handleSaveBannerHomepage}
-                    disabled={isSavingSettings || !isBannerDirty}
+                    disabled={isSavingSettings || (!isBannerDirty && !isGroupDirty("hero") && !isGroupDirty("cta"))}
                     className={`px-4 py-2 font-bold text-xs rounded-xl transition flex items-center gap-1.5 ${
-                      isBannerDirty
+                      isBannerDirty || isGroupDirty("hero") || isGroupDirty("cta")
                         ? "bg-[#0d3830] hover:bg-[#165349] text-white cursor-pointer"
                         : "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
                     }`}
                   >
-                    {isBannerDirty ? (
+                    {isBannerDirty || isGroupDirty("hero") || isGroupDirty("cta") ? (
                       <>
                         <Save className="w-3.5 h-3.5 text-amber-400" />
-                        <span>{isSavingSettings ? "Menyimpan..." : "Simpan Banner"}</span>
+                        <span>{isSavingSettings ? "Menyimpan..." : "Simpan Teks & Tombol Banner"}</span>
                       </>
                     ) : (
                       <>
                         <Check className="w-3.5 h-3.5 text-slate-400" />
-                        <span>Banner Tersimpan</span>
+                        <span>Teks &amp; Tombol Banner Tersimpan</span>
                       </>
                     )}
                   </button>
                 </div>
 
-                <div className="grid grid-cols-1 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-700">Judul Utama Banner (Headline) *</label>
-                    <input
-                      type="text"
-                      value={settings.banner_title}
-                      onChange={(e) => {
-                        setSettings({ ...settings, banner_title: e.target.value });
-                        setIsBannerDirty(true);
-                      }}
-                      placeholder="Contoh: Pusat Pendaftaran Mahasiswa Baru & Informasi Program Studi"
-                      className="w-full p-3 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:border-[#0d3830]"
-                    />
+                <div className="grid grid-cols-1 gap-5">
+                  {/* 1. Headline Banner Hero */}
+                  <div className="p-4 bg-slate-50/70 rounded-2xl border border-slate-200/80 space-y-3">
+                    <span className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                      <span>Judul Utama Banner (Headline Hero)</span>
+                    </span>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                          <span>🇮🇩</span>
+                          <span>Bahasa Indonesia (ID) *</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={settings.banner_title}
+                          onChange={(e) => {
+                            setSettings({ ...settings, banner_title: e.target.value });
+                            updateTransVal("hero", "title", "text_id", e.target.value);
+                            updateTransVal("hero", "titleMain", "text_id", e.target.value);
+                            setIsBannerDirty(true);
+                          }}
+                          placeholder="Pusat Pendaftaran Mahasiswa Baru & Informasi Program Studi"
+                          className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:border-[#0d3830]"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                          <span>🇬🇧</span>
+                          <span>English Translation (EN)</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={getTransVal("hero", "title", "text_en", "New Student Admission Center & Study Program Information")}
+                          onChange={(e) => {
+                            updateTransVal("hero", "title", "text_en", e.target.value);
+                            updateTransVal("hero", "titleMain", "text_en", e.target.value);
+                          }}
+                          placeholder="New Student Admission Center & Study Program Information"
+                          className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:border-[#0d3830]"
+                        />
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-700">Subtitle Deskripsi Banner</label>
-                    <textarea
-                      rows={2}
-                      value={settings.banner_subtitle}
-                      onChange={(e) => {
-                        setSettings({ ...settings, banner_subtitle: e.target.value });
-                        setIsBannerDirty(true);
-                      }}
-                      placeholder="Contoh: Meneguhkan keilmuan Islam modern dan etika profesional santri..."
-                      className="w-full p-3 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:border-[#0d3830]"
-                    />
+                  {/* 2. Subtitle Deskripsi Banner */}
+                  <div className="p-4 bg-slate-50/70 rounded-2xl border border-slate-200/80 space-y-3">
+                    <span className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                      <span>Subtitle Deskripsi Banner Hero</span>
+                    </span>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                          <span>🇮🇩</span>
+                          <span>Bahasa Indonesia (ID)</span>
+                        </label>
+                        <textarea
+                          rows={2}
+                          value={settings.banner_subtitle}
+                          onChange={(e) => {
+                            setSettings({ ...settings, banner_subtitle: e.target.value });
+                            updateTransVal("hero", "subtitle", "text_id", e.target.value);
+                            setIsBannerDirty(true);
+                          }}
+                          placeholder="Meneguhkan keilmuan Islam modern dan etika profesional santri..."
+                          className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:border-[#0d3830]"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                          <span>🇬🇧</span>
+                          <span>English Translation (EN)</span>
+                        </label>
+                        <textarea
+                          rows={2}
+                          value={getTransVal("hero", "subtitle", "text_en", "Advancing modern Islamic scholarship and professional santri ethics...")}
+                          onChange={(e) => updateTransVal("hero", "subtitle", "text_en", e.target.value)}
+                          placeholder="Advancing modern Islamic scholarship and professional santri ethics..."
+                          className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:border-[#0d3830]"
+                        />
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-700">Teks Pengumuman Pill Badge (Header Hero)</label>
-                    <input
-                      type="text"
-                      value={settings.announcement_text}
-                      onChange={(e) => {
-                        setSettings({ ...settings, announcement_text: e.target.value });
-                        setIsBannerDirty(true);
-                      }}
-                      placeholder="Contoh: Penerimaan Mahasiswa Baru Gelombang 1 Resmi Dibuka"
-                      className="w-full p-3 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:border-[#0d3830]"
-                    />
+                  {/* 3. Teks Pengumuman Pill Badge */}
+                  <div className="p-4 bg-slate-50/70 rounded-2xl border border-slate-200/80 space-y-3">
+                    <span className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                      <span>Teks Pengumuman Pill Badge (Header Hero)</span>
+                    </span>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                          <span>🇮🇩</span>
+                          <span>Bahasa Indonesia (ID)</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={settings.announcement_text}
+                          onChange={(e) => {
+                            setSettings({ ...settings, announcement_text: e.target.value });
+                            updateTransVal("hero", "badge", "text_id", e.target.value);
+                            setIsBannerDirty(true);
+                          }}
+                          placeholder="Penerimaan Mahasiswa Baru Gelombang 1 Resmi Dibuka"
+                          className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:border-[#0d3830]"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                          <span>🇬🇧</span>
+                          <span>English Translation (EN)</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={getTransVal("hero", "badge", "text_en", "Wave 1 New Student Admission is Officially Open")}
+                          onChange={(e) => updateTransVal("hero", "badge", "text_en", e.target.value)}
+                          placeholder="Wave 1 New Student Admission is Officially Open"
+                          className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:border-[#0d3830]"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 4. Tombol Aksi Utama Hero (CTA Buttons) */}
+                  <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-200/80 space-y-3">
+                    <span className="text-xs font-black text-emerald-950 uppercase tracking-wider flex items-center gap-1.5">
+                      <span>Teks Tombol Aksi Hero (CTA Buttons)</span>
+                    </span>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Tombol 1: Daftar Sekarang */}
+                      <div className="p-3 bg-white rounded-xl border border-emerald-200/60 space-y-2">
+                        <span className="text-[11px] font-extrabold text-slate-700 block">
+                          Tombol 1 (Daftar Online)
+                        </span>
+                        <div className="space-y-1.5">
+                          <div>
+                            <span className="text-[10px] text-slate-500 font-bold">🇮🇩 Teks Tombol (ID):</span>
+                            <input
+                              type="text"
+                              value={getTransVal("hero", "btnDaftar", "text_id", "Daftar Sekarang (Online)")}
+                              onChange={(e) => updateTransVal("hero", "btnDaftar", "text_id", e.target.value)}
+                              className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:outline-none focus:border-[#0d3830]"
+                            />
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-slate-500 font-bold">🇬🇧 Button Text (EN):</span>
+                            <input
+                              type="text"
+                              value={getTransVal("hero", "btnDaftar", "text_en", "Apply Online Now")}
+                              onChange={(e) => updateTransVal("hero", "btnDaftar", "text_en", e.target.value)}
+                              className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:outline-none focus:border-[#0d3830]"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Tombol 2: Unduh Brosur */}
+                      <div className="p-3 bg-white rounded-xl border border-emerald-200/60 space-y-2">
+                        <span className="text-[11px] font-extrabold text-slate-700 block">
+                          Tombol 2 (Unduh Brosur PDF)
+                        </span>
+                        <div className="space-y-1.5">
+                          <div>
+                            <span className="text-[10px] text-slate-500 font-bold">🇮🇩 Teks Tombol (ID):</span>
+                            <input
+                              type="text"
+                              value={getTransVal("hero", "btnBrosur", "text_id", "Unduh Brosur PMB (PDF)")}
+                              onChange={(e) => updateTransVal("hero", "btnBrosur", "text_id", e.target.value)}
+                              className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:outline-none focus:border-[#0d3830]"
+                            />
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-slate-500 font-bold">🇬🇧 Button Text (EN):</span>
+                            <input
+                              type="text"
+                              value={getTransVal("hero", "btnBrosur", "text_en", "Download Brochure (PDF)")}
+                              onChange={(e) => updateTransVal("hero", "btnBrosur", "text_en", e.target.value)}
+                              className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:outline-none focus:border-[#0d3830]"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 5. Teks Banner Ajakan Mendaftar (CTA Section Bawah) */}
+                  <div className="p-4 bg-slate-50/70 rounded-2xl border border-slate-200/80 space-y-3">
+                    <span className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                      <span>Banner Ajakan Mendaftar (CTA Section Bawah Landing Page)</span>
+                    </span>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                          <span>🇮🇩</span>
+                          <span>Judul CTA (ID)</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={getTransVal("cta", "title", "text_id", "Siap Meraih Masa Depan Gemilang Bersama STAICI?")}
+                          onChange={(e) => updateTransVal("cta", "title", "text_id", e.target.value)}
+                          className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:border-[#0d3830]"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                          <span>🇬🇧</span>
+                          <span>Judul CTA English (EN)</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={getTransVal("cta", "title", "text_en", "Ready to Build a Bright Future with STAICI?")}
+                          onChange={(e) => updateTransVal("cta", "title", "text_en", e.target.value)}
+                          className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:border-[#0d3830]"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                          <span>🇮🇩</span>
+                          <span>Subjudul CTA (ID)</span>
+                        </label>
+                        <textarea
+                          rows={2}
+                          value={getTransVal("cta", "subtitle", "text_id", "Daftarkan diri Anda sekarang pada Gelombang 1 untuk mendapatkan kuota beasiswa.")}
+                          onChange={(e) => updateTransVal("cta", "subtitle", "text_id", e.target.value)}
+                          className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:border-[#0d3830]"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                          <span>🇬🇧</span>
+                          <span>Subjudul CTA English (EN)</span>
+                        </label>
+                        <textarea
+                          rows={2}
+                          value={getTransVal("cta", "subtitle", "text_en", "Register now in Wave 1 to secure scholarship quotas and premier academic programs.")}
+                          onChange={(e) => updateTransVal("cta", "subtitle", "text_en", e.target.value)}
+                          className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:border-[#0d3830]"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                      <div className="p-3 bg-white rounded-xl border border-slate-200/80 space-y-1.5">
+                        <span className="text-[11px] font-extrabold text-slate-700 block">Tombol CTA Daftar (ID / EN)</span>
+                        <div className="grid grid-cols-2 gap-2">
+                          <input
+                            type="text"
+                            placeholder="Teks ID"
+                            value={getTransVal("cta", "btnDaftar", "text_id", "Daftar Mahasiswa Baru Sekarang")}
+                            onChange={(e) => updateTransVal("cta", "btnDaftar", "text_id", e.target.value)}
+                            className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Teks EN"
+                            value={getTransVal("cta", "btnDaftar", "text_en", "Apply as a New Student Now")}
+                            onChange={(e) => updateTransVal("cta", "btnDaftar", "text_en", e.target.value)}
+                            className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="p-3 bg-white rounded-xl border border-slate-200/80 space-y-1.5">
+                        <span className="text-[11px] font-extrabold text-slate-700 block">Tombol CTA Hotline / WA (ID / EN)</span>
+                        <div className="grid grid-cols-2 gap-2">
+                          <input
+                            type="text"
+                            placeholder="Teks ID"
+                            value={getTransVal("cta", "btnHotline", "text_id", "Konsultasi WhatsApp Panitia")}
+                            onChange={(e) => updateTransVal("cta", "btnHotline", "text_id", e.target.value)}
+                            className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Teks EN"
+                            value={getTransVal("cta", "btnHotline", "text_en", "WhatsApp Admission Consultation")}
+                            onChange={(e) => updateTransVal("cta", "btnHotline", "text_en", e.target.value)}
+                            className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs"
+                          />
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -6422,6 +7366,8 @@ export default function AdminCMSDashboardPage() {
               </div>
             </div>
           )}
+
+
 
           {/* MODAL: TAMBAH / EDIT FAQ */}
           {isFaqModalOpen && (

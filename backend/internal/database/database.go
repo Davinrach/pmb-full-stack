@@ -72,6 +72,7 @@ func InitDB(cfg *config.Config) (*gorm.DB, error) {
 		&model.MenuGroup{},
 		&model.Menu{},
 		&model.RoleMenu{},
+		&model.SiteTranslation{},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("gagal migrasi skema tabel: %w", err)
@@ -92,6 +93,7 @@ func InitDB(cfg *config.Config) (*gorm.DB, error) {
 	seedKontakHotline(db)
 	seedPersyaratanDokumen(db)
 	seedRBACDefault(db)
+	seedSiteTranslations(db)
 	seedBasicPendaftar(db, cfg.UploadDir)
 
 	DB = db
@@ -661,6 +663,13 @@ func seedRBACDefault(db *gorm.DB) {
 		{MenuGroupID: groupPengaturan.ID, Nama: "Manajemen Role & RBAC", Key: "rbac", Icon: "ShieldCheck", URL: "rbac", Urutan: 5, IsAktif: true},
 	}
 
+	// Hapus menu translations jika sebelumnya sempat dibuat di database (kini dikelola langsung di masing-masing CMS page)
+	var transMenu model.Menu
+	if err := db.Unscoped().Where("`key` = ?", "translations").First(&transMenu).Error; err == nil {
+		db.Where("menu_id = ?", transMenu.ID).Delete(&model.RoleMenu{})
+		db.Unscoped().Delete(&transMenu)
+	}
+
 	// Migrasi menu lama gelombang -> pendaftaran
 	db.Model(&model.Menu{}).Where("`key` = ?", "gelombang").Updates(map[string]interface{}{
 		"nama":   "Pendaftaran & Biaya",
@@ -1010,4 +1019,134 @@ func createDummyPNG(filePath string, width, height int, baseColor color.RGBA) {
 	}
 }
 
+// seedSiteTranslations menyuntikkan seluruh teks terjemahan default (ID & EN) ke tabel site_translations.
+// Hanya dijalankan jika tabel masih kosong, agar perubahan admin tidak tertimpa.
+func seedSiteTranslations(db *gorm.DB) {
+	var count int64
+	db.Model(&model.SiteTranslation{}).Count(&count)
+	if count > 0 {
+		return
+	}
 
+	log.Println("📝 Seeding teks terjemahan default (site_translations)...")
+
+	type entry struct {
+		Group string
+		Key   string
+		ID    string // Bahasa Indonesia
+		EN    string // English
+	}
+
+	seeds := []entry{
+		// ── NAVBAR ──
+		{"navbar", "beranda", "Beranda", "Home"},
+		{"navbar", "programStudi", "Program Studi", "Study Programs"},
+		{"navbar", "lihatSemuaProdi", "Lihat Semua Program Studi ↓", "View All Study Programs ↓"},
+		{"navbar", "pendaftaran", "Pendaftaran", "Admission"},
+		{"navbar", "daftar", "Daftar", "Register"},
+		{"navbar", "masuk", "Masuk", "Sign In"},
+		{"navbar", "masukSebagai", "Masuk sebagai", "Signed in as"},
+		{"navbar", "dashboardPmb", "Dashboard PMB", "Admission Dashboard"},
+		{"navbar", "keluar", "Keluar (Logout)", "Sign Out"},
+		{"navbar", "bukaMenu", "Buka Menu", "Open Menu"},
+		{"navbar", "bahasa", "Bahasa", "Language"},
+		{"navbar", "dashboardBtn", "Buka Dashboard PMB →", "Open Admission Dashboard →"},
+
+		// ── HERO ──
+		{"hero", "badge", "Penerimaan Mahasiswa Baru Gelombang 1 Resmi Dibuka", "Wave 1 New Student Admission is Officially Open"},
+		{"hero", "title", "Pusat Pendaftaran Mahasiswa Baru & Informasi Program Studi", "New Student Admission Center & Study Program Information"},
+		{"hero", "titleMain", "Pusat Pendaftaran Mahasiswa Baru", "New Student Admission Center"},
+		{"hero", "titleHighlight", "& Informasi Program Studi", "& Study Program Information"},
+		{"hero", "subtitle", "Meneguhkan keilmuan Islam modern dan etika profesional santri. Mari bergabung bersama STAI Cendekia Insani Tahun Akademik 2026/2027.", "Advancing modern Islamic scholarship and professional santri ethics. Join STAI Cendekia Insani for Academic Year 2026/2027."},
+		{"hero", "btnDaftar", "Daftar Sekarang (Online)", "Apply Online Now"},
+		{"hero", "btnBrosur", "Unduh Brosur PMB (PDF)", "Download Brochure (PDF)"},
+		{"hero", "statistikGelombang", "Pendaftaran Gelombang 1 Aktif", "Wave 1 Admission Active"},
+		{"hero", "jalurPenerimaan", "Jalur Reguler & KIP Kuliah", "Regular & KIP Scholarship Tracks"},
+
+		// ── QUICK INFO ──
+		{"quickInfo", "akreditasiTitle", "Terakreditasi Resmi", "Officially Accredited"},
+		{"quickInfo", "akreditasiDesc", "BAN-PT & Kementerian Agama RI", "BAN-PT & Ministry of Religious Affairs RI"},
+		{"quickInfo", "beasiswaTitle", "Program Beasiswa", "Scholarship Programs"},
+		{"quickInfo", "beasiswaDesc", "KIP-Kuliah, Tahfidz & Prestasi", "KIP-Kuliah, Tahfidz & Academic Merit"},
+		{"quickInfo", "kampusTitle", "Lokasi Strategis", "Strategic Campus"},
+		{"quickInfo", "kampusDesc", "Jl. Raya no. 25 Paowan Panarukan Situbondo", "Jl. Raya no. 25 Paowan Panarukan Situbondo"},
+		{"quickInfo", "lulusanTitle", "Gelar & Karir", "Degrees & Careers"},
+		{"quickInfo", "lulusanDesc", "Sarjana S.Pd., S.H., dan S.Sos.", "Bachelor Degrees in S.Pd., S.H., and S.Sos."},
+
+		// ── PRODI SECTION ──
+		{"prodiSection", "badge", "Informasi Program Studi", "Study Program Information"},
+		{"prodiSection", "title", "Program Studi Unggulan", "Featured Study Programs"},
+		{"prodiSection", "subtitle", "STAI Cendekia Insani menyelenggarakan pendidikan sarjana terakreditasi dengan integrasi adab pesantren dan keilmuan kontemporer.", "STAI Cendekia Insani provides accredited bachelor education integrating Islamic values and contemporary science."},
+		{"prodiSection", "lihatDetail", "Lihat Detail", "View Details"},
+		{"prodiSection", "daftarProdiIni", "Daftar Program Studi Ini", "Apply for this Program"},
+		{"prodiSection", "tutup", "Tutup", "Close"},
+		{"prodiSection", "prospekKarir", "Prospek Karir & Profil Lulusan", "Career Prospects & Graduate Profiles"},
+		{"prodiSection", "mataKuliah", "Mata Kuliah & Keilmuan Unggulan", "Core & Featured Courses"},
+
+		// ── ALUR ──
+		{"alur", "badge", "Alur Penerimaan Mahasiswa", "Admission Flow"},
+		{"alur", "title", "5 Tahap Mudah Menjadi Mahasiswa STAICI", "5 Easy Steps to Become a STAICI Student"},
+		{"alur", "subtitle", "Proses pendaftaran dirancang cepat, transparan, dan sepenuhnya online.", "The registration process is fast, transparent, and completely online."},
+
+		// ── CTA ──
+		{"cta", "title", "Siap Meraih Masa Depan Gemilang Bersama STAICI?", "Ready to Build a Bright Future with STAICI?"},
+		{"cta", "subtitle", "Daftarkan diri Anda sekarang pada Gelombang 1 untuk mendapatkan kuota beasiswa dan program unggulan.", "Register now in Wave 1 to secure scholarship quotas and premier academic programs."},
+		{"cta", "btnDaftar", "Daftar Mahasiswa Baru Sekarang", "Apply as a New Student Now"},
+		{"cta", "btnHotline", "Konsultasi WhatsApp Panitia", "WhatsApp Admission Consultation"},
+
+		// ── FOOTER ──
+		{"footer", "identitasTitle", "STAI Cendekia Insani", "STAI Cendekia Insani"},
+		{"footer", "identitasLocation", "Situbondo, Jawa Timur", "Situbondo, East Java, Indonesia"},
+		{"footer", "identitasDesc", "Sekolah Tinggi Agama Islam Cendekia Insani Situbondo (STAI Cendekia Insani) adalah lembaga pendidikan tinggi yang bernaung di bawah Yayasan Cendekia Insani Panarukan, Situbondo.", "STAI Cendekia Insani Situbondo (STAICI) is an Islamic higher education institution under the auspices of the Cendekia Insani Panarukan Foundation, Situbondo."},
+		{"footer", "akreditasiBanpt", "Terakreditasi BAN-PT", "Accredited by BAN-PT"},
+		{"footer", "akreditasiKemenag", "Kemenag RI", "Ministry of Religious Affairs"},
+		{"footer", "prodiTitle", "Program Studi", "Study Programs"},
+		{"footer", "tautanTitle", "Tautan Cepat", "Quick Links"},
+		{"footer", "tautanPendaftaran", "Pendaftaran Mahasiswa Baru", "New Student Admission"},
+		{"footer", "tautanProdi", "Informasi Program Studi", "Study Program Information"},
+		{"footer", "tautanPortal", "Portal Akun PMB", "Admission Account Portal"},
+		{"footer", "kontakTitle", "Kontak & Kampus", "Contact & Campus"},
+		{"footer", "alamat", "Jalan Raya no. 25 Paowan Panarukan Situbondo 68351", "Jalan Raya no. 25 Paowan Panarukan Situbondo 68351"},
+		{"footer", "email", "staicendekia2010@gmail.com", "staicendekia2010@gmail.com"},
+		{"footer", "telepon", "0852-3343-2221", "+62 852-3343-2221"},
+		{"footer", "jamOperasional", "Senin - Sabtu: 08.00 - 16.00 WIB", "Monday - Saturday: 08:00 - 16:00 WIB"},
+		{"footer", "copyright", "© 2026 STAI Cendekia Insani. Hak Cipta Dilindungi Undang-Undang.", "© 2026 STAI Cendekia Insani. All Rights Reserved."},
+		{"footer", "bantuan", "Bantuan & Layanan PMB", "Support & PMB Services"},
+		{"footer", "privasi", "Kebijakan Privasi", "Privacy Policy"},
+
+		// ── SIDEBAR ──
+		{"sidebar", "caraDaftarTitle", "Tata Cara Pendaftaran", "Admission Guidelines"},
+		{"sidebar", "caraDaftarSubtitle", "Berikut adalah cara mudah untuk mendaftarkan diri ke STAI Cendekia Insani", "Here are the simple steps to register at STAI Cendekia Insani"},
+		{"sidebar", "hotlineTitle", "Hotline Panitia PMB", "PMB Committee Hotline"},
+		{"sidebar", "hotlineDesc", "Butuh bantuan pengisian atau konsultasi program studi? Hubungi petugas kami:", "Need help or consultation regarding study programs? Contact our team:"},
+		{"sidebar", "whatsappLabel", "WhatsApp PMB Center", "WhatsApp PMB Center"},
+		{"sidebar", "operatingHours", "Senin - Sabtu: 08.00 - 16.00 WIB", "Monday - Saturday: 08:00 - 16:00 WIB"},
+		{"sidebar", "jalurTitle", "Jalur Masuk Reguler PMB TA 2026/2027", "Regular Admission Track AY 2026/2027"},
+		{"sidebar", "jalurBadge", "Reguler & KIP", "Regular & KIP"},
+		{"sidebar", "jalurDesc", "Semua calon mahasiswa baru mendaftar melalui Jalur Reguler STAICI. Bagi Anda pemegang Kartu Indonesia Pintar (KIP / KIP-K), silakan lampirkan pindaian Kartu KIP pada bagian unggah berkas (Bagian G) untuk diverifikasi dan diseleksi langsung oleh Panitia PMB STAICI Situbondo.", "All prospective new students register via the STAICI Regular Track. For holders of the Smart Indonesia Card (KIP / KIP-K), please attach a scan of your KIP card in the document upload section for direct verification and selection."},
+
+		// ── PENDAFTARAN PAGE ──
+		{"pendaftaranPage", "title", "Formulir Pendaftaran Mahasiswa Baru", "New Student Admission Form"},
+		{"pendaftaranPage", "subtitle", "Tahun Akademik 2026/2027 • STAI Cendekia Insani Situbondo", "Academic Year 2026/2027 • STAI Cendekia Insani Situbondo"},
+		{"pendaftaranPage", "step1Title", "1. Pilihan Prodi & Biodata", "1. Program Choice & Identity"},
+		{"pendaftaranPage", "step2Title", "2. Sekolah & Keluarga", "2. School & Family"},
+		{"pendaftaranPage", "step3Title", "3. Unggah Berkas & Submit", "3. Document Upload & Submit"},
+		{"pendaftaranPage", "btnDraft", "Simpan Draft", "Save Draft"},
+		{"pendaftaranPage", "btnNext", "Lanjut ke Tahap Berikutnya →", "Proceed to Next Step →"},
+		{"pendaftaranPage", "btnPrev", "← Kembali ke Tahap Sebelumnya", "← Back to Previous Step"},
+		{"pendaftaranPage", "btnSubmit", "Submit Pendaftaran Sekarang", "Submit Registration Now"},
+	}
+
+	for i, s := range seeds {
+		t := model.SiteTranslation{
+			GroupName:      s.Group,
+			TranslationKey: s.Key,
+			TextID:         s.ID,
+			TextEN:         s.EN,
+			Urutan:         i,
+		}
+		db.Create(&t)
+	}
+
+	log.Printf("✓ Seeded %d baris teks terjemahan default.", len(seeds))
+}

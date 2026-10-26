@@ -74,6 +74,7 @@ func main() {
 	adminHandler := handler.NewAdminHandler()
 	publicHandler := handler.NewPublicHandler()
 	cmsHandler := handler.NewCMSHandler()
+	translationHandler := handler.NewTranslationHandler()
 
 	// 7. Route Groups
 	api := r.Group("/api/v1")
@@ -89,6 +90,7 @@ func main() {
 		api.GET("/tata-cara", cmsHandler.ListPublicTataCara)
 		api.GET("/hotline", cmsHandler.ListPublicHotline)
 		api.GET("/persyaratan", cmsHandler.ListPublicPersyaratan)
+		api.GET("/public/translations", translationHandler.GetPublicTranslations)
 
 		api.GET("/program-studi", func(c *gin.Context) {
 			var results []model.ProgramStudi
@@ -216,6 +218,13 @@ func main() {
 				adminGroup.POST("/persyaratan", cmsHandler.CreatePersyaratan)
 				adminGroup.PUT("/persyaratan/:id", cmsHandler.UpdatePersyaratan)
 				adminGroup.DELETE("/persyaratan/:id", cmsHandler.DeletePersyaratan)
+
+				// Dynamic Translation / i18n Management
+				adminGroup.GET("/translations", translationHandler.ListTranslations)
+				adminGroup.POST("/translations", translationHandler.CreateTranslation)
+				adminGroup.PUT("/translations/:id", translationHandler.UpdateTranslation)
+				adminGroup.DELETE("/translations/:id", translationHandler.DeleteTranslation)
+				adminGroup.PUT("/translations/bulk", translationHandler.BulkUpdateTranslations)
 
 				// Dynamic RBAC Navigation (Accessible by any authorized admin role)
 				rbacHandler := handler.NewRBACHandler()
