@@ -142,8 +142,8 @@ export default function RegisterPage() {
       {/* 3. Main Form Section */}
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-14 w-full flex-1">
         {/* Info Banner Box */}
-        <div className="bg-[#f0f5ff] border border-blue-200/90 rounded-2xl p-4 sm:p-5 mb-8 flex items-center gap-3.5 text-xs sm:text-sm text-slate-700 shadow-sm">
-          <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center flex-shrink-0">
+        <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 sm:p-5 mb-8 flex items-center gap-3.5 text-xs sm:text-sm text-slate-700 shadow-2xs">
+          <div className="w-8 h-8 rounded-full bg-slate-100 text-[#0d3830] border border-slate-200/70 flex items-center justify-center flex-shrink-0">
             <Info className="w-4 h-4" />
           </div>
           <p className="leading-relaxed">
@@ -156,8 +156,8 @@ export default function RegisterPage() {
         {/* Registration Form Card */}
         <div className="bg-white rounded-2xl border border-slate-200/90 p-6 sm:p-8 md:p-10 shadow-sm">
           {errorMessage && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-xs sm:text-sm text-red-700 flex items-center gap-2.5">
-              <AlertCircle className="w-5 h-5 flex-shrink-0 text-red-600" />
+            <div className="mb-6 p-4 bg-rose-50/70 border border-rose-200/70 rounded-xl text-xs sm:text-sm text-rose-800 flex items-center gap-2.5">
+              <AlertCircle className="w-5 h-5 flex-shrink-0 text-rose-600/80" />
               <span>{errorMessage}</span>
             </div>
           )}
@@ -184,12 +184,11 @@ export default function RegisterPage() {
                   type="text"
                   id="namaLengkap"
                   required
-                  placeholder={lang === "eng" ? "Ahmad Fauzi Rahman" : "Ahmad Fauzi Rahman"}
                   value={formData.namaLengkap}
                   onChange={(e) =>
                     setFormData({ ...formData, namaLengkap: e.target.value })
                   }
-                  className="w-full pl-10 pr-4 py-3 bg-white text-slate-900 placeholder:text-slate-400 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:border-[#0d3830] focus:ring-1 focus:ring-[#0d3830] transition shadow-xs"
+                  className="w-full pl-10 pr-4 py-3 bg-white text-slate-900 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:border-[#0d3830] focus:ring-1 focus:ring-[#0d3830] transition shadow-xs"
                 />
               </div>
             </div>
@@ -213,7 +212,6 @@ export default function RegisterPage() {
                   id="nik"
                   required
                   maxLength={16}
-                  placeholder="3512xxxxxxxxxxxx"
                   value={formData.nik}
                   onChange={(e) =>
                     setFormData({
@@ -221,7 +219,7 @@ export default function RegisterPage() {
                       nik: e.target.value.replace(/\D/g, ""),
                     })
                   }
-                  className="w-full pl-10 pr-4 py-3 bg-white text-slate-900 placeholder:text-slate-400 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:border-[#0d3830] focus:ring-1 focus:ring-[#0d3830] transition shadow-xs"
+                  className="w-full pl-10 pr-4 py-3 bg-white text-slate-900 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:border-[#0d3830] focus:ring-1 focus:ring-[#0d3830] transition shadow-xs"
                 />
               </div>
             </div>
@@ -232,7 +230,7 @@ export default function RegisterPage() {
                 <label htmlFor="noWhatsapp" className="font-bold text-slate-900">
                   {lang === "eng" ? "Active WhatsApp Number" : "Nomor WhatsApp Aktif"} <span className="text-red-500">*</span>
                 </label>
-                <span className="text-amber-700 font-bold text-xs">
+                <span className="text-[#0d3830] font-semibold text-xs">
                   {lang === "eng" ? "For Selection & Payment Notice" : "Notif Seleksi & VA"}
                 </span>
               </div>
@@ -244,12 +242,11 @@ export default function RegisterPage() {
                   type="tel"
                   id="noWhatsapp"
                   required
-                  placeholder="08xxxxxxxxxx"
                   value={formData.noWhatsapp}
                   onChange={(e) =>
                     setFormData({ ...formData, noWhatsapp: e.target.value })
                   }
-                  className="w-full pl-10 pr-4 py-3 bg-white text-slate-900 placeholder:text-slate-400 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:border-[#0d3830] focus:ring-1 focus:ring-[#0d3830] transition shadow-xs"
+                  className="w-full pl-10 pr-4 py-3 bg-white text-slate-900 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:border-[#0d3830] focus:ring-1 focus:ring-[#0d3830] transition shadow-xs"
                 />
               </div>
             </div>
@@ -272,12 +269,11 @@ export default function RegisterPage() {
                   type="email"
                   id="email"
                   required
-                  placeholder="nama@gmail.com"
                   value={formData.email}
                   onChange={(e) =>
                     setFormData({ ...formData, email: e.target.value })
                   }
-                  className="w-full pl-10 pr-4 py-3 bg-white text-slate-900 placeholder:text-slate-400 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:border-[#0d3830] focus:ring-1 focus:ring-[#0d3830] transition shadow-xs"
+                  className="w-full pl-10 pr-4 py-3 bg-white text-slate-900 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:border-[#0d3830] focus:ring-1 focus:ring-[#0d3830] transition shadow-xs"
                 />
               </div>
             </div>
@@ -301,12 +297,11 @@ export default function RegisterPage() {
                   id="password"
                   required
                   minLength={8}
-                  placeholder="••••••••"
                   value={formData.password}
                   onChange={(e) =>
                     setFormData({ ...formData, password: e.target.value })
                   }
-                  className="w-full pl-10 pr-10 py-3 bg-white text-slate-900 placeholder:text-slate-400 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:border-[#0d3830] focus:ring-1 focus:ring-[#0d3830] transition shadow-xs"
+                  className="w-full pl-10 pr-10 py-3 bg-white text-slate-900 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:border-[#0d3830] focus:ring-1 focus:ring-[#0d3830] transition shadow-xs"
                 />
                 <button
                   type="button"
@@ -344,7 +339,6 @@ export default function RegisterPage() {
                   type={showConfirmPassword ? "text" : "password"}
                   id="confirmPassword"
                   required
-                  placeholder="••••••••"
                   value={formData.confirmPassword}
                   onChange={(e) =>
                     setFormData({
@@ -352,7 +346,7 @@ export default function RegisterPage() {
                       confirmPassword: e.target.value,
                     })
                   }
-                  className="w-full pl-10 pr-10 py-3 bg-white text-slate-900 placeholder:text-slate-400 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:border-[#0d3830] focus:ring-1 focus:ring-[#0d3830] transition shadow-xs"
+                  className="w-full pl-10 pr-10 py-3 bg-white text-slate-900 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:border-[#0d3830] focus:ring-1 focus:ring-[#0d3830] transition shadow-xs"
                 />
                 <button
                   type="button"
@@ -418,7 +412,7 @@ export default function RegisterPage() {
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 text-slate-700 hover:text-[#0d3830] transition"
               >
-                <Headphones className="w-4 h-4 text-amber-600" />
+                <Headphones className="w-4 h-4 text-slate-500" />
                 <span>{lang === "eng" ? "Need help signing in?" : "Bantuan kendala masuk?"}</span>
               </a>
             </div>

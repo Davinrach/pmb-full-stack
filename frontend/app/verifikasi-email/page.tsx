@@ -229,7 +229,7 @@ function VerifikasiEmailContent() {
         </div>
 
         <div className="relative z-10 max-w-2xl mx-auto px-4 py-8 flex flex-col items-center">
-          <div className="w-11 h-11 rounded-xl bg-emerald-500/20 text-emerald-300 flex items-center justify-center mb-2 border border-emerald-400/20">
+          <div className="w-11 h-11 rounded-xl bg-white/10 text-emerald-200 flex items-center justify-center mb-2 border border-white/20">
             <ShieldCheck className="w-6 h-6 stroke-[2.2]" />
           </div>
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white tracking-tight">
@@ -274,13 +274,13 @@ function VerifikasiEmailContent() {
                 </button>
               </div>
             ) : (
-              <div className="mt-2 inline-flex items-center gap-2 bg-emerald-50/80 border border-emerald-200/80 px-3 py-1.5 rounded-xl text-xs font-bold text-[#0d3830]">
-                <Mail className="w-3.5 h-3.5 text-emerald-700" />
+              <div className="mt-2 inline-flex items-center gap-2 bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-800">
+                <Mail className="w-3.5 h-3.5 text-slate-600" />
                 <span>{email ? maskEmail(email) : "Belum diisi"}</span>
                 <button
                   type="button"
                   onClick={() => setIsEditingEmail(true)}
-                  className="text-[11px] font-normal text-emerald-700 underline hover:text-emerald-900 ml-1"
+                  className="text-[11px] font-normal text-slate-600 underline hover:text-slate-900 ml-1"
                 >
                   Ubah
                 </button>
@@ -290,9 +290,9 @@ function VerifikasiEmailContent() {
 
           {/* Dev OTP Helper */}
           {devOtp && (
-            <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-900 flex items-center justify-between gap-2">
+            <div className="mb-4 bg-slate-50 border border-slate-200/80 rounded-xl p-3 text-xs text-slate-700 flex items-center justify-between gap-2">
               <span className="flex items-center gap-1.5 font-medium">
-                <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                <Sparkles className="w-3.5 h-3.5 text-slate-500" />
                 Mode Uji Coba:
               </span>
               <button
@@ -301,7 +301,7 @@ function VerifikasiEmailContent() {
                   const digits = devOtp.split("").slice(0, 6);
                   setOtpValues(digits);
                 }}
-                className="font-mono font-bold bg-amber-200/90 hover:bg-amber-300 text-amber-950 px-2.5 py-1 rounded-lg text-xs transition cursor-pointer"
+                className="font-mono font-bold bg-slate-200 hover:bg-slate-300 text-slate-900 px-2.5 py-1 rounded-lg text-xs transition cursor-pointer"
               >
                 {devOtp} (Isi Otomatis)
               </button>
@@ -310,8 +310,8 @@ function VerifikasiEmailContent() {
 
           {/* Feedback messages */}
           {errorMessage && (
-            <div className="mb-4 bg-red-50 border border-red-200 text-red-700 rounded-xl p-3 text-xs flex items-start gap-2">
-              <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+            <div className="mb-4 bg-rose-50/70 border border-rose-200/70 text-rose-800 rounded-xl p-3 text-xs flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 text-rose-600/80 flex-shrink-0 mt-0.5" />
               <span>{errorMessage}</span>
             </div>
           )}
@@ -403,7 +403,7 @@ function VerifikasiEmailContent() {
               href="https://wa.me/6285233432221?text=Halo%20Admin%20PMB%20STAICI,%20saya%20butuh%20bantuan%20kode%20OTP"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-amber-700 hover:underline flex items-center gap-1"
+              className="text-slate-600 hover:text-slate-900 hover:underline flex items-center gap-1"
             >
               <Headphones className="w-3.5 h-3.5" />
               <span>Bantuan CS PMB</span>

@@ -71,7 +71,7 @@ export default function LupaPasswordPage() {
               </span>
             </p>
 
-            <div className="p-3.5 bg-blue-50/80 border border-blue-200 rounded-xl text-xs text-blue-900 text-left leading-relaxed">
+            <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl text-xs text-slate-700 text-left leading-relaxed">
               💡 <strong>Langkah Selanjutnya:</strong>
               <ol className="list-decimal pl-4 mt-1.5 space-y-1">
                 <li>Buka email Anda (periksa juga folder <em>Spam/Promosi</em>).</li>
@@ -81,11 +81,11 @@ export default function LupaPasswordPage() {
             </div>
 
             {resetLink && (
-              <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-left">
-                <span className="font-bold text-amber-900 block mb-1">⚡ Tautan Cepat (Mode Uji Coba):</span>
+              <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-xl text-xs text-left">
+                <span className="font-bold text-slate-800 block mb-1">⚡ Tautan Cepat (Mode Uji Coba):</span>
                 <Link
                   href={resetLink.replace(/^https?:\/\/[^\/]+/, "") || `/reset-password?token=${resetToken}`}
-                  className="w-full py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-lg block text-center transition shadow-xs"
+                  className="w-full py-2 bg-[#0d3830] hover:bg-[#165349] text-white font-bold rounded-lg block text-center transition shadow-xs"
                 >
                   Buka Form Password Baru Langsung →
                 </Link>
@@ -108,8 +108,8 @@ export default function LupaPasswordPage() {
             </p>
 
             {errorMessage && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              <div className="p-3 bg-rose-50/70 border border-rose-200/70 rounded-xl text-xs text-rose-800 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-600/80" />
                 <span>{errorMessage}</span>
               </div>
             )}

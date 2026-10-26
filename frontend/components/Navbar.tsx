@@ -87,8 +87,8 @@ export default function Navbar({ activePage = "beranda" }: NavbarProps) {
 
   return (
     <>
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 transition-all">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 sm:h-22 lg:h-24 flex items-center justify-between">
+      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-t-2 border-[#0d3830] border-b border-slate-200/80 transition-all shadow-xs">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between">
           {/* Logo */}
           <Link
             href="/"
@@ -103,12 +103,12 @@ export default function Navbar({ activePage = "beranda" }: NavbarProps) {
             <div className="flex items-center flex-shrink-0 transition-transform duration-200 group-hover:scale-[1.02]">
               <Image
                 src="/logo.png"
-                alt="Portal PMB Terpadu STAICI"
-                width={305}
-                height={48}
+                alt="Portal Penerimaan Mahasiswa Baru STAI Cendekia Insani Situbondo"
+                width={220}
+                height={34}
                 priority
                 unoptimized
-                className="h-10 sm:h-12 lg:h-14 w-auto object-contain"
+                className="h-8 sm:h-[34px] lg:h-9 w-auto object-contain"
               />
             </div>
           </Link>
@@ -146,7 +146,7 @@ export default function Navbar({ activePage = "beranda" }: NavbarProps) {
                     const el = document.getElementById("program-studi");
                     if (el) {
                       e.preventDefault();
-                      const yOffset = -110;
+                      const yOffset = -75;
                       const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
                       window.scrollTo({ top: y, behavior: "smooth" });
                     }
@@ -172,7 +172,7 @@ export default function Navbar({ activePage = "beranda" }: NavbarProps) {
                         const el = document.getElementById("program-studi");
                         if (el) {
                           e.preventDefault();
-                          const yOffset = -110;
+                          const yOffset = -75;
                           const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
                           window.scrollTo({ top: y, behavior: "smooth" });
                         }
@@ -207,7 +207,7 @@ export default function Navbar({ activePage = "beranda" }: NavbarProps) {
                   const el = document.getElementById("faq");
                   if (el) {
                     e.preventDefault();
-                    const yOffset = -110;
+                    const yOffset = -75;
                     const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
                     window.scrollTo({ top: y, behavior: "smooth" });
                   }
@@ -321,9 +321,9 @@ export default function Navbar({ activePage = "beranda" }: NavbarProps) {
                     <button
                       type="button"
                       onClick={handleLogout}
-                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-rose-600 hover:bg-rose-50 transition text-left cursor-pointer border-t border-slate-100"
+                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-slate-600 hover:text-rose-700 hover:bg-slate-50 transition text-left cursor-pointer border-t border-slate-100"
                     >
-                      <LogOut className="w-4 h-4 text-rose-500" />
+                      <LogOut className="w-4 h-4 text-slate-400 group-hover:text-rose-600" />
                       <span>{t.navbar.keluar}</span>
                     </button>
                   </div>
@@ -469,7 +469,7 @@ export default function Navbar({ activePage = "beranda" }: NavbarProps) {
                 <Link
                   href={dashboardUrl}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="w-full flex items-center justify-between p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl"
+                  className="w-full flex items-center justify-between p-2.5 bg-slate-50 border border-slate-200/80 rounded-xl"
                 >
                   <div className="flex items-center gap-2.5">
                     <div className="w-8 h-8 rounded-full bg-[#0d3830] text-emerald-300 font-extrabold text-xs flex items-center justify-center">
@@ -477,16 +477,16 @@ export default function Navbar({ activePage = "beranda" }: NavbarProps) {
                     </div>
                     <div>
                       <p className="text-xs font-bold text-slate-900 truncate max-w-[160px]">{user.nama_lengkap}</p>
-                      <p className="text-[11px] text-emerald-800 font-medium">{t.navbar.dashboardBtn}</p>
+                      <p className="text-[11px] text-slate-600 font-medium">{t.navbar.dashboardBtn}</p>
                     </div>
                   </div>
                 </Link>
                 <button
                   type="button"
                   onClick={handleLogout}
-                  className="w-full py-2 px-3 text-xs font-bold text-rose-600 bg-rose-50 border border-rose-100 rounded-lg flex items-center justify-center gap-2"
+                  className="w-full py-2 px-3 text-xs font-bold text-slate-600 hover:text-rose-700 bg-slate-100/80 hover:bg-rose-50/50 border border-slate-200/70 rounded-lg flex items-center justify-center gap-2 transition"
                 >
-                  <LogOut className="w-3.5 h-3.5" />
+                  <LogOut className="w-3.5 h-3.5 text-slate-400" />
                   <span>{t.navbar.keluar}</span>
                 </button>
               </div>

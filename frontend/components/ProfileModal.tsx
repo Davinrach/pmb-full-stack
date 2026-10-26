@@ -248,9 +248,9 @@ export default function ProfileModal({
       case "super_admin":
         return { label: "Super Administrator", color: "bg-[#0d3830] text-emerald-100 border-[#0d3830]" };
       case "admin_pmb":
-        return { label: "Admin Panitia PMB", color: "bg-emerald-100 text-emerald-900 border-emerald-300" };
+        return { label: "Admin Panitia PMB", color: "bg-slate-100 text-slate-800 border-slate-200" };
       default:
-        return { label: "Calon Mahasiswa", color: "bg-emerald-50 text-emerald-800 border-emerald-200" };
+        return { label: "Calon Mahasiswa", color: "bg-emerald-50 text-emerald-800 border-emerald-200/80" };
     }
   };
 
@@ -260,7 +260,7 @@ export default function ProfileModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-fadeIn overflow-y-auto font-sans">
       <div className="bg-white rounded-[28px] max-w-lg w-full shadow-2xl overflow-hidden border border-slate-100 relative animate-scaleUp my-8">
         {/* Top Accent Gradient Header */}
-        <div className="h-2 w-full bg-gradient-to-r from-[#0d3830] via-[#10b981] to-amber-500" />
+        <div className="h-2 w-full bg-gradient-to-r from-[#0d3830] via-[#165349] to-[#0d3830]" />
 
         {/* Modal Header */}
         <div className="px-6 sm:px-8 pt-6 pb-4 border-b border-slate-100 flex items-center justify-between">
@@ -363,7 +363,7 @@ export default function ProfileModal({
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isUploadingPhoto}
-                    className="absolute bottom-0 right-0 p-2 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-md transition cursor-pointer border-2 border-white"
+                    className="absolute bottom-0 right-0 p-2 rounded-full bg-[#0d3830] hover:bg-[#165349] text-white shadow-md transition cursor-pointer border-2 border-white"
                     title="Ganti Foto Profil"
                   >
                     <Camera className="w-3.5 h-3.5" />

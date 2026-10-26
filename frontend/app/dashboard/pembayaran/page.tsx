@@ -149,8 +149,8 @@ export default function PembayaranPage() {
         </div>
 
         {errorMessage && (
-          <div className="p-4 bg-red-50 border border-red-200 rounded-2xl text-xs sm:text-sm text-red-700 flex items-center gap-2.5 animate-fadeIn">
-            <AlertCircle className="w-5 h-5 flex-shrink-0 text-red-600" />
+          <div className="p-4 bg-rose-50/70 border border-rose-200/70 rounded-2xl text-xs sm:text-sm text-rose-800 flex items-center gap-2.5 animate-fadeIn">
+            <AlertCircle className="w-5 h-5 flex-shrink-0 text-rose-600/80" />
             <span>{errorMessage}</span>
           </div>
         )}
@@ -185,8 +185,8 @@ export default function PembayaranPage() {
                 <div className="bg-[#0d3830] rounded-3xl text-white p-6 sm:p-8 shadow-sm border border-[#092621] space-y-4">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div className="space-y-2">
-                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-extrabold border border-emerald-400/30">
-                        <Sparkles className="w-4 h-4 text-emerald-400" />
+                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-emerald-200 text-xs font-semibold border border-white/20">
+                        <Sparkles className="w-4 h-4 text-emerald-300" />
                         <span>Jalur Beasiswa KIP-Kuliah (Pemerintah)</span>
                       </div>
                       <h2 className="text-xl sm:text-2xl font-bold text-white font-serif">
@@ -306,12 +306,12 @@ export default function PembayaranPage() {
                     return (
                       <div
                         key={rekKey}
-                        className="bg-white border-2 border-slate-200 hover:border-emerald-700/60 rounded-2xl p-5 shadow-xs transition flex flex-col justify-between space-y-4"
+                        className="bg-white border border-slate-200/80 hover:border-[#0d3830]/50 rounded-2xl p-5 shadow-xs transition flex flex-col justify-between space-y-4"
                       >
                         <div className="space-y-3">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2.5">
-                              <div className="w-8 h-8 rounded-lg bg-emerald-50 text-[#0d3830] border border-emerald-200 flex items-center justify-center font-bold text-xs flex-shrink-0">
+                              <div className="w-8 h-8 rounded-lg bg-slate-50 text-[#0d3830] border border-slate-200/70 flex items-center justify-center font-bold text-xs flex-shrink-0">
                                 <Building2 className="w-4 h-4" />
                               </div>
                               <div>
@@ -319,7 +319,7 @@ export default function PembayaranPage() {
                                 <span className="text-[10px] text-slate-400">KC / KCP: {cabang}</span>
                               </div>
                             </div>
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-[#0d3830] border border-slate-200/80">
                               Rekening Sah
                             </span>
                           </div>

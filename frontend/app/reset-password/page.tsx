@@ -82,7 +82,7 @@ function ResetPasswordContent() {
 
         {isSuccess ? (
           <div className="text-center py-4 space-y-4">
-            <div className="w-12 h-12 rounded-full bg-emerald-100 text-[#0d3830] flex items-center justify-center mx-auto">
+            <div className="w-12 h-12 rounded-full bg-[#0d3830]/10 text-[#0d3830] flex items-center justify-center mx-auto">
               <CheckCircle2 className="w-7 h-7" />
             </div>
             <h3 className="text-lg font-bold text-slate-900">Kata Sandi Diperbarui!</h3>
@@ -101,8 +101,8 @@ function ResetPasswordContent() {
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             {errorMessage && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              <div className="p-3 bg-rose-50/70 border border-rose-200/70 rounded-xl text-xs text-rose-800 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-600/80" />
                 <span>{errorMessage}</span>
               </div>
             )}

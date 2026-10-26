@@ -83,7 +83,7 @@ export default function LoginAdminPage() {
 
         <Link
           href="/login"
-          className="text-xs font-bold text-[#0d3830] hover:text-[#165349] hover:underline flex items-center gap-1 bg-emerald-50 border border-emerald-200 px-3.5 py-1.5 rounded-lg transition"
+          className="text-xs font-bold text-slate-700 hover:text-[#0d3830] flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200/80 border border-slate-200/80 px-3.5 py-1.5 rounded-lg transition"
         >
           <GraduationCap className="w-4 h-4 text-[#0d3830]" />
           <span>Login Calon Mahasiswa</span>
@@ -98,7 +98,7 @@ export default function LoginAdminPage() {
           <div className="md:col-span-5 bg-[#0d3830] text-white p-8 flex flex-col justify-between relative overflow-hidden">
             <div className="absolute inset-0 opacity-10 bg-[url('/banner.png')] bg-cover bg-center" />
             <div className="relative z-10 space-y-6">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-bold border border-emerald-400/30">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-emerald-200 text-xs font-semibold border border-white/15">
                 <ShieldCheck className="w-3.5 h-3.5" />
                 <span>Portal Resmi Pengelola PMB</span>
               </div>
@@ -114,15 +114,15 @@ export default function LoginAdminPage() {
 
               <div className="space-y-3 pt-2 text-xs text-emerald-50 font-medium">
                 <div className="flex items-center gap-2.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                  <CheckCircle2 className="w-4 h-4 text-emerald-300/90 flex-shrink-0" />
                   <span>Verifikasi pembayaran otomatis &amp; manual</span>
                 </div>
                 <div className="flex items-center gap-2.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                  <CheckCircle2 className="w-4 h-4 text-emerald-300/90 flex-shrink-0" />
                   <span>Manajemen status kelulusan &amp; seleksi</span>
                 </div>
                 <div className="flex items-center gap-2.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                  <CheckCircle2 className="w-4 h-4 text-emerald-300/90 flex-shrink-0" />
                   <span>CMS Pengaturan Banner &amp; Teks Pendaftaran</span>
                 </div>
               </div>
@@ -147,8 +147,8 @@ export default function LoginAdminPage() {
 
             <form onSubmit={handleSubmit} className="space-y-5">
               {errorMessage && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-start gap-2">
-                  <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <div className="p-3 bg-rose-50/70 border border-rose-200/70 rounded-xl text-xs text-rose-800 flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5 text-rose-600/80" />
                   <span>{errorMessage}</span>
                 </div>
               )}

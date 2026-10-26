@@ -367,7 +367,7 @@ export default function DetailProdiPage({ params }: PageProps) {
               <ol className="space-y-4 text-xs sm:text-sm text-slate-700">
                 {displayAlurSteps.map((step, idx) => (
                   <li key={idx} className="flex gap-3 items-start">
-                    <span className="font-bold text-slate-900 flex-shrink-0 w-6 h-6 rounded-full bg-emerald-100 text-[#0d3830] flex items-center justify-center text-xs font-mono font-black mt-0.5">
+                    <span className="font-bold text-slate-800 flex-shrink-0 w-6 h-6 rounded-full bg-slate-100 text-[#0d3830] border border-slate-200/80 flex items-center justify-center text-xs font-mono font-black mt-0.5">
                       {idx + 1}
                     </span>
                     <div className="space-y-0.5">
@@ -388,7 +388,7 @@ export default function DetailProdiPage({ params }: PageProps) {
             {/* Card 2: Hotline & Narahubung Panitia PMB (Seragam dengan Desain Card Page Pendaftaran) */}
             <div className="bg-white rounded-2xl border border-slate-200/90 p-6 shadow-sm space-y-3.5">
               <div className="flex items-center gap-2 text-slate-900 font-bold text-lg">
-                <Headphones className="w-5 h-5 text-amber-600" />
+                <Headphones className="w-5 h-5 text-[#0d3830]" />
                 <h3>Pusat Bantuan &amp; Narahubung PMB</h3>
               </div>
               <p className="text-xs text-slate-500 leading-relaxed">
@@ -433,10 +433,10 @@ export default function DetailProdiPage({ params }: PageProps) {
                         <a
                           key={h.id || idx}
                           href={`mailto:${rawVal}`}
-                          className="flex items-center gap-3.5 p-3.5 bg-[#f0f6ff] hover:bg-[#e1eeff] rounded-2xl border border-blue-200 transition group cursor-pointer shadow-2xs"
+                          className="flex items-center gap-3.5 p-3.5 bg-slate-50 hover:bg-slate-100/80 rounded-2xl border border-slate-200/80 transition group cursor-pointer shadow-2xs"
                         >
-                          <div className="w-10 h-10 rounded-full bg-blue-700 text-white flex items-center justify-center flex-shrink-0 shadow-xs group-hover:scale-105 transition-transform">
-                            <Mail className="w-5 h-5 text-blue-200" />
+                          <div className="w-10 h-10 rounded-full bg-slate-800 text-white flex items-center justify-center flex-shrink-0 shadow-xs group-hover:scale-105 transition-transform">
+                            <Mail className="w-5 h-5 text-slate-200" />
                           </div>
                           <div className="flex flex-col min-w-0">
                             <span className="text-[11px] font-semibold text-slate-600 truncate">
@@ -461,10 +461,10 @@ export default function DetailProdiPage({ params }: PageProps) {
                         href={href}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-3.5 p-3.5 bg-[#eef7f2] hover:bg-[#e2f2e9] rounded-2xl border border-emerald-200 transition group cursor-pointer shadow-2xs"
+                        className="flex items-center gap-3.5 p-3.5 bg-slate-50/80 hover:bg-emerald-50/40 rounded-2xl border border-slate-200/80 hover:border-emerald-200/60 transition group cursor-pointer shadow-2xs"
                       >
                         <div className="w-10 h-10 rounded-full bg-[#0d3830] text-white flex items-center justify-center flex-shrink-0 shadow-xs group-hover:scale-105 transition-transform">
-                          <Phone className="w-5 h-5 text-emerald-400" />
+                          <Phone className="w-5 h-5 text-emerald-300" />
                         </div>
                         <div className="flex flex-col min-w-0">
                           <span className="text-[11px] font-semibold text-slate-600 truncate">

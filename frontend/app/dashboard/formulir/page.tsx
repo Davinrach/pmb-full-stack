@@ -556,11 +556,11 @@ function FormulirPendaftaranContent() {
       <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full flex-1 space-y-6">
         {/* Lock Alert if Submitted */}
         {isLocked && (
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center gap-3 text-amber-900 text-xs sm:text-sm shadow-2xs">
-            <Lock className="w-5 h-5 flex-shrink-0 text-amber-700" />
+          <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 flex items-center gap-3 text-slate-700 text-xs sm:text-sm shadow-2xs">
+            <Lock className="w-5 h-5 flex-shrink-0 text-slate-500" />
             <p>
               <strong>Formulir Terkunci:</strong> Anda telah men-submit pendaftaran final dengan Nomor Registrasi{" "}
-              <strong className="font-mono">{pendaftar.nomor_pendaftaran}</strong>. Data tidak dapat diedit lagi kecuali panitia PMB meminta perbaikan berkas.
+              <strong className="font-mono text-slate-900">{pendaftar.nomor_pendaftaran}</strong>. Data tidak dapat diedit lagi kecuali panitia PMB meminta perbaikan berkas.
             </p>
           </div>
         )}
@@ -616,8 +616,8 @@ function FormulirPendaftaranContent() {
 
         {/* Feedback Messages */}
         {errorMessage && (
-          <div className="p-4 bg-red-50 border border-red-200 rounded-2xl text-xs sm:text-sm text-red-700 flex items-center gap-2.5 animate-fadeIn">
-            <AlertCircle className="w-5 h-5 flex-shrink-0 text-red-600" />
+          <div className="p-4 bg-rose-50/70 border border-rose-200/70 rounded-2xl text-xs sm:text-sm text-rose-800 flex items-center gap-2.5 animate-fadeIn">
+            <AlertCircle className="w-5 h-5 flex-shrink-0 text-rose-600/80" />
             <span>{errorMessage}</span>
           </div>
         )}
@@ -1450,8 +1450,8 @@ function FormulirPendaftaranContent() {
 
             {/* Alert Jalur KIP jika dipilih */}
             {jalurPendaftaran === "KIP-Kuliah" && (
-              <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-3 text-amber-900 text-xs">
-                <AlertCircle className="w-4 h-4 flex-shrink-0 text-amber-600 mt-0.5" />
+              <div className="p-4 bg-slate-50 border border-slate-200/80 rounded-2xl flex items-start gap-3 text-slate-700 text-xs">
+                <AlertCircle className="w-4 h-4 flex-shrink-0 text-slate-500 mt-0.5" />
                 <p>
                   <strong>Perhatian Pendaftar KIP-Kuliah:</strong> Dokumen <strong>Kartu KIP / KKS / PKH / Bukti DTKS</strong> bersifat <strong>wajib diunggah</strong> untuk proses verifikasi beasiswa kuliah bebas biaya oleh panitia PMB.
                 </p>

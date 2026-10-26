@@ -265,9 +265,9 @@ export default function DashboardPage() {
 
             <button
               onClick={handleLogout}
-              className="p-2 sm:px-3 sm:py-2 text-xs font-bold text-rose-700 hover:bg-rose-50 rounded-xl transition flex items-center gap-1.5 border border-rose-200/60 cursor-pointer"
+              className="p-2 sm:px-3 sm:py-2 text-xs font-bold text-slate-600 hover:text-rose-700 hover:bg-rose-50/50 rounded-xl transition flex items-center gap-1.5 border border-slate-200 cursor-pointer"
             >
-              <LogOut className="w-4 h-4" />
+              <LogOut className="w-4 h-4 text-slate-400 group-hover:text-rose-600" />
               <span className="hidden sm:inline">{isEng ? "Sign Out" : "Keluar"}</span>
             </button>
           </div>
@@ -335,17 +335,17 @@ export default function DashboardPage() {
 
         {/* Rejection / Revision Alert Banner (FR-5.2, FR-5.4) */}
         {pendaftar?.catatan_revisi && (
-          <div className="bg-red-50 border border-red-200 rounded-2xl p-5 flex items-start gap-4 text-red-800 shadow-2xs animate-fadeIn">
-            <AlertCircle className="w-5 h-5 flex-shrink-0 text-red-600 mt-0.5" />
+          <div className="bg-rose-50/70 border border-rose-200/70 rounded-2xl p-5 flex items-start gap-4 text-rose-800 shadow-2xs animate-fadeIn">
+            <AlertCircle className="w-5 h-5 flex-shrink-0 text-rose-600/80 mt-0.5" />
             <div className="space-y-1 text-xs sm:text-sm">
-              <h4 className="font-bold text-red-900">
+              <h4 className="font-bold text-rose-900">
                 {isEng ? "Revision Notes from PMB Committee:" : "Catatan Perbaikan dari Panitia PMB:"}
               </h4>
               <p className="leading-relaxed">{pendaftar.catatan_revisi}</p>
               <div className="pt-2">
                 <Link
                   href="/dashboard/formulir"
-                  className="inline-flex items-center gap-1 font-bold text-red-700 hover:underline"
+                  className="inline-flex items-center gap-1 font-bold text-rose-700 hover:underline"
                 >
                   <span>{isEng ? "Revise Documents / Data Now" : "Revisi Berkas / Data Sekarang"}</span>
                   <ChevronRight className="w-4 h-4" />
@@ -363,7 +363,7 @@ export default function DashboardPage() {
             className="group bg-white rounded-2xl border border-slate-200/80 p-6 hover:border-[#0d3830] hover:shadow-md transition flex flex-col justify-between"
           >
             <div className="space-y-3">
-              <div className="w-12 h-12 rounded-xl bg-emerald-50 text-[#0d3830] flex items-center justify-center group-hover:bg-[#0d3830] group-hover:text-white transition">
+              <div className="w-12 h-12 rounded-xl bg-slate-100 text-[#0d3830] border border-slate-200/60 flex items-center justify-center group-hover:bg-[#0d3830] group-hover:text-white transition">
                 <FileText className="w-6 h-6" />
               </div>
               <h3 className="text-base font-bold text-slate-900 group-hover:text-[#0d3830] transition">
@@ -391,10 +391,10 @@ export default function DashboardPage() {
             className="group bg-white rounded-2xl border border-slate-200/80 p-6 hover:border-[#0d3830] hover:shadow-md transition flex flex-col justify-between"
           >
             <div className="space-y-3">
-              <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-800 flex items-center justify-center group-hover:bg-amber-600 group-hover:text-white transition">
+              <div className="w-12 h-12 rounded-xl bg-slate-100 text-[#0d3830] border border-slate-200/60 flex items-center justify-center group-hover:bg-[#0d3830] group-hover:text-white transition">
                 <CreditCard className="w-6 h-6" />
               </div>
-              <h3 className="text-base font-bold text-slate-900 group-hover:text-amber-800 transition">
+              <h3 className="text-base font-bold text-slate-900 group-hover:text-[#0d3830] transition">
                 {isEng ? "Payment Info & Receipts" : "Informasi & Bukti Pembayaran"}
               </h3>
               <p className="text-xs text-slate-600 leading-relaxed">
@@ -403,7 +403,7 @@ export default function DashboardPage() {
                   : "Lihat nomor rekening bank tujuan, rincian biaya pendaftaran gelombang, dan unggah bukti transfer."}
               </p>
             </div>
-            <div className="pt-5 flex items-center justify-between text-xs font-bold text-amber-800">
+            <div className="pt-5 flex items-center justify-between text-xs font-bold text-[#0d3830]">
               <span>{isEng ? "Manage Payment" : "Kelola Pembayaran"}</span>
               <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition" />
             </div>
@@ -415,10 +415,10 @@ export default function DashboardPage() {
             className="group bg-white rounded-2xl border border-slate-200/80 p-6 hover:border-[#0d3830] hover:shadow-md transition flex flex-col justify-between"
           >
             <div className="space-y-3">
-              <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-800 flex items-center justify-center group-hover:bg-blue-700 group-hover:text-white transition">
+              <div className="w-12 h-12 rounded-xl bg-slate-100 text-[#0d3830] border border-slate-200/60 flex items-center justify-center group-hover:bg-[#0d3830] group-hover:text-white transition">
                 <Award className="w-6 h-6" />
               </div>
-              <h3 className="text-base font-bold text-slate-900 group-hover:text-blue-800 transition">
+              <h3 className="text-base font-bold text-slate-900 group-hover:text-[#0d3830] transition">
                 {isEng ? "Selection Results & Enrollment" : "Hasil Seleksi & Daftar Ulang"}
               </h3>
               <p className="text-xs text-slate-600 leading-relaxed">
@@ -427,7 +427,7 @@ export default function DashboardPage() {
                   : "Cek kelulusan seleksi administrasi/ujian dan panduan her-registrasi mahasiswa baru."}
               </p>
             </div>
-            <div className="pt-5 flex items-center justify-between text-xs font-bold text-blue-800">
+            <div className="pt-5 flex items-center justify-between text-xs font-bold text-[#0d3830]">
               <span>{isEng ? "Check Announcement" : "Cek Pengumuman"}</span>
               <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition" />
             </div>

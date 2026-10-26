@@ -213,47 +213,63 @@ export default function HomePage() {
       {/* 1. Header / Navbar */}
       <Navbar activePage="beranda" />
 
-      {/* 2. Hero / Banner Section */}
+      {/* 2. Modern Hero / Banner Section */}
       <section
         id="beranda"
-        className="relative w-full min-h-[360px] md:min-h-[420px] flex items-center overflow-hidden bg-[#0c2f29]"
+        className="relative w-full min-h-[500px] md:min-h-[560px] lg:min-h-[600px] flex items-center bg-white overflow-hidden border-b border-slate-200/70"
       >
-        {/* Banner Background Image */}
-        <div className="absolute inset-0 z-0">
+        {/* Right Photo with Soft Feathered Gradient Overlay */}
+        <div className="absolute inset-y-0 right-0 w-full lg:w-[62%] xl:w-[60%] z-0 overflow-hidden">
           <Image
-            src="/banner.png"
-            alt="Gedung Kampus STAI Cendekia Insani Situbondo"
+            src="/banner-staici.png"
+            alt="Mahasiswa STAI Cendekia Insani Situbondo"
             fill
             priority
             unoptimized
-            className="object-cover object-center scale-105"
+            className="object-cover object-[center_15%] lg:object-[left_center]"
           />
-          {/* Emerald-Teal Translucent Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-r from-[#0d3830]/95 via-[#0e3b33]/90 to-[#07241e]/85 backdrop-blur-[1.5px]" />
+          {/* Smooth horizontal gradient from solid white on the left into the photo */}
+          <div className="absolute inset-0 bg-gradient-to-r from-white via-white/85 md:via-white/50 lg:via-white/20 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-white via-white/80 to-transparent md:hidden" />
+
+          {/* Faint modern architectural line art accents (inspired by IUP banner) */}
+          <div className="absolute inset-0 pointer-events-none opacity-20 hidden md:block">
+            <svg className="w-full h-full" viewBox="0 0 800 600" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="720" cy="480" r="130" stroke="#0d3830" strokeWidth="1.5" strokeDasharray="5 5" />
+              <rect x="620" y="70" width="90" height="90" rx="18" stroke="#0d3830" strokeWidth="1.5" />
+              <path d="M480,240 Q620,180 740,320" stroke="#0d3830" strokeWidth="1.5" />
+            </svg>
+          </div>
         </div>
 
-        {/* Content Container */}
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16 w-full">
-          {/* Breadcrumb */}
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-200/90 mb-4">
-            <Home className="w-3.5 h-3.5" />
-            <span>{t.navbar.beranda}</span>
-          </div>
+        {/* Content Container on the Left */}
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20 w-full">
+          <div className="max-w-xl lg:max-w-2xl">
+            {/* Headline */}
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[48px] font-black text-slate-900 tracking-tight leading-[1.15]">
+              {lang === "eng" ? (
+                <>
+                  New Student Admission<br />
+                  Center<br />
+                  <span className="text-[#0d3830] font-extrabold text-2xl sm:text-3xl md:text-4xl lg:text-[40px] block mt-2 sm:mt-3 leading-snug">
+                    {t.hero.titleHighlight}
+                  </span>
+                </>
+              ) : (
+                <>
+                  Pusat Pendaftaran<br />
+                  Mahasiswa Baru<br />
+                  <span className="text-[#0d3830] font-extrabold text-2xl sm:text-3xl md:text-4xl lg:text-[40px] block mt-2 sm:mt-3 leading-snug">
+                    {t.hero.titleHighlight}
+                  </span>
+                </>
+              )}
+            </h1>
 
-          {/* Announcement Pill Badge */}
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-200 text-xs font-semibold backdrop-blur-md mb-6 shadow-sm">
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-300" />
-            <span>{announcementText}</span>
-          </div>
-
-          {/* Headline */}
-          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[52px] font-extrabold text-white tracking-tight leading-[1.15] max-w-3xl drop-shadow-sm">
-            {bannerTitle}
-          </h1>
-
-          {/* Subtitle */}
-          <div className="mt-4 space-y-1 text-emerald-100/90 text-sm sm:text-base md:text-lg max-w-2xl font-normal leading-relaxed">
-            <p>{bannerSubtitle}</p>
+            {/* Subtitle / Description */}
+            <p className="mt-5 sm:mt-6 text-slate-600 text-sm sm:text-base md:text-lg font-normal leading-relaxed">
+              {bannerSubtitle}
+            </p>
           </div>
         </div>
       </section>
@@ -265,7 +281,7 @@ export default function HomePage() {
           <section id="program-studi" className="lg:col-span-8 space-y-6 scroll-mt-28 lg:scroll-mt-32">
             {/* Section Header */}
             <div>
-              <span className="text-xs font-bold tracking-wider text-amber-700 uppercase">
+              <span className="text-xs font-bold tracking-wider text-slate-500 uppercase">
                 {t.prodiSection.badge}
               </span>
               <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-1">
@@ -298,7 +314,7 @@ export default function HomePage() {
                     <div className="space-y-2.5 max-w-xl">
                       {/* Badge Kode Prodi */}
                       {kode && (
-                        <span className="inline-block text-xs font-bold px-2.5 py-0.5 rounded border text-emerald-800 bg-emerald-50 border-emerald-200">
+                        <span className="inline-block text-xs font-bold px-2.5 py-0.5 rounded border text-[#0d3830] bg-slate-50 border-slate-200">
                           {kode}
                         </span>
                       )}
@@ -316,17 +332,17 @@ export default function HomePage() {
                       {/* 3 Badges: Jenjang S1, Gelar, Akreditasi BAN-PT */}
                       <div className="flex flex-wrap items-center gap-2 pt-1">
                         {badgeJenjang && (
-                          <span className="px-2.5 py-1 text-xs font-semibold text-slate-700 bg-slate-100 rounded-md border border-slate-200">
+                          <span className="px-2.5 py-1 text-xs font-semibold text-slate-700 bg-slate-100 rounded-md border border-slate-200/80">
                             {badgeJenjang}
                           </span>
                         )}
                         {badgeGelar && (
-                          <span className="px-2.5 py-1 text-xs font-semibold text-amber-800 bg-amber-50 rounded-md border border-amber-200">
+                          <span className="px-2.5 py-1 text-xs font-semibold text-slate-700 bg-slate-100/90 rounded-md border border-slate-200/80">
                             {badgeGelar}
                           </span>
                         )}
                         {badgeAkreditasi && (
-                          <span className="px-2.5 py-1 text-xs font-semibold text-emerald-800 bg-emerald-100/90 rounded-md border border-emerald-200">
+                          <span className="px-2.5 py-1 text-xs font-semibold text-emerald-900 bg-emerald-50/80 rounded-md border border-emerald-200/60">
                             {badgeAkreditasi}
                           </span>
                         )}
@@ -349,150 +365,99 @@ export default function HomePage() {
             </div>
           </section>
 
-          {/* RIGHT COLUMN: Persyaratan Berkas & Hotline Narahubung (col-span-4) */}
-          <aside className="lg:col-span-4 space-y-6">
-            {/* Card 1 (ATAS): Persyaratan Berkas Pendaftaran (Dinamis dari Master Dokumen) */}
-            <div className="bg-white rounded-2xl border border-slate-200/90 p-6 shadow-sm space-y-4">
-              <div className="flex items-center gap-2 text-slate-900 font-bold text-base sm:text-lg">
-                <FileText className="w-5 h-5 text-emerald-700" />
-                <h3>Persyaratan Berkas Pendaftaran</h3>
+          {/* RIGHT COLUMN: Keunggulan STAICI & Hotline Narahubung (col-span-4) */}
+          <aside className="lg:col-span-4 space-y-5">
+            {/* Card 1 (ATAS): Keunggulan Kampus STAI Cendekia Insani */}
+            <div className="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-xs space-y-4">
+              <div className="flex items-center gap-2.5 text-slate-900 font-bold text-base sm:text-lg">
+                <div className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-100/80 text-emerald-800 flex items-center justify-center flex-shrink-0 shadow-2xs">
+                  <Award className="w-4.5 h-4.5 text-emerald-700" />
+                </div>
+                <h3>{lang === "eng" ? "STAICI Core Advantages" : "Keunggulan STAI Cendekia Insani"}</h3>
               </div>
               <p className="text-xs text-slate-500 leading-relaxed">
-                Dokumen resmi yang wajib disiapkan sebelum melakukan submit formulir pendaftaran:
+                {lang === "eng"
+                  ? "Integrating Islamic scholarship and moral development with professional career readiness in education and socio-religious sectors."
+                  : "Fokus pada integrasi nilai keislaman dan kesiapan kerja profesional di bidang kependidikan Islam serta sosial-keagamaan."}
               </p>
 
-              <ul className="space-y-2 text-xs text-slate-700">
-                {(backendPersyaratanDocs.length > 0
-                  ? backendPersyaratanDocs.filter((d: any) => d.is_aktif ?? true)
-                  : [
-                      { nama_dokumen: "Scan/Foto Kartu Keluarga (KK) Asli atau Legalisir", is_wajib: true },
-                      { nama_dokumen: "Scan/Foto KTP Calon Mahasiswa", is_wajib: true },
-                      { nama_dokumen: "Scan/Foto Ijazah / SKL SLTA Sederajat", is_wajib: true },
-                      { nama_dokumen: "Pas Foto Resmi Berwarna 3x4", is_wajib: true },
-                      { nama_dokumen: "Bukti Transfer Pembayaran Biaya Pendaftaran PMB", is_wajib: true },
-                      { nama_dokumen: "Scan Kartu KIP / KKS / PKH (Khusus Beasiswa KIP)", is_wajib: false, jalur_khusus: "kip-kuliah" },
+              {/* List Keunggulan (Ringkas & Soft) */}
+              <div className="space-y-2.5 pt-1">
+                {(lang === "eng"
+                  ? [
+                      {
+                        title: "Academic & Moral Integration",
+                        desc: "Blending standardized higher education curriculum with spiritual values and solid character building.",
+                        icon: <GraduationCap className="w-4 h-4 text-emerald-700" />,
+                      },
+                      {
+                        title: "Qur'anic & Religious Reinforcement",
+                        desc: "Qur'anic literacy, tahfidz, Arabic language, and classical text studies as the core student competence.",
+                        icon: <BookOpen className="w-4 h-4 text-emerald-700" />,
+                      },
+                      {
+                        title: "Flexible Class Schedules",
+                        desc: "Adaptive learning schemes tailored for workers, madrasah teachers, and honorary staff.",
+                        icon: <Clock className="w-4 h-4 text-emerald-700" />,
+                      },
+                      {
+                        title: "Affordable Tuition & Scholarships",
+                        desc: "Budget-friendly tuition supported by Tahfidz, Merit, and government KIP-Kuliah scholarships.",
+                        icon: <ShieldCheck className="w-4 h-4 text-emerald-700" />,
+                      },
+                      {
+                        title: "Practical & Targeted Community Service",
+                        desc: "Hands-on real-world experience through teaching practice, partner internships, and community empowerment.",
+                        icon: <Briefcase className="w-4 h-4 text-emerald-700" />,
+                      },
                     ]
-                ).map((doc: any, idx: number) => (
-                  <li
-                    key={doc.id || idx}
-                    className="flex items-start justify-between gap-2 p-2.5 rounded-xl bg-slate-50/70 border border-slate-100 hover:bg-emerald-50/40 transition"
+                  : [
+                      {
+                        title: "Integrasi Keilmuan & Pembinaan Akhlak",
+                        desc: "Memadukan kurikulum akademik standar dengan penanaman nilai spiritual dan karakter santri yang kuat.",
+                        icon: <GraduationCap className="w-4 h-4 text-emerald-700" />,
+                      },
+                      {
+                        title: "Penguatan Al-Qur'an & Keagamaan",
+                        desc: "Literasi Al-Qur'an, tahfidz, bahasa Arab, dan kajian kitab keagamaan sebagai fondasi utama kompetensi.",
+                        icon: <BookOpen className="w-4 h-4 text-emerald-700" />,
+                      },
+                      {
+                        title: "Fleksibilitas Waktu Perkuliahan",
+                        desc: "Pilihan skema kelas adaptif dan ramah bagi pekerja, guru madrasah, serta tenaga honorer.",
+                        icon: <Clock className="w-4 h-4 text-emerald-700" />,
+                      },
+                      {
+                        title: "Biaya Terjangkau & Akses Beasiswa",
+                        desc: "Biaya studi ramah kantong didukung beasiswa jalur Tahfidz, Prestasi, dan KIP-Kuliah pemerintah.",
+                        icon: <ShieldCheck className="w-4 h-4 text-emerald-700" />,
+                      },
+                      {
+                        title: "Praktik Lapangan & Pengabdian Terarah",
+                        desc: "Pengalaman praktis riil melalui praktik mengajar, magang instansi, dan KKN pemberdayaan masyarakat.",
+                        icon: <Briefcase className="w-4 h-4 text-emerald-700" />,
+                      },
+                    ]
+                ).map((item, idx) => (
+                  <div
+                    key={idx}
+                    className="p-3 rounded-xl bg-slate-50/70 border border-slate-100 hover:bg-emerald-50/30 hover:border-emerald-100/70 transition group"
                   >
-                    <div className="flex items-start gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
-                      <span className="leading-relaxed font-medium text-slate-800">{doc.nama_dokumen}</span>
+                    <div className="flex items-start gap-2.5">
+                      <div className="w-7 h-7 rounded-lg bg-white border border-slate-200/60 flex items-center justify-center flex-shrink-0 mt-0.5 text-emerald-700 shadow-2xs group-hover:scale-105 transition-transform">
+                        {item.icon}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h4 className="text-xs font-bold text-slate-800 leading-snug">
+                          {item.title}
+                        </h4>
+                        <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
+                          {item.desc}
+                        </p>
+                      </div>
                     </div>
-                    {doc.is_wajib ? (
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200 flex-shrink-0">
-                        Wajib
-                      </span>
-                    ) : doc.jalur_khusus && doc.jalur_khusus !== "semua" ? (
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 flex-shrink-0">
-                        Khusus KIP
-                      </span>
-                    ) : null}
-                  </li>
+                  </div>
                 ))}
-              </ul>
-            </div>
-
-            {/* Card 2 (BAWAH): Hotline & Narahubung Panitia PMB (Seragam dengan Desain Card Page Pendaftaran) */}
-            <div className="bg-white rounded-2xl border border-slate-200/90 p-6 shadow-sm space-y-3.5">
-              <div className="flex items-center gap-2 text-slate-900 font-bold text-lg">
-                <Headphones className="w-5 h-5 text-amber-600" />
-                <h3>Pusat Bantuan &amp; Narahubung PMB</h3>
-              </div>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                Pertanyaan seputar pendaftaran, berkas persyaratan, atau konfirmasi biaya kuliah? Tim panitia kami siap membantu Anda:
-              </p>
-
-              <div className="space-y-2.5">
-                {(() => {
-                  const seen = new Set<string>();
-                  const activeList = (backendHotlines.length > 0
-                    ? backendHotlines.filter((h: any) => h.is_aktif ?? true)
-                    : [
-                        {
-                          id: "fb-wa",
-                          nama_layanan: "WhatsApp Panitia PMB Center",
-                          tipe_kontak: "whatsapp",
-                          nomor_atau_email: backendSettings?.no_whatsapp_cs || "0852-3343-2221",
-                        },
-                        {
-                          id: "fb-email",
-                          nama_layanan: "Email Resmi PMB STAICI",
-                          tipe_kontak: "email",
-                          nomor_atau_email: backendSettings?.email_cs || "pmb@staicisitubondo.ac.id",
-                        },
-                      ]
-                  ).filter((h: any) => {
-                    const val = (h.nomor_atau_email || h.nomor_kontak || "").trim().toLowerCase();
-                    if (!val || seen.has(val)) return false;
-                    seen.add(val);
-                    return true;
-                  });
-
-                  return activeList.map((h: any, idx: number) => {
-                    const rawVal = (h.nomor_atau_email || h.nomor_kontak || "").trim();
-                    const tipe = (h.tipe_kontak || h.channel || "").toLowerCase();
-                    const isEmail = tipe === "email" || rawVal.includes("@");
-                    const cleanNomor = rawVal.replace(/\D/g, "");
-                    const isWa = !isEmail && (tipe.includes("wa") || cleanNomor.startsWith("08") || cleanNomor.startsWith("62"));
-
-                    if (isEmail) {
-                      return (
-                        <a
-                          key={h.id || idx}
-                          href={`mailto:${rawVal}`}
-                          className="flex items-center gap-3.5 p-3.5 bg-[#f0f6ff] hover:bg-[#e1eeff] rounded-2xl border border-blue-200 transition group cursor-pointer shadow-2xs"
-                        >
-                          <div className="w-10 h-10 rounded-full bg-blue-700 text-white flex items-center justify-center flex-shrink-0 shadow-xs group-hover:scale-105 transition-transform">
-                            <Mail className="w-5 h-5 text-blue-200" />
-                          </div>
-                          <div className="flex flex-col min-w-0">
-                            <span className="text-[11px] font-semibold text-slate-600 truncate">
-                              {h.nama_layanan || "Email Resmi PMB STAICI"}
-                            </span>
-                            <span className="text-xs sm:text-sm font-bold text-slate-900 font-mono truncate">
-                              {rawVal}
-                            </span>
-                          </div>
-                        </a>
-                      );
-                    }
-
-                    const waNum = cleanNomor.startsWith("0") ? "62" + cleanNomor.slice(1) : cleanNomor;
-                    const href = isWa
-                      ? `https://wa.me/${waNum}?text=Halo%20Panitia%20PMB%20STAICI,%20saya%20ingin%20berkonsultasi%20pendaftaran`
-                      : `tel:${cleanNomor}`;
-
-                    return (
-                      <a
-                        key={h.id || idx}
-                        href={href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-3.5 p-3.5 bg-[#eef7f2] hover:bg-[#e2f2e9] rounded-2xl border border-emerald-200 transition group cursor-pointer shadow-2xs"
-                      >
-                        <div className="w-10 h-10 rounded-full bg-[#0d3830] text-white flex items-center justify-center flex-shrink-0 shadow-xs group-hover:scale-105 transition-transform">
-                          <Phone className="w-5 h-5 text-emerald-400" />
-                        </div>
-                        <div className="flex flex-col min-w-0">
-                          <span className="text-[11px] font-semibold text-slate-600 truncate">
-                            {h.nama_layanan || "WhatsApp PMB Center"}
-                          </span>
-                          <span className="text-sm sm:text-base font-bold text-slate-900 font-mono tracking-tight truncate">
-                            {rawVal}
-                          </span>
-                        </div>
-                      </a>
-                    );
-                  });
-                })()}
-              </div>
-
-              <div className="flex items-center gap-2 text-xs text-slate-500 pt-2 border-t border-slate-100">
-                <Clock className="w-3.5 h-3.5 text-slate-400" />
-                <span>Jam Layanan: {backendSettings?.jam_operasional || "Senin - Sabtu: 08.00 - 16.00 WIB"}</span>
               </div>
             </div>
           </aside>
@@ -502,7 +467,7 @@ export default function HomePage() {
         <section id="jalur-masuk" className="mt-12 space-y-5">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 border-b border-slate-200/80 pb-4">
             <div>
-              <span className="text-xs font-bold tracking-wider text-emerald-800 uppercase px-2.5 py-1 bg-emerald-100/80 rounded-full border border-emerald-200">
+              <span className="text-xs font-bold tracking-wider text-slate-700 uppercase px-2.5 py-1 bg-slate-100 rounded-full border border-slate-200/80">
                 Pilihan Jalur Masuk
               </span>
               <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight mt-2">
@@ -529,8 +494,8 @@ export default function HomePage() {
                   key={jalur.id || idx}
                   className={`rounded-2xl border p-6 transition-all duration-200 shadow-xs hover:shadow-md flex flex-col justify-between relative overflow-hidden bg-white ${
                     isKip
-                      ? "border-amber-200/90 hover:border-amber-300"
-                      : "border-emerald-200/90 hover:border-emerald-300"
+                      ? "border-amber-200/70 hover:border-amber-300/80"
+                      : "border-slate-200 hover:border-slate-300"
                   }`}
                 >
                   <div className="space-y-3.5">
@@ -539,20 +504,20 @@ export default function HomePage() {
                       <span
                         className={`text-xs font-bold px-3 py-1 rounded-full border ${
                           isKip
-                            ? "bg-amber-50 text-amber-900 border-amber-200"
-                            : "bg-emerald-50 text-emerald-900 border-emerald-200"
+                            ? "bg-amber-50/70 text-amber-900 border-amber-200/60"
+                            : "bg-slate-100 text-slate-800 border-slate-200/80"
                         }`}
                       >
                         {cardBadge}
                       </span>
                       <div
-                        className={`w-9 h-9 rounded-xl flex items-center justify-center ${
+                        className={`w-9 h-9 rounded-xl flex items-center justify-center border ${
                           isKip
-                            ? "bg-amber-100/80 text-amber-800"
-                            : "bg-emerald-100/80 text-emerald-800"
+                            ? "bg-amber-50 text-amber-800 border-amber-100"
+                            : "bg-slate-50 text-slate-700 border-slate-200/70"
                         }`}
                       >
-                        {isKip ? <Award className="w-5 h-5" /> : <GraduationCap className="w-5 h-5" />}
+                        {isKip ? <Award className="w-5 h-5 text-amber-700" /> : <GraduationCap className="w-5 h-5 text-[#0d3830]" />}
                       </div>
                     </div>
 
@@ -568,15 +533,11 @@ export default function HomePage() {
                   {/* Card Action */}
                   <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
                     <span className="text-xs text-slate-500 font-medium">
-                      Status: <span className="text-emerald-700 font-bold">Pendaftaran Aktif</span>
+                      Status: <span className="text-[#0d3830] font-bold">Pendaftaran Aktif</span>
                     </span>
                     <Link
                       href="/dashboard"
-                      className={`px-4 py-2 text-xs font-bold rounded-lg transition inline-flex items-center gap-1.5 shadow-xs ${
-                        isKip
-                          ? "bg-amber-700 hover:bg-amber-800 text-white"
-                          : "bg-[#0e3831] hover:bg-[#165349] text-white"
-                      }`}
+                      className="px-4 py-2 text-xs font-bold rounded-lg transition inline-flex items-center gap-1.5 shadow-xs bg-[#0e3831] hover:bg-[#165349] text-white"
                     >
                       <span>Daftar Jalur Ini</span>
                       <ChevronRight className="w-3.5 h-3.5" />
@@ -591,7 +552,7 @@ export default function HomePage() {
         {/* 5. Interactive Dynamic FAQ Section */}
         <section id="faq" className="mt-16 pt-10 border-t border-slate-200/80 space-y-8 scroll-mt-28 lg:scroll-mt-32">
           <div className="text-center max-w-2xl mx-auto space-y-2">
-            <span className="text-xs font-bold tracking-wider text-emerald-800 uppercase px-3 py-1 bg-emerald-100/70 rounded-full border border-emerald-200 inline-block">
+            <span className="text-xs font-bold tracking-wider text-slate-600 uppercase px-3 py-1 bg-slate-100 rounded-full border border-slate-200/80 inline-block">
               Pusat Informasi &amp; Regulasi
             </span>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
@@ -610,7 +571,7 @@ export default function HomePage() {
                 <div
                   key={faq.id}
                   className={`bg-white rounded-2xl border transition-all overflow-hidden ${
-                    isOpen ? "border-emerald-300 shadow-md ring-1 ring-emerald-100" : "border-slate-200 hover:border-slate-300 shadow-xs"
+                    isOpen ? "border-[#0d3830]/30 shadow-xs ring-1 ring-[#0d3830]/10" : "border-slate-200 hover:border-slate-300 shadow-xs"
                   }`}
                 >
                   <button
@@ -619,7 +580,7 @@ export default function HomePage() {
                     className="w-full p-5 text-left flex items-start justify-between gap-4 cursor-pointer"
                   >
                     <div className="space-y-1">
-                      <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 inline-block">
+                      <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 inline-block">
                         {faq.kategori || "Umum"}
                       </span>
                       <h4 className="text-sm sm:text-base font-bold text-slate-900">
@@ -628,7 +589,7 @@ export default function HomePage() {
                     </div>
                     <div
                       className={`p-1.5 rounded-lg text-slate-500 transition-transform flex-shrink-0 ${
-                        isOpen ? "rotate-180 text-emerald-700 bg-emerald-50" : "bg-slate-50"
+                        isOpen ? "rotate-180 text-[#0d3830] bg-slate-100" : "bg-slate-50"
                       }`}
                     >
                       <ChevronDown className="w-4 h-4" />
@@ -700,7 +661,7 @@ export default function HomePage() {
               <ul className="grid grid-cols-1 gap-1.5 text-xs text-slate-600">
                 {selectedProdi.profilLulusan.map((item: string, idx: number) => (
                   <li key={idx} className="flex items-start gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 mt-1.5 flex-shrink-0" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#0d3830]/80 mt-1.5 flex-shrink-0" />
                     <span>{item}</span>
                   </li>
                 ))}
@@ -710,13 +671,13 @@ export default function HomePage() {
             {/* Mata Kuliah Unggulan */}
             <div className="mt-5 space-y-2">
               <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                <BookOpen className="w-4 h-4 text-emerald-700" />
+                <BookOpen className="w-4 h-4 text-[#0d3830]" />
                 <span>{t.prodiSection.mataKuliah}</span>
               </h4>
               <ul className="grid grid-cols-1 gap-1.5 text-xs text-slate-600">
                 {selectedProdi.mataKuliahUnggulan.map((item: string, idx: number) => (
                   <li key={idx} className="flex items-start gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-600 mt-1.5 flex-shrink-0" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-slate-400 mt-1.5 flex-shrink-0" />
                     <span>{item}</span>
                   </li>
                 ))}

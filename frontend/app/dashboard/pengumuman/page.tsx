@@ -98,13 +98,13 @@ export default function PengumumanPage() {
 
         {/* LOLOS SELEKSI */}
         {isLolos && (
-          <div className="bg-white rounded-3xl border border-emerald-200 p-6 sm:p-10 shadow-md space-y-6 text-center">
-            <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto shadow-xs">
-              <CheckCircle2 className="w-10 h-10" />
+          <div className="bg-white rounded-3xl border border-emerald-200/80 p-6 sm:p-10 shadow-xs space-y-6 text-center">
+            <div className="w-16 h-16 rounded-full bg-emerald-50 text-[#0d3830] border border-emerald-100 flex items-center justify-center mx-auto shadow-2xs">
+              <CheckCircle2 className="w-9 h-9" />
             </div>
 
             <div className="space-y-2 max-w-xl mx-auto">
-              <span className="text-xs font-bold uppercase tracking-widest text-emerald-800 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+              <span className="text-xs font-bold uppercase tracking-widest text-[#0d3830] bg-emerald-50/80 px-3 py-1 rounded-full border border-emerald-200/80">
                 PENGUMUMAN KELULUSAN RESMI
               </span>
               <h2 className="text-2xl sm:text-3xl font-black text-slate-900 font-serif">
@@ -113,7 +113,7 @@ export default function PengumumanPage() {
               <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
                 Calon Mahasiswa atas nama <strong>{pendaftar?.user?.nama_lengkap}</strong> (No. Registrasi: <strong className="font-mono">{pendaftar?.nomor_pendaftaran}</strong>) dinyatakan diterima sebagai Calon Mahasiswa Baru pada program studi:
               </p>
-              <div className="p-4 bg-emerald-50/80 rounded-2xl border border-emerald-200 text-[#0d3830] font-bold text-base sm:text-lg">
+              <div className="p-4 bg-emerald-50/60 rounded-2xl border border-emerald-200/70 text-[#0d3830] font-bold text-base sm:text-lg">
                 {pendaftar?.program_studi?.nama} ({pendaftar?.program_studi?.kode})
               </div>
             </div>
@@ -154,13 +154,13 @@ export default function PengumumanPage() {
 
         {/* TIDAK LOLOS */}
         {isTidakLolos && (
-          <div className="bg-white rounded-3xl border border-rose-200 p-6 sm:p-10 shadow-md space-y-6 text-center">
-            <div className="w-16 h-16 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center mx-auto shadow-xs">
-              <XCircle className="w-10 h-10" />
+          <div className="bg-white rounded-3xl border border-rose-200/70 p-6 sm:p-10 shadow-xs space-y-6 text-center">
+            <div className="w-16 h-16 rounded-full bg-rose-50 text-rose-800 border border-rose-100 flex items-center justify-center mx-auto shadow-2xs">
+              <XCircle className="w-9 h-9" />
             </div>
 
             <div className="space-y-2 max-w-xl mx-auto">
-              <span className="text-xs font-bold uppercase tracking-widest text-rose-800 bg-rose-50 px-3 py-1 rounded-full border border-rose-200">
+              <span className="text-xs font-bold uppercase tracking-widest text-rose-800 bg-rose-50/80 px-3 py-1 rounded-full border border-rose-200/60">
                 HASIL SELEKSI
               </span>
               <h2 className="text-2xl sm:text-3xl font-black text-slate-900 font-serif">
@@ -175,13 +175,13 @@ export default function PengumumanPage() {
 
         {/* MENGIKUTI UJIAN */}
         {isUjian && (
-          <div className="bg-white rounded-3xl border border-sky-200 p-6 sm:p-10 shadow-md space-y-6 text-center">
-            <div className="w-16 h-16 rounded-full bg-sky-100 text-sky-700 flex items-center justify-center mx-auto shadow-xs">
-              <Clock className="w-10 h-10" />
+          <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-10 shadow-xs space-y-6 text-center">
+            <div className="w-16 h-16 rounded-full bg-slate-100 text-slate-700 border border-slate-200/80 flex items-center justify-center mx-auto shadow-2xs">
+              <Clock className="w-9 h-9" />
             </div>
 
             <div className="space-y-2 max-w-xl mx-auto">
-              <span className="text-xs font-bold uppercase tracking-widest text-sky-800 bg-sky-50 px-3 py-1 rounded-full border border-sky-200">
+              <span className="text-xs font-bold uppercase tracking-widest text-slate-700 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
                 TAHAP SELEKSI
               </span>
               <h2 className="text-2xl sm:text-3xl font-black text-slate-900 font-serif">
@@ -197,8 +197,8 @@ export default function PengumumanPage() {
         {/* MASIH MENUNGGU SELEKSI / BERKAS */}
         {!isLolos && !isTidakLolos && !isUjian && (
           <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-10 shadow-xs space-y-6 text-center">
-            <div className="w-16 h-16 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center mx-auto shadow-xs">
-              <Clock className="w-10 h-10" />
+            <div className="w-16 h-16 rounded-full bg-slate-100 text-slate-700 border border-slate-200/80 flex items-center justify-center mx-auto shadow-2xs">
+              <Clock className="w-9 h-9" />
             </div>
 
             <div className="space-y-2 max-w-xl mx-auto">

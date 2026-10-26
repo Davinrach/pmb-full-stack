@@ -401,6 +401,7 @@ export default function AdminCMSDashboardPage() {
 
   // Current Authenticated Admin User
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [isAuthorized, setIsAuthorized] = useState(false);
 
   // RBAC Management State (Super Admin Only)
   const [rbacSubTab, setRbacSubTab] = useState<"matrix" | "users" | "roles" | "menus">("matrix");
@@ -747,16 +748,20 @@ export default function AdminCMSDashboardPage() {
   const [pendaftaranSubTab, setPendaftaranSubTab] = useState<"gelombang" | "jalur" | "dokumen" | "rekening">("gelombang");
 
   const checkAuth = () => {
+    const token = authStorage.getToken();
     const user = authStorage.getUser();
-    if (!user) {
-      router.push("/loginadmin");
+    if (!token || !user) {
+      setIsAuthorized(false);
+      router.replace("/loginadmin");
       return false;
     }
     if (user.role !== "admin_pmb" && user.role !== "super_admin") {
-      router.push("/dashboard");
+      setIsAuthorized(false);
+      router.replace("/dashboard");
       return false;
     }
     setCurrentUser(user);
+    setIsAuthorized(true);
     return true;
   };
 
@@ -804,6 +809,7 @@ export default function AdminCMSDashboardPage() {
   };
 
   const loadPendaftars = async (page = 1) => {
+    if (!authStorage.getToken()) return;
     setIsLoading(true);
     try {
       let query = `/admin/pendaftar?page=${page}&per_page=10`;
@@ -819,8 +825,10 @@ export default function AdminCMSDashboardPage() {
       const realData = Array.isArray(res.data) ? res.data : [];
       setPendaftars(realData);
       setMeta(res.meta || { total: realData.length, page, per_page: 10, total_pages: Math.ceil(realData.length / 10) || 1 });
-    } catch (err) {
-      console.error("Error loading applicants:", err);
+    } catch (err: any) {
+      if (err?.status !== 401) {
+        console.error("Error loading applicants:", err);
+      }
       setPendaftars([]);
     } finally {
       setIsLoading(false);
@@ -1227,13 +1235,14 @@ export default function AdminCMSDashboardPage() {
   }, [seleksiSearch, seleksiProdiFilter, seleksiGelombangFilter, seleksiJalurFilter, seleksiStatusFilter, seleksiTahunFilter]);
 
   useEffect(() => {
+    if (!isAuthorized) return;
     if (activeTab === "pendaftar" || activeTab === "verifikasi") {
       const timer = setTimeout(() => {
         loadPendaftars(1);
       }, 250);
       return () => clearTimeout(timer);
     }
-  }, [search, prodiFilter, statusFilter, jalurFilter, statusBayarFilter, pendaftarTahunFilter, pendaftarGelombangFilter, activeTab]);
+  }, [search, prodiFilter, statusFilter, jalurFilter, statusBayarFilter, pendaftarTahunFilter, pendaftarGelombangFilter, activeTab, isAuthorized]);
 
   useEffect(() => {
     if (activeTab === "rbac") {
@@ -2548,6 +2557,14 @@ export default function AdminCMSDashboardPage() {
       )
   );
 
+  if (!isAuthorized) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center font-sans text-xs text-slate-500 font-bold">
+        Memeriksa autentikasi administrator...
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#f8fafc] flex font-sans text-slate-900">
       
@@ -3857,8 +3874,8 @@ export default function AdminCMSDashboardPage() {
                   }}
                   className={`px-3.5 py-1.5 rounded-xl border transition cursor-pointer flex items-center gap-1.5 ${
                     statusFilter === "menunggu_verifikasi"
-                      ? "bg-amber-600 text-white border-amber-600"
-                      : "bg-white text-amber-800 border-amber-200 hover:bg-amber-50"
+                      ? "bg-amber-50 text-amber-900 border-amber-300 ring-1 ring-amber-200"
+                      : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
                   }`}
                 >
                   <Clock className="w-3.5 h-3.5" />
@@ -3872,8 +3889,8 @@ export default function AdminCMSDashboardPage() {
                   }}
                   className={`px-3.5 py-1.5 rounded-xl border transition cursor-pointer flex items-center gap-1.5 ${
                     statusFilter === "berkas_diverifikasi"
-                      ? "bg-emerald-600 text-white border-emerald-600"
-                      : "bg-white text-emerald-800 border-emerald-200 hover:bg-emerald-50"
+                      ? "bg-emerald-50 text-[#0d3830] border-emerald-300 ring-1 ring-emerald-200"
+                      : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
                   }`}
                 >
                   <CheckCircle2 className="w-3.5 h-3.5" />
@@ -3887,8 +3904,8 @@ export default function AdminCMSDashboardPage() {
                   }}
                   className={`px-3.5 py-1.5 rounded-xl border transition cursor-pointer flex items-center gap-1.5 ${
                     statusFilter === "belum_lengkap"
-                      ? "bg-rose-600 text-white border-rose-600"
-                      : "bg-white text-rose-800 border-rose-200 hover:bg-rose-50"
+                      ? "bg-rose-50 text-rose-900 border-rose-300 ring-1 ring-rose-200"
+                      : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
                   }`}
                 >
                   <AlertCircle className="w-3.5 h-3.5" />

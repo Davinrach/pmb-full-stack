@@ -19,6 +19,8 @@ export const translations = {
     hero: {
       badge: "Penerimaan Mahasiswa Baru Gelombang 1 Resmi Dibuka",
       title: "Pusat Pendaftaran Mahasiswa Baru & Informasi Program Studi",
+      titleMain: "Pusat Pendaftaran Mahasiswa Baru",
+      titleHighlight: "& Informasi Program Studi",
       subtitle:
         "Meneguhkan keilmuan Islam modern dan etika profesional santri. Mari bergabung bersama STAI Cendekia Insani Tahun Akademik 2026/2027.",
       btnDaftar: "Daftar Sekarang (Online)",
@@ -246,6 +248,8 @@ export const translations = {
     hero: {
       badge: "Wave 1 New Student Admission is Officially Open",
       title: "New Student Admission Center & Study Program Information",
+      titleMain: "New Student Admission Center",
+      titleHighlight: "& Study Program Information",
       subtitle:
         "Advancing modern Islamic scholarship and professional santri ethics. Join STAI Cendekia Insani for Academic Year 2026/2027.",
       btnDaftar: "Apply Online Now",
