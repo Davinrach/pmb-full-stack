@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   ShieldCheck,
@@ -27,6 +27,17 @@ export default function LoginAdminPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("pmb_remembered_admin_identifier");
+      const isRemembered = localStorage.getItem("pmb_admin_remember_me") === "true";
+      if (saved && isRemembered) {
+        setIdentifier(saved);
+        setRememberMe(true);
+      }
+    }
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage("");
@@ -41,6 +52,16 @@ export default function LoginAdminPage() {
       if (res.data && res.data.token) {
         authStorage.setToken(res.data.token);
         authStorage.setUser(res.data.user);
+
+        if (typeof window !== "undefined") {
+          if (rememberMe) {
+            localStorage.setItem("pmb_remembered_admin_identifier", identifier.trim());
+            localStorage.setItem("pmb_admin_remember_me", "true");
+          } else {
+            localStorage.removeItem("pmb_remembered_admin_identifier");
+            localStorage.removeItem("pmb_admin_remember_me");
+          }
+        }
 
         const role = res.data.user?.role;
         if (role === "admin_pmb" || role === "super_admin") {
@@ -169,6 +190,7 @@ export default function LoginAdminPage() {
                     type="text"
                     id="admin-identifier"
                     required
+                    autoComplete="username"
                     placeholder="Username / Email (cth: admin)"
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
@@ -193,6 +215,7 @@ export default function LoginAdminPage() {
                     type={showPassword ? "text" : "password"}
                     id="admin-password"
                     required
+                    autoComplete="current-password"
                     placeholder="••••••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}

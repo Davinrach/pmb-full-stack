@@ -21,6 +21,7 @@ import {
   Award,
   GraduationCap,
   Mail,
+  Calendar,
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -37,6 +38,7 @@ export default function HomePage() {
   const [backendPersyaratanDocs, setBackendPersyaratanDocs] = useState<any[]>([]);
   const [backendHotlines, setBackendHotlines] = useState<any[]>([]);
   const [dynamicJalurList, setDynamicJalurList] = useState<any[]>([]);
+  const [gelombangList, setGelombangList] = useState<any[]>([]);
   const [expandedFaqId, setExpandedFaqId] = useState<number | null>(null);
 
   useEffect(() => {
@@ -74,6 +76,9 @@ export default function HomePage() {
         }
         if (infoVal?.jalur_pendaftaran && Array.isArray(infoVal.jalur_pendaftaran)) {
           setDynamicJalurList(infoVal.jalur_pendaftaran);
+        }
+        if (infoVal?.gelombang && Array.isArray(infoVal.gelombang)) {
+          setGelombangList(infoVal.gelombang);
         }
 
         const faqVal = (faqRes as any)?.data || faqRes;
@@ -166,47 +171,84 @@ export default function HomePage() {
     ];
   }
 
-  // Parse Jalur Masuk Cards from CMS settings or dynamic database table or fallback
-  let displayedJalurList: any[] = [];
-  const jalurRaw = backendSettings?.jalur_pendaftaran_info;
-  if (jalurRaw) {
-    try {
-      const parsed = typeof jalurRaw === "string" ? JSON.parse(jalurRaw) : jalurRaw;
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        displayedJalurList = parsed.filter((j: any) => j.is_aktif ?? true);
+  // Gelombang Pendaftaran logic matching reference Admission Schedule
+  const formatGelombangRange = (startStr: string, endStr: string) => {
+    if (!startStr || !endStr) return "-";
+    const start = new Date(startStr);
+    const end = new Date(endStr);
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) return `${startStr} - ${endStr}`;
+    const months = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+
+    if (start.getFullYear() === end.getFullYear()) {
+      if (start.getMonth() === end.getMonth()) {
+        return `${start.getDate()} - ${end.getDate()} ${months[start.getMonth()]} ${start.getFullYear()}`;
       }
-    } catch {}
-  }
-  if (displayedJalurList.length === 0 && dynamicJalurList.length > 0) {
-    displayedJalurList = dynamicJalurList
-      .filter((j: any) => (j.tampil_di_homepage ?? true) && (j.is_aktif ?? true))
-      .map((j: any) => ({
-        id: j.kode || String(j.id),
-        jalur_id: j.id,
-        nama: j.nama,
-        badge: j.badge_text || j.nama,
-        deskripsi: j.deskripsi,
-        is_aktif: j.is_aktif ?? true,
-      }));
-  }
-  if (displayedJalurList.length === 0) {
-    displayedJalurList = [
-      {
-        id: "reguler",
-        nama: "Jalur Masuk Reguler (Mandiri)",
-        badge: "Jalur Reguler",
-        deskripsi: "Terbuka bagi seluruh lulusan SMA/MA/SMK/Pondok Pesantren sederajat tanpa batasan tahun kelulusan. Proses seleksi administrasi berkas dan wawancara mandiri.",
-        is_aktif: true,
-      },
-      {
-        id: "kip",
-        nama: "Jalur Beasiswa KIP-Kuliah (Pemerintah)",
-        badge: "Beasiswa KIP-Kuliah",
-        deskripsi: "Khusus bagi calon mahasiswa berprestasi dari keluarga pemegang KIP/KKS/PKH atau terdata dalam DTKS Kemensos RI. Bebas biaya pendaftaran dan subsidi UKT penuh.",
-        is_aktif: true,
-      },
-    ];
-  }
+      return `${start.getDate()} ${months[start.getMonth()]} - ${end.getDate()} ${months[end.getMonth()]} ${start.getFullYear()}`;
+    }
+    return `${start.getDate()} ${months[start.getMonth()]} ${start.getFullYear()} - ${end.getDate()} ${months[end.getMonth()]} ${end.getFullYear()}`;
+  };
+
+  const getGelombangStatus = (g: any) => {
+    const now = new Date();
+    const start = new Date(g.tanggal_buka);
+    const end = new Date(g.tanggal_tutup);
+    if (now < start) {
+      return {
+        label: "Akan Datang",
+        badgeClass: "border border-slate-200 text-slate-600 bg-slate-100/80",
+        isOpen: false,
+        isUpcoming: true,
+      };
+    }
+    if (now > end || g.is_aktif === false) {
+      return {
+        label: "Ditutup",
+        badgeClass: "border border-slate-200 text-slate-500 bg-slate-50",
+        isOpen: false,
+        isUpcoming: false,
+      };
+    }
+    return {
+      label: "Sedang Dibuka",
+      badgeClass: "border border-emerald-300 text-emerald-800 bg-emerald-50/80 font-semibold",
+      isOpen: true,
+      isUpcoming: false,
+    };
+  };
+
+  const defaultGelombangList = [
+    {
+      id: 1,
+      nama: "Pendaftaran Gelombang 1 - TA 2026/2027",
+      tanggal_buka: "2026-05-01T00:00:00Z",
+      tanggal_tutup: "2026-07-31T23:59:59Z",
+      is_aktif: false,
+      jenjang: "Sarjana (S1)",
+    },
+    {
+      id: 2,
+      nama: "Pendaftaran Gelombang 2 - TA 2026/2027",
+      tanggal_buka: "2026-08-01T00:00:00Z",
+      tanggal_tutup: "2026-11-30T23:59:59Z",
+      is_aktif: true,
+      jenjang: "Sarjana (S1)",
+    },
+    {
+      id: 3,
+      nama: "Pendaftaran Gelombang 3 - TA 2026/2027",
+      tanggal_buka: "2026-12-01T00:00:00Z",
+      tanggal_tutup: "2027-02-28T23:59:59Z",
+      is_aktif: false,
+      jenjang: "Sarjana (S1)",
+    },
+  ];
+
+  const displayedGelombang = gelombangList.length > 0 ? gelombangList : defaultGelombangList;
+  const currentTahunAkademik =
+    displayedGelombang.find((g: any) => g.is_aktif)?.tahun_akademik ||
+    displayedGelombang[0]?.tahun_akademik ||
+    backendSettings?.tahun_akademik ||
+    "2026/2027";
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col selection:bg-emerald-200 selection:text-emerald-950">
@@ -274,11 +316,106 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 3. Main Content Section (Grid Layout) */}
+      {/* 3. Main Content Section (Full-width Layout) */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 w-full flex-1">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* LEFT COLUMN: Program Studi Unggulan (col-span-8) */}
-          <section id="program-studi" className="lg:col-span-8 space-y-6 scroll-mt-28 lg:scroll-mt-32">
+        {/* Profil / Nilai STAI Cendekia Insani (Full-width Grid Section) */}
+        <section id="keunggulan" className="space-y-6 scroll-mt-28">
+          <div className="border-b border-slate-200/80 pb-3 flex flex-col sm:flex-row sm:items-baseline justify-between gap-2">
+            <div>
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight font-serif flex items-center gap-2.5">
+                <Award className="w-6 h-6 text-emerald-700" />
+                <span>STAI Cendekia Insani Situbondo</span>
+              </h2>
+            </div>
+            <p className="text-xs sm:text-sm text-slate-500 max-w-md leading-relaxed">
+              {lang === "eng"
+                ? "Commitment to providing superior, character-driven Islamic higher education in Situbondo."
+                : "Alasan utama dan komitmen kami dalam menghadirkan pendidikan tinggi Islam yang unggul, berkarakter, dan berdaya saing."}
+            </p>
+          </div>
+
+          {/* Grid Keunggulan 5 Kolom Responsif */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+            {(lang === "eng"
+              ? [
+                  {
+                    title: "Academic & Islamic Character",
+                    desc: "Standard degree curriculum with strong santri ethical foundation.",
+                    icon: <GraduationCap className="w-5 h-5 text-emerald-700" />,
+                  },
+                  {
+                    title: "Qur'an & Classical Studies",
+                    desc: "Tahfidz reinforcement and Arabic classical text literacy.",
+                    icon: <BookOpen className="w-5 h-5 text-emerald-700" />,
+                  },
+                  {
+                    title: "Flexible Schedules",
+                    desc: "Adaptive classes ideal for workers and madrasah teachers.",
+                    icon: <Clock className="w-5 h-5 text-emerald-700" />,
+                  },
+                  {
+                    title: "Affordable & Scholarships",
+                    desc: "Low-cost tuition, KIP-Kuliah, Tahfidz & Merit scholarships.",
+                    icon: <ShieldCheck className="w-5 h-5 text-emerald-700" />,
+                  },
+                  {
+                    title: "Career & Field Practice",
+                    desc: "Real internships, teaching practice, and community service.",
+                    icon: <Briefcase className="w-5 h-5 text-emerald-700" />,
+                  },
+                ]
+              : [
+                  {
+                    title: "Akademik & Karakter Islami",
+                    desc: "Kurikulum sarjana terakreditasi berpadu adab & nilai kepesantrenan.",
+                    icon: <GraduationCap className="w-5 h-5 text-emerald-700" />,
+                  },
+                  {
+                    title: "Kajian Qur'an & Kitab Kuning",
+                    desc: "Penguatan tahfidz, bahasa Arab, dan literasi keagamaan.",
+                    icon: <BookOpen className="w-5 h-5 text-emerald-700" />,
+                  },
+                  {
+                    title: "Jadwal Kuliah Fleksibel",
+                    desc: "Pilihan kelas adaptif bagi pekerja, guru madrasah & honorer.",
+                    icon: <Clock className="w-5 h-5 text-emerald-700" />,
+                  },
+                  {
+                    title: "Biaya Terjangkau & Beasiswa",
+                    desc: "Akses beasiswa KIP-Kuliah, jalur Tahfidz, serta Prestasi.",
+                    icon: <ShieldCheck className="w-5 h-5 text-emerald-700" />,
+                  },
+                  {
+                    title: "Magang & Kesiapan Karir",
+                    desc: "Pengalaman riil lewat praktik mengajar, instansi & KKN aplikatif.",
+                    icon: <Briefcase className="w-5 h-5 text-emerald-700" />,
+                  },
+                ]
+            ).map((item, idx) => (
+              <div
+                key={idx}
+                className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md hover:border-emerald-200 transition-all flex flex-col justify-between group"
+              >
+                <div className="space-y-3">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100/80 text-emerald-800 flex items-center justify-center flex-shrink-0 shadow-2xs group-hover:scale-110 transition-transform">
+                    {item.icon}
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-800 leading-snug group-hover:text-emerald-900 transition-colors">
+                      {item.title}
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                      {item.desc}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Program Studi Unggulan (Full-width) */}
+        <section id="program-studi" className="mt-14 space-y-6 scroll-mt-28 lg:scroll-mt-32">
             {/* Section Header */}
             <div>
               <span className="text-xs font-bold tracking-wider text-slate-500 uppercase">
@@ -298,13 +435,14 @@ export default function HomePage() {
                 const master = masterProdis.find(
                   (mp) => String(mp.id) === String(prodi.prodi_id) || mp.kode === prodi.kode
                 );
-                const title = prodi.nama || master?.nama || "Program Studi";
+                const isEng = lang === "eng";
+                const title = isEng && (prodi.nama_en || master?.nama_en) ? (prodi.nama_en || master?.nama_en) : (prodi.nama || master?.nama || "Program Studi");
                 const kode = prodi.kode || master?.kode || "";
                 const slug = (kode || String(prodi.prodi_id || idx + 1)).toLowerCase();
-                const deskripsi = prodi.deskripsi_singkat || prodi.deskripsi || master?.deskripsi || "";
-                const badgeJenjang = prodi.badge_jenjang || (master?.jenjang ? `Jenjang ${master.jenjang}` : "Jenjang S1");
-                const badgeGelar = prodi.badge_gelar || (master?.gelar_akademik ? `Gelar ${master.gelar_akademik}` : undefined);
-                const badgeAkreditasi = prodi.badge_akreditasi || "Terakreditasi BAN-PT";
+                const deskripsi = isEng && (prodi.deskripsi_singkat_en || master?.deskripsi_en) ? (prodi.deskripsi_singkat_en || master?.deskripsi_en) : (prodi.deskripsi_singkat || prodi.deskripsi || master?.deskripsi || "");
+                const badgeJenjang = isEng && prodi.badge_jenjang_en ? prodi.badge_jenjang_en : (prodi.badge_jenjang || (master?.jenjang ? (isEng ? `Level ${master.jenjang}` : `Jenjang ${master.jenjang}`) : (isEng ? "Undergraduate (S1)" : "Jenjang S1")));
+                const badgeGelar = isEng && prodi.badge_gelar_en ? prodi.badge_gelar_en : (prodi.badge_gelar || (master?.gelar_akademik ? (isEng && master?.gelar_akademik_en ? `Degree ${master.gelar_akademik_en}` : `Gelar ${master.gelar_akademik}`) : undefined));
+                const badgeAkreditasi = isEng && prodi.badge_akreditasi_en ? prodi.badge_akreditasi_en : (prodi.badge_akreditasi || (isEng ? "Accredited by BAN-PT" : "Terakreditasi BAN-PT"));
 
                 return (
                   <div
@@ -365,183 +503,85 @@ export default function HomePage() {
             </div>
           </section>
 
-          {/* RIGHT COLUMN: Keunggulan STAICI & Hotline Narahubung (col-span-4) */}
-          <aside className="lg:col-span-4 space-y-5">
-            {/* Card 1 (ATAS): Keunggulan Kampus STAI Cendekia Insani */}
-            <div className="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-xs space-y-4">
-              <div className="flex items-center gap-2.5 text-slate-900 font-bold text-base sm:text-lg">
-                <div className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-100/80 text-emerald-800 flex items-center justify-center flex-shrink-0 shadow-2xs">
-                  <Award className="w-4.5 h-4.5 text-emerald-700" />
-                </div>
-                <h3>{lang === "eng" ? "STAICI Core Advantages" : "Keunggulan STAI Cendekia Insani"}</h3>
-              </div>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                {lang === "eng"
-                  ? "Integrating Islamic scholarship and moral development with professional career readiness in education and socio-religious sectors."
-                  : "Fokus pada integrasi nilai keislaman dan kesiapan kerja profesional di bidang kependidikan Islam serta sosial-keagamaan."}
-              </p>
-
-              {/* List Keunggulan (Ringkas & Soft) */}
-              <div className="space-y-2.5 pt-1">
-                {(lang === "eng"
-                  ? [
-                      {
-                        title: "Academic & Moral Integration",
-                        desc: "Blending standardized higher education curriculum with spiritual values and solid character building.",
-                        icon: <GraduationCap className="w-4 h-4 text-emerald-700" />,
-                      },
-                      {
-                        title: "Qur'anic & Religious Reinforcement",
-                        desc: "Qur'anic literacy, tahfidz, Arabic language, and classical text studies as the core student competence.",
-                        icon: <BookOpen className="w-4 h-4 text-emerald-700" />,
-                      },
-                      {
-                        title: "Flexible Class Schedules",
-                        desc: "Adaptive learning schemes tailored for workers, madrasah teachers, and honorary staff.",
-                        icon: <Clock className="w-4 h-4 text-emerald-700" />,
-                      },
-                      {
-                        title: "Affordable Tuition & Scholarships",
-                        desc: "Budget-friendly tuition supported by Tahfidz, Merit, and government KIP-Kuliah scholarships.",
-                        icon: <ShieldCheck className="w-4 h-4 text-emerald-700" />,
-                      },
-                      {
-                        title: "Practical & Targeted Community Service",
-                        desc: "Hands-on real-world experience through teaching practice, partner internships, and community empowerment.",
-                        icon: <Briefcase className="w-4 h-4 text-emerald-700" />,
-                      },
-                    ]
-                  : [
-                      {
-                        title: "Integrasi Keilmuan & Pembinaan Akhlak",
-                        desc: "Memadukan kurikulum akademik standar dengan penanaman nilai spiritual dan karakter santri yang kuat.",
-                        icon: <GraduationCap className="w-4 h-4 text-emerald-700" />,
-                      },
-                      {
-                        title: "Penguatan Al-Qur'an & Keagamaan",
-                        desc: "Literasi Al-Qur'an, tahfidz, bahasa Arab, dan kajian kitab keagamaan sebagai fondasi utama kompetensi.",
-                        icon: <BookOpen className="w-4 h-4 text-emerald-700" />,
-                      },
-                      {
-                        title: "Fleksibilitas Waktu Perkuliahan",
-                        desc: "Pilihan skema kelas adaptif dan ramah bagi pekerja, guru madrasah, serta tenaga honorer.",
-                        icon: <Clock className="w-4 h-4 text-emerald-700" />,
-                      },
-                      {
-                        title: "Biaya Terjangkau & Akses Beasiswa",
-                        desc: "Biaya studi ramah kantong didukung beasiswa jalur Tahfidz, Prestasi, dan KIP-Kuliah pemerintah.",
-                        icon: <ShieldCheck className="w-4 h-4 text-emerald-700" />,
-                      },
-                      {
-                        title: "Praktik Lapangan & Pengabdian Terarah",
-                        desc: "Pengalaman praktis riil melalui praktik mengajar, magang instansi, dan KKN pemberdayaan masyarakat.",
-                        icon: <Briefcase className="w-4 h-4 text-emerald-700" />,
-                      },
-                    ]
-                ).map((item, idx) => (
-                  <div
-                    key={idx}
-                    className="p-3 rounded-xl bg-slate-50/70 border border-slate-100 hover:bg-emerald-50/30 hover:border-emerald-100/70 transition group"
-                  >
-                    <div className="flex items-start gap-2.5">
-                      <div className="w-7 h-7 rounded-lg bg-white border border-slate-200/60 flex items-center justify-center flex-shrink-0 mt-0.5 text-emerald-700 shadow-2xs group-hover:scale-105 transition-transform">
-                        {item.icon}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <h4 className="text-xs font-bold text-slate-800 leading-snug">
-                          {item.title}
-                        </h4>
-                        <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
-                          {item.desc}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </aside>
-        </div>
-
-        {/* 4. Pilihan Jalur Masuk (Grid Card: Reguler & KIP Kuliah) */}
-        <section id="jalur-masuk" className="mt-12 space-y-5">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 border-b border-slate-200/80 pb-4">
-            <div>
-              <span className="text-xs font-bold tracking-wider text-slate-700 uppercase px-2.5 py-1 bg-slate-100 rounded-full border border-slate-200/80">
-                Pilihan Jalur Masuk
-              </span>
-              <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight mt-2">
-                Jalur Penerimaan Mahasiswa Baru
+        {/* 4. Jadwal Gelombang Pendaftaran PMB (Bahasa Indonesia & Warna Selaras Identitas Kampus) */}
+        <section id="gelombang-pendaftaran" className="mt-14 space-y-4 scroll-mt-28">
+          {/* Header Title Bahasa Indonesia */}
+          <div className="border-b border-slate-200/80 pb-3">
+            <span className="text-xs font-bold tracking-wider text-[#0d3830] uppercase px-3 py-1 bg-emerald-50 rounded-full border border-emerald-200/70 inline-block mb-1.5">
+              Jadwal Seleksi PMB
+            </span>
+            <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1">
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight font-serif">
+                Gelombang Pendaftaran Mahasiswa Baru
               </h2>
+              <span className="text-xs sm:text-sm font-semibold text-slate-500">
+                Program Sarjana (S1) • TA {currentTahunAkademik}
+              </span>
             </div>
-            <p className="text-xs sm:text-sm text-slate-600 max-w-md">
-              Pilih jalur pendaftaran yang sesuai dengan kualifikasi dan kebutuhan studi Anda di STAI Cendekia Insani.
-            </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {displayedJalurList.map((jalur: any, idx: number) => {
-              const masterJalur = dynamicJalurList.find(
-                (dj) => String(dj.id) === String(jalur.jalur_id || jalur.id) || dj.kode === jalur.kode
-              );
-              const cardNama = jalur.nama || masterJalur?.nama || "Jalur Pendaftaran";
-              const isKip = jalur.id === "kip" || cardNama.toLowerCase().includes("kip");
-              const cardBadge = jalur.badge || masterJalur?.badge_text || (isKip ? "Beasiswa KIP-Kuliah" : "Jalur Reguler");
-              const cardDesc = jalur.deskripsi || masterJalur?.deskripsi || "";
+          {/* Table / List Cards */}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-xs divide-y divide-slate-100 overflow-hidden">
+            {displayedGelombang.map((g: any, idx: number) => {
+              const status = getGelombangStatus(g);
+              const dateRange = formatGelombangRange(g.tanggal_buka, g.tanggal_tutup);
+              const isEng = lang === "eng";
+              const rawName = isEng && g.nama_en ? g.nama_en : g.nama;
+              const displayName = rawName?.startsWith("Pendaftaran") || rawName?.startsWith("Admission") || rawName?.startsWith("Registration")
+                ? rawName
+                : (isEng ? `Admission ${rawName || "Wave " + (idx + 1)}` : `Pendaftaran ${rawName || "Gelombang " + (idx + 1)}`);
 
               return (
                 <div
-                  key={jalur.id || idx}
-                  className={`rounded-2xl border p-6 transition-all duration-200 shadow-xs hover:shadow-md flex flex-col justify-between relative overflow-hidden bg-white ${
-                    isKip
-                      ? "border-amber-200/70 hover:border-amber-300/80"
-                      : "border-slate-200 hover:border-slate-300"
-                  }`}
+                  key={g.id || idx}
+                  className="p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 hover:bg-slate-50/60 transition-colors"
                 >
-                  <div className="space-y-3.5">
-                    {/* Badge & Icon */}
-                    <div className="flex items-center justify-between gap-2">
-                      <span
-                        className={`text-xs font-bold px-3 py-1 rounded-full border ${
-                          isKip
-                            ? "bg-amber-50/70 text-amber-900 border-amber-200/60"
-                            : "bg-slate-100 text-slate-800 border-slate-200/80"
-                        }`}
-                      >
-                        {cardBadge}
-                      </span>
-                      <div
-                        className={`w-9 h-9 rounded-xl flex items-center justify-center border ${
-                          isKip
-                            ? "bg-amber-50 text-amber-800 border-amber-100"
-                            : "bg-slate-50 text-slate-700 border-slate-200/70"
-                        }`}
-                      >
-                        {isKip ? <Award className="w-5 h-5 text-amber-700" /> : <GraduationCap className="w-5 h-5 text-[#0d3830]" />}
-                      </div>
+                  {/* Bagian Kiri: Tanggal + Status Badge + Nama Gelombang */}
+                  <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 sm:gap-4 flex-1">
+                    {/* Tanggal dengan Icon Kalender Berwarna Emerald Kampus */}
+                    <div className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-slate-800 whitespace-nowrap min-w-[190px]">
+                      <Calendar className="w-4 h-4 text-[#0d3830] flex-shrink-0" />
+                      <span>{dateRange}</span>
                     </div>
 
-                    {/* Card Title & Desc */}
-                    <h3 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">
-                      {cardNama}
-                    </h3>
-                    <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                      {cardDesc}
-                    </p>
+                    {/* Status Badge */}
+                    <span
+                      className={`text-xs px-3 py-1 rounded-lg border font-medium whitespace-nowrap flex-shrink-0 ${status.badgeClass}`}
+                    >
+                      {status.label}
+                    </span>
+
+                    {/* Pembatas pipa */}
+                    <span className="hidden sm:inline-block text-slate-300 font-light">|</span>
+
+                    {/* Nama Pendaftaran */}
+                    <span className="text-xs sm:text-sm font-medium text-slate-800">
+                      {displayName}
+                    </span>
                   </div>
 
-                  {/* Card Action */}
-                  <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
-                    <span className="text-xs text-slate-500 font-medium">
-                      Status: <span className="text-[#0d3830] font-bold">Pendaftaran Aktif</span>
+                  {/* Bagian Kanan: Badge Jenjang & Tombol Aksi */}
+                  <div className="flex items-center justify-between lg:justify-end gap-3 flex-shrink-0 pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-100">
+                    <span className="px-4 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200/80">
+                      {g.jenjang || "Sarjana (S1)"}
                     </span>
-                    <Link
-                      href="/dashboard"
-                      className="px-4 py-2 text-xs font-bold rounded-lg transition inline-flex items-center gap-1.5 shadow-xs bg-[#0e3831] hover:bg-[#165349] text-white"
-                    >
-                      <span>Daftar Jalur Ini</span>
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </Link>
+
+                    {status.isOpen ? (
+                      <Link
+                        href="/daftar"
+                        className="px-5 py-1.5 text-xs font-bold rounded-full bg-[#0d3830] hover:bg-[#165349] text-white transition-all shadow-xs whitespace-nowrap border border-[#0d3830]"
+                      >
+                        Daftar Sekarang
+                      </Link>
+                    ) : status.isUpcoming ? (
+                      <span className="px-5 py-1.5 text-xs font-medium rounded-full bg-slate-100 text-slate-500 border border-slate-200 whitespace-nowrap cursor-default">
+                        Belum Dibuka
+                      </span>
+                    ) : (
+                      <span className="px-5 py-1.5 text-xs font-medium rounded-full bg-slate-100 text-slate-400 border border-slate-200 whitespace-nowrap cursor-default">
+                        Ditutup
+                      </span>
+                    )}
                   </div>
                 </div>
               );
@@ -584,7 +624,7 @@ export default function HomePage() {
                         {faq.kategori || "Umum"}
                       </span>
                       <h4 className="text-sm sm:text-base font-bold text-slate-900">
-                        {faq.pertanyaan}
+                        {lang === "eng" && faq.pertanyaan_en ? faq.pertanyaan_en : faq.pertanyaan}
                       </h4>
                     </div>
                     <div
@@ -598,7 +638,7 @@ export default function HomePage() {
 
                   {isOpen && (
                     <div className="px-5 pb-5 pt-1 text-xs sm:text-sm text-slate-600 leading-relaxed border-t border-slate-100/80 animate-fadeIn whitespace-pre-line">
-                      {faq.jawaban}
+                      {lang === "eng" && faq.jawaban_en ? faq.jawaban_en : faq.jawaban}
                     </div>
                   )}
                 </div>
@@ -693,7 +733,7 @@ export default function HomePage() {
                 {t.prodiSection.tutup}
               </button>
               <Link
-                href="/dashboard"
+                href="/pendaftaran"
                 onClick={() => setSelectedProdi(null)}
                 className="w-full sm:w-auto px-5 py-2 text-sm font-bold text-white bg-[#0e3831] hover:bg-[#165349] rounded-lg shadow-sm transition inline-flex items-center justify-center gap-2 cursor-pointer"
               >

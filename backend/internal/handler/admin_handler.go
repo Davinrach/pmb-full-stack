@@ -47,20 +47,34 @@ func RecordAdminLog(c *gin.Context, aksi, detail string) {
 // GetDashboardStats aggregates applicants statistics (FR-8.13)
 func (h *AdminHandler) GetDashboardStats(c *gin.Context) {
 	var totalPendaftar int64
+	var akunTerdaftar int64
 	var belumLengkap int64
+	var menungguPembayaran int64
 	var menungguVerifikasi int64
 	var berkasDiverifikasi int64
 	var mengikutiUjian int64
 	var lolosSeleksi int64
+	var tidakLolos int64
+	var daftarUlang int64
 	var ditolak int64
+	var kadaluarsa int64
 
 	database.DB.Model(&model.Pendaftar{}).Count(&totalPendaftar)
+	database.DB.Model(&model.Pendaftar{}).Where("status_pendaftaran = ?", model.StatusAkunTerdaftar).Count(&akunTerdaftar)
 	database.DB.Model(&model.Pendaftar{}).Where("status_pendaftaran = ?", model.StatusBelumLengkap).Count(&belumLengkap)
+	database.DB.Model(&model.Pendaftar{}).Where("status_pendaftaran = ?", model.StatusMenungguPembayaran).Count(&menungguPembayaran)
 	database.DB.Model(&model.Pendaftar{}).Where("status_pendaftaran = ?", model.StatusMenungguVerifikasi).Count(&menungguVerifikasi)
 	database.DB.Model(&model.Pendaftar{}).Where("status_pendaftaran = ?", model.StatusBerkasDiverifikasi).Count(&berkasDiverifikasi)
 	database.DB.Model(&model.Pendaftar{}).Where("status_pendaftaran = ?", model.StatusMengikutiUjian).Count(&mengikutiUjian)
 	database.DB.Model(&model.Pendaftar{}).Where("status_pendaftaran = ?", model.StatusLolosSeleksi).Count(&lolosSeleksi)
+	database.DB.Model(&model.Pendaftar{}).Where("status_pendaftaran = ?", model.StatusTidakLolos).Count(&tidakLolos)
+	database.DB.Model(&model.Pendaftar{}).Where("status_pendaftaran = ?", model.StatusDaftarUlang).Count(&daftarUlang)
 	database.DB.Model(&model.Pendaftar{}).Where("status_pendaftaran = ?", model.StatusDitolak).Count(&ditolak)
+	database.DB.Model(&model.Pendaftar{}).Where("status_pendaftaran = ?", model.StatusKadaluarsa).Count(&kadaluarsa)
+
+	// Hitung total nominal pembayaran yang telah diterima (sah)
+	var totalNominalDiterima float64
+	database.DB.Model(&model.Pembayaran{}).Where("status = ?", model.StatusBayarDiterima).Select("COALESCE(SUM(nominal), 0)").Scan(&totalNominalDiterima)
 
 	// Stat per Program Studi
 	type ProdiStat struct {
@@ -91,12 +105,18 @@ func (h *AdminHandler) GetDashboardStats(c *gin.Context) {
 
 	response.Success(c, http.StatusOK, "Statistik pendaftaran PMB", gin.H{
 		"total_pendaftar":      totalPendaftar,
+		"akun_terdaftar":       akunTerdaftar,
 		"belum_lengkap":        belumLengkap,
+		"menunggu_pembayaran":  menungguPembayaran,
 		"menunggu_verifikasi":  menungguVerifikasi,
 		"berkas_diverifikasi":  berkasDiverifikasi,
 		"mengikuti_ujian":      mengikutiUjian,
 		"lolos_seleksi":        lolosSeleksi,
+		"tidak_lolos":          tidakLolos,
+		"daftar_ulang":         daftarUlang,
 		"ditolak":              ditolak,
+		"kadaluarsa":           kadaluarsa,
+		"va_terverifikasi":     fmt.Sprintf("%.0f", totalNominalDiterima),
 		"statistik_prodi":      prodiStats,
 		"statistik_gelombang":  gelombangStats,
 	})
@@ -305,9 +325,10 @@ func updatePendaftarOverallStatus(pendaftar *model.Pendaftar) {
 	hasInvalidBerkas := false
 	for _, b := range allBerkas {
 		key := strings.ToLower(b.JenisDokumen)
-		if b.StatusVerifikasi == model.StatusBerkasValid {
+		switch b.StatusVerifikasi {
+		case model.StatusBerkasValid:
 			validMap[key] = true
-		} else if b.StatusVerifikasi == model.StatusBerkasInvalid {
+		case model.StatusBerkasInvalid:
 			hasInvalidBerkas = true
 		}
 	}
@@ -319,9 +340,10 @@ func updatePendaftarOverallStatus(pendaftar *model.Pendaftar) {
 	isPaymentRejected := false
 	if len(pembayaranList) > 0 {
 		latestPayment := pembayaranList[0]
-		if latestPayment.Status == model.StatusBayarDiterima {
+		switch latestPayment.Status {
+		case model.StatusBayarDiterima:
 			isPaymentApproved = true
-		} else if latestPayment.Status == model.StatusBayarDitolak {
+		case model.StatusBayarDitolak:
 			isPaymentRejected = true
 		}
 	}
@@ -469,6 +491,7 @@ func (h *AdminHandler) ListGelombang(c *gin.Context) {
 
 type GelombangRequest struct {
 	Nama             string  `json:"nama" binding:"required"`
+	NamaEN           string  `json:"nama_en"`
 	TahunAkademik    string  `json:"tahun_akademik" binding:"required"`
 	TanggalBuka      string  `json:"tanggal_buka" binding:"required"`  // YYYY-MM-DD
 	TanggalTutup     string  `json:"tanggal_tutup" binding:"required"` // YYYY-MM-DD
@@ -496,6 +519,7 @@ func (h *AdminHandler) CreateGelombang(c *gin.Context) {
 
 	gel := model.Gelombang{
 		Nama:             req.Nama,
+		NamaEN:           req.NamaEN,
 		TahunAkademik:    req.TahunAkademik,
 		TanggalBuka:      tglBuka,
 		TanggalTutup:     tglTutup,
@@ -540,6 +564,7 @@ func (h *AdminHandler) UpdateGelombang(c *gin.Context) {
 	tglTutup, _ := time.Parse("2006-01-02", req.TanggalTutup)
 
 	gel.Nama = req.Nama
+	gel.NamaEN = req.NamaEN
 	gel.TahunAkademik = req.TahunAkademik
 	gel.TanggalBuka = tglBuka
 	gel.TanggalTutup = tglTutup
@@ -562,10 +587,14 @@ func (h *AdminHandler) ListProgramStudi(c *gin.Context) {
 type ProgramStudiRequest struct {
 	Kode                string `json:"kode" binding:"required"`
 	Nama                string `json:"nama" binding:"required"`
+	NamaEN              string `json:"nama_en"`
 	Jenjang             string `json:"jenjang" binding:"required"`
 	GelarAkademik       string `json:"gelar_akademik"`
+	GelarAkademikEN     string `json:"gelar_akademik_en"`
 	Deskripsi           string `json:"deskripsi"`
+	DeskripsiEN         string `json:"deskripsi_en"`
 	ProfilLulusanIntro  string `json:"profil_lulusan_intro"`
+	ProfilLulusanIntroEN string `json:"profil_lulusan_intro_en"`
 	ProfilLulusan       string `json:"profil_lulusan"`
 	CapaianPembelajaran string `json:"capaian_pembelajaran"`
 	AlurPendaftaran     string `json:"alur_pendaftaran"`
@@ -582,10 +611,14 @@ func (h *AdminHandler) CreateProgramStudi(c *gin.Context) {
 	prodi := model.ProgramStudi{
 		Kode:                strings.ToUpper(req.Kode),
 		Nama:                req.Nama,
+		NamaEN:              req.NamaEN,
 		Jenjang:             req.Jenjang,
 		GelarAkademik:       req.GelarAkademik,
+		GelarAkademikEN:     req.GelarAkademikEN,
 		Deskripsi:           req.Deskripsi,
+		DeskripsiEN:         req.DeskripsiEN,
 		ProfilLulusanIntro:  req.ProfilLulusanIntro,
+		ProfilLulusanIntroEN: req.ProfilLulusanIntroEN,
 		ProfilLulusan:       req.ProfilLulusan,
 		CapaianPembelajaran: req.CapaianPembelajaran,
 		AlurPendaftaran:     req.AlurPendaftaran,
@@ -619,10 +652,14 @@ func (h *AdminHandler) UpdateProgramStudi(c *gin.Context) {
 
 	prodi.Kode = strings.ToUpper(req.Kode)
 	prodi.Nama = req.Nama
+	prodi.NamaEN = req.NamaEN
 	prodi.Jenjang = req.Jenjang
 	prodi.GelarAkademik = req.GelarAkademik
+	prodi.GelarAkademikEN = req.GelarAkademikEN
 	prodi.Deskripsi = req.Deskripsi
+	prodi.DeskripsiEN = req.DeskripsiEN
 	prodi.ProfilLulusanIntro = req.ProfilLulusanIntro
+	prodi.ProfilLulusanIntroEN = req.ProfilLulusanIntroEN
 	prodi.ProfilLulusan = req.ProfilLulusan
 	prodi.CapaianPembelajaran = req.CapaianPembelajaran
 	prodi.AlurPendaftaran = req.AlurPendaftaran
@@ -686,7 +723,9 @@ type SettingsRequest struct {
 	NoWhatsappCS           string `json:"no_whatsapp_cs"`
 	EmailCS                string `json:"email_cs"`
 	AlamatKampus           string `json:"alamat_kampus"`
+	AlamatKampusEN         string `json:"alamat_kampus_en"`
 	JamOperasional         string `json:"jam_operasional"`
+	JamOperasionalEN       string `json:"jam_operasional_en"`
 	HomepageProdiList      string `json:"homepage_prodi_list"`
 }
 
@@ -755,9 +794,11 @@ func (h *AdminHandler) UpdateSettings(c *gin.Context) {
 	if req.AlamatKampus != "" {
 		settings.AlamatKampus = req.AlamatKampus
 	}
+	settings.AlamatKampusEN = req.AlamatKampusEN
 	if req.JamOperasional != "" {
 		settings.JamOperasional = req.JamOperasional
 	}
+	settings.JamOperasionalEN = req.JamOperasionalEN
 	if req.HomepageProdiList != "" {
 		settings.HomepageProdiList = req.HomepageProdiList
 	}
@@ -772,8 +813,10 @@ func (h *AdminHandler) UpdateSettings(c *gin.Context) {
 // FAQ Management (FR-10 Dynamic FAQ)
 type FAQRequest struct {
 	Kategori   string `json:"kategori"`
-	Pertanyaan string `json:"pertanyaan" binding:"required"`
-	Jawaban    string `json:"jawaban" binding:"required"`
+	Pertanyaan   string `json:"pertanyaan" binding:"required"`
+	PertanyaanEN string `json:"pertanyaan_en"`
+	Jawaban      string `json:"jawaban" binding:"required"`
+	JawabanEN    string `json:"jawaban_en"`
 	Urutan     int    `json:"urutan"`
 	IsAktif    *bool  `json:"is_aktif"`
 }
@@ -803,8 +846,10 @@ func (h *AdminHandler) CreateFAQ(c *gin.Context) {
 
 	faq := model.FAQ{
 		Kategori:   kategori,
-		Pertanyaan: req.Pertanyaan,
-		Jawaban:    req.Jawaban,
+		Pertanyaan:   req.Pertanyaan,
+		PertanyaanEN: req.PertanyaanEN,
+		Jawaban:      req.Jawaban,
+		JawabanEN:    req.JawabanEN,
 		Urutan:     req.Urutan,
 		IsAktif:    isAktif,
 	}
@@ -838,9 +883,11 @@ func (h *AdminHandler) UpdateFAQ(c *gin.Context) {
 	if req.Pertanyaan != "" {
 		faq.Pertanyaan = req.Pertanyaan
 	}
+	faq.PertanyaanEN = req.PertanyaanEN
 	if req.Jawaban != "" {
 		faq.Jawaban = req.Jawaban
 	}
+	faq.JawabanEN = req.JawabanEN
 	faq.Urutan = req.Urutan
 	if req.IsAktif != nil {
 		faq.IsAktif = *req.IsAktif
@@ -1025,6 +1072,34 @@ func (h *AdminHandler) ExportPendaftar(c *gin.Context) {
 				noHPOrtu = fmt.Sprintf("=\"%s\"", noHPOrtu)
 			}
 
+			statusPendaftaranLabel := string(p.StatusPendaftaran)
+			switch p.StatusPendaftaran {
+			case model.StatusDraft:
+				statusPendaftaranLabel = "Draft"
+			case model.StatusAkunTerdaftar:
+				statusPendaftaranLabel = "Akun Terdaftar"
+			case model.StatusBelumLengkap:
+				statusPendaftaranLabel = "Belum Lengkap"
+			case model.StatusMenungguPembayaran:
+				statusPendaftaranLabel = "Menunggu Pembayaran"
+			case model.StatusMenungguVerifikasi:
+				statusPendaftaranLabel = "Menunggu Verifikasi"
+			case model.StatusBerkasDiverifikasi:
+				statusPendaftaranLabel = "Berkas Sah / Diverifikasi"
+			case model.StatusDitolak:
+				statusPendaftaranLabel = "Perlu Perbaikan"
+			case model.StatusMengikutiUjian:
+				statusPendaftaranLabel = "Mengikuti Ujian / Wawancara"
+			case model.StatusLolosSeleksi:
+				statusPendaftaranLabel = "Lolos Seleksi (Diterima)"
+			case model.StatusTidakLolos:
+				statusPendaftaranLabel = "Tidak Lolos"
+			case model.StatusDaftarUlang:
+				statusPendaftaranLabel = "Daftar Ulang (Mahasiswa Aktif)"
+			case model.StatusKadaluarsa:
+				statusPendaftaranLabel = "Kadaluarsa"
+			}
+
 			row := []string{
 				strconv.Itoa(i + 1),
 				noPmb,
@@ -1053,7 +1128,7 @@ func (h *AdminHandler) ExportPendaftar(c *gin.Context) {
 				namaIbu,
 				pekerjaanIbu,
 				noHPOrtu,
-				string(p.StatusPendaftaran),
+				statusPendaftaranLabel,
 				statusBayar,
 				p.CreatedAt.Format("2006-01-02 15:04"),
 			}

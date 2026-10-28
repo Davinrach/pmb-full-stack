@@ -104,6 +104,13 @@ const getStatusConfig = (lang: "id" | "eng"): Record<
       ? "Welcome, New Student! Re-registration documents have been verified."
       : "Selamat datang Mahasiswa Baru! Berkas daftar ulang her-registrasi telah diverifikasi.",
   },
+  kadaluarsa: {
+    label: lang === "eng" ? "Expired" : "Kadaluarsa",
+    color: "bg-slate-100 text-slate-700 border-slate-300",
+    desc: lang === "eng"
+      ? "Your registration period has expired. Please contact the PMB admissions committee."
+      : "Masa pendaftaran Anda telah berakhir (kadaluarsa). Silakan hubungi panitia PMB.",
+  },
 });
 
 export default function DashboardPage() {

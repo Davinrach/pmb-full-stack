@@ -8,6 +8,9 @@ function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const roleParam = searchParams.get("role");
+  const verifiedParam = searchParams.get("verified");
+  const emailParam = searchParams.get("email");
+  const redirectParam = searchParams.get("redirect") || "/dashboard/formulir";
 
   useEffect(() => {
     if (roleParam === "admin") {
@@ -26,6 +29,13 @@ function LoginContent() {
           isOpen={true}
           onClose={() => router.push("/")}
           isStandalonePage={true}
+          initialIdentifier={emailParam || ""}
+          initialSuccessMessage={
+            verifiedParam === "true"
+              ? "Akun Anda berhasil diverifikasi! Silakan login untuk melanjutkan pengisian formulir pendaftaran."
+              : ""
+          }
+          redirectTo={redirectParam}
         />
       </div>
     </div>

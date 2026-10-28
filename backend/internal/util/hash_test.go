@@ -44,25 +44,41 @@ func TestValidateNIK_Empty(t *testing.T) {
 	}
 }
 
-// TC_WB_006: Password valid dengan panjang >= 8 karakter
+// TC_WB_006: Password valid dengan panjang >= 12 karakter dan variasi karakter
 func TestValidatePasswordStrength_Valid(t *testing.T) {
-	pass := "password123"
+	pass := "StaiciPMB2026!"
 	err := ValidatePasswordStrength(pass)
 	if err != nil {
 		t.Errorf("ValidatePasswordStrength(%s) menghasilkan error: %v, diharapkan nil", pass, err)
 	}
+
+	// Passphrase panjang (>= 16 karakter) tanpa simbol tetap valid (NIST SP 800-63B)
+	longPassphrase := "belajardikampusstaici"
+	errLong := ValidatePasswordStrength(longPassphrase)
+	if errLong != nil {
+		t.Errorf("ValidatePasswordStrength(%s) menghasilkan error: %v, diharapkan nil", longPassphrase, errLong)
+	}
 }
 
-// TC_WB_007: Password tidak valid dengan panjang < 8 karakter
+// TC_WB_007: Password tidak valid dengan panjang < 12 karakter
 func TestValidatePasswordStrength_TooShort(t *testing.T) {
-	pass := "pass1"
+	pass := "pass123456"
 	err := ValidatePasswordStrength(pass)
 	if err == nil {
 		t.Errorf("ValidatePasswordStrength(%s) = nil, diharapkan error", pass)
 	}
-	expectedMsg := "kata sandi harus memiliki minimal 8 karakter"
+	expectedMsg := "kata sandi harus memiliki minimal 12 karakter"
 	if err.Error() != expectedMsg {
 		t.Errorf("Pesan error = %v, diharapkan %v", err.Error(), expectedMsg)
+	}
+}
+
+// TestValidatePasswordStrength_CommonRejected menguji penolakan password umum
+func TestValidatePasswordStrength_CommonRejected(t *testing.T) {
+	commonPass := "password123456"
+	err := ValidatePasswordStrength(commonPass)
+	if err == nil {
+		t.Errorf("ValidatePasswordStrength(%s) = nil, diharapkan ditolak", commonPass)
 	}
 }
 

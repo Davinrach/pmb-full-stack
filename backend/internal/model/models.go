@@ -71,10 +71,14 @@ type ProgramStudi struct {
 	ID                  uint           `gorm:"primaryKey" json:"id"`
 	Kode                string         `gorm:"type:varchar(20);uniqueIndex;not null" json:"kode"` // MPI, AS, KPI
 	Nama                string         `gorm:"type:varchar(191);not null" json:"nama"`
+	NamaEN              string         `gorm:"type:varchar(191)" json:"nama_en"`
 	Jenjang             string         `gorm:"type:varchar(10);default:'S1'" json:"jenjang"`
 	GelarAkademik       string         `gorm:"type:varchar(255)" json:"gelar_akademik"`
+	GelarAkademikEN     string         `gorm:"type:varchar(255)" json:"gelar_akademik_en"`
 	Deskripsi           string         `gorm:"type:text" json:"deskripsi"`
+	DeskripsiEN         string         `gorm:"type:text" json:"deskripsi_en"`
 	ProfilLulusanIntro  string         `gorm:"type:text" json:"profil_lulusan_intro"`
+	ProfilLulusanIntroEN string        `gorm:"type:text" json:"profil_lulusan_intro_en"`
 	ProfilLulusan       string         `gorm:"type:longtext" json:"profil_lulusan"`        // JSON string of [{title, desc}]
 	CapaianPembelajaran string         `gorm:"type:longtext" json:"capaian_pembelajaran"` // JSON string of [{title, desc}]
 	AlurPendaftaran     string         `gorm:"type:text" json:"alur_pendaftaran"`
@@ -87,6 +91,7 @@ type ProgramStudi struct {
 type Gelombang struct {
 	ID               uint           `gorm:"primaryKey" json:"id"`
 	Nama             string         `gorm:"type:varchar(100);not null" json:"nama"` // contoh: "Gelombang 1 - 2026/2027"
+	NamaEN           string         `gorm:"type:varchar(100)" json:"nama_en"`
 	TahunAkademik    string         `gorm:"type:varchar(20);not null" json:"tahun_akademik"` // contoh: "2026/2027"
 	TanggalBuka      time.Time      `json:"tanggal_buka"`
 	TanggalTutup     time.Time      `json:"tanggal_tutup"`
@@ -242,7 +247,9 @@ type PengaturanSistem struct {
 	NoWhatsappCS           string    `gorm:"type:varchar(50)" json:"no_whatsapp_cs"`
 	EmailCS                string    `gorm:"type:varchar(100)" json:"email_cs"`
 	AlamatKampus           string    `gorm:"type:text" json:"alamat_kampus"`
+	AlamatKampusEN         string    `gorm:"type:text" json:"alamat_kampus_en"`
 	JamOperasional         string    `gorm:"type:varchar(150)" json:"jam_operasional"`
+	JamOperasionalEN       string    `gorm:"type:varchar(150)" json:"jam_operasional_en"`
 	HomepageProdiList      string    `gorm:"type:longtext" json:"homepage_prodi_list"`
 	UpdatedAt              time.Time `json:"updated_at"`
 }
@@ -250,8 +257,10 @@ type PengaturanSistem struct {
 type FAQ struct {
 	ID        uint      `gorm:"primaryKey" json:"id"`
 	Kategori  string    `gorm:"type:varchar(100);default:'Umum'" json:"kategori"`
-	Pertanyaan string    `gorm:"type:text;not null" json:"pertanyaan"`
-	Jawaban   string    `gorm:"type:text;not null" json:"jawaban"`
+	Pertanyaan   string    `gorm:"type:text;not null" json:"pertanyaan"`
+	PertanyaanEN string    `gorm:"type:text" json:"pertanyaan_en"`
+	Jawaban      string    `gorm:"type:text;not null" json:"jawaban"`
+	JawabanEN    string    `gorm:"type:text" json:"jawaban_en"`
 	Urutan    int       `gorm:"default:0" json:"urutan"`
 	IsAktif   bool      `gorm:"default:true" json:"is_aktif"`
 	CreatedAt time.Time `json:"created_at"`
@@ -278,8 +287,11 @@ type JalurPendaftaran struct {
 	ID               uint      `gorm:"primaryKey" json:"id"`
 	Kode             string    `gorm:"type:varchar(50);uniqueIndex;not null" json:"kode"`
 	Nama             string    `gorm:"type:varchar(100);not null" json:"nama"`
+	NamaEN           string    `gorm:"type:varchar(100)" json:"nama_en"`
 	BadgeText        string    `gorm:"type:varchar(50)" json:"badge_text"`
+	BadgeTextEN      string    `gorm:"type:varchar(50)" json:"badge_text_en"`
 	Deskripsi        string    `gorm:"type:text" json:"deskripsi"`
+	DeskripsiEN      string    `gorm:"type:text" json:"deskripsi_en"`
 	SyaratKhusus     string    `gorm:"type:text" json:"syarat_khusus"`
 	BebasBiaya       bool      `gorm:"default:false" json:"bebas_biaya"`
 	TampilDiHomepage bool      `gorm:"default:true" json:"tampil_di_homepage"`
@@ -306,10 +318,12 @@ type TataCaraPendaftaran struct {
 type KontakHotline struct {
 	ID             uint      `gorm:"primaryKey" json:"id"`
 	NamaLayanan    string    `gorm:"type:varchar(100);not null" json:"nama_layanan"`
+	NamaLayananEN  string    `gorm:"type:varchar(100)" json:"nama_layanan_en"`
 	TipeKontak     string    `gorm:"type:varchar(30);default:'whatsapp'" json:"tipe_kontak"` // whatsapp, telepon, email
 	NomorAtauEmail string    `gorm:"type:varchar(100);not null" json:"nomor_atau_email"`
 	NamaPetugas    string    `gorm:"type:varchar(100)" json:"nama_petugas"`
 	JamLayanan     string    `gorm:"type:varchar(100)" json:"jam_layanan"`
+	JamLayananEN   string    `gorm:"type:varchar(100)" json:"jam_layanan_en"`
 	IsAktif        bool      `gorm:"default:true" json:"is_aktif"`
 	Urutan         int       `gorm:"default:0" json:"urutan"`
 	CreatedAt      time.Time `json:"created_at"`
@@ -320,8 +334,10 @@ type KontakHotline struct {
 type PersyaratanDokumen struct {
 	ID          uint      `gorm:"primaryKey" json:"id"`
 	Kode        string    `gorm:"type:varchar(50);not null" json:"kode"`
-	NamaDokumen string    `gorm:"type:varchar(191);not null" json:"nama_dokumen"`
-	Deskripsi   string    `gorm:"type:text" json:"deskripsi"`
+	NamaDokumen   string    `gorm:"type:varchar(191);not null" json:"nama_dokumen"`
+	NamaDokumenEN string    `gorm:"type:varchar(191)" json:"nama_dokumen_en"`
+	Deskripsi     string    `gorm:"type:text" json:"deskripsi"`
+	DeskripsiEN   string    `gorm:"type:text" json:"deskripsi_en"`
 	IsWajib     bool      `gorm:"default:true" json:"is_wajib"`
 	JalurKhusus string    `gorm:"type:varchar(50);default:'semua'" json:"jalur_khusus"` // semua / kip-kuliah / reguler
 	TipeFile    string    `gorm:"type:varchar(100);default:'jpg,jpeg,png,pdf'" json:"tipe_file"`

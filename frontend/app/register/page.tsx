@@ -2,7 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useMemo, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   User,
   CreditCard,
@@ -16,6 +17,7 @@ import {
   Headphones,
   Check,
   AlertCircle,
+  ShieldCheck,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import Navbar from "@/components/Navbar";
@@ -23,7 +25,43 @@ import Footer from "@/components/Footer";
 import { useLanguage } from "@/lib/LanguageContext";
 import OTPVerificationModal from "@/components/OTPVerificationModal";
 
+// Daftar kata sandi umum / diketahui bocor yang wajib ditolak
+const COMMON_LEAKED_PASSWORDS = new Set([
+  "password1234",
+  "password12345",
+  "password123456",
+  "123456789012",
+  "1234567890123",
+  "qwertyuiopas",
+  "qwertyuiopasd",
+  "admin12345678",
+  "administrator",
+  "staici1234567",
+  "staicisitubondo",
+  "situbondo1234",
+  "mahasiswabaru",
+  "mahasiswastaici",
+  "rahasia123456",
+  "bismillah1234",
+  "indonesia1234",
+  "welcome123456",
+  "iloveyou12345",
+  "letmein123456",
+  "sunshine12345",
+]);
+
 export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-slate-50 flex items-center justify-center text-xs text-slate-500 font-bold">Memuat Halaman Pendaftaran Akun...</div>}>
+      <RegisterPageContent />
+    </Suspense>
+  );
+}
+
+function RegisterPageContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectParam = searchParams.get("redirect") || "/pendaftaran";
   const { lang, t } = useLanguage();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -45,6 +83,125 @@ export default function RegisterPage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Evaluasi kekuatan kata sandi secara real-time
+  const passwordStrength = useMemo(() => {
+    const p = formData.password.trim();
+    if (!p) {
+      return {
+        score: 0,
+        label: "",
+        feedback: "",
+        isCommon: false,
+        isValid: false,
+      };
+    }
+
+    const lowered = p.toLowerCase();
+    const isCommon = COMMON_LEAKED_PASSWORDS.has(lowered);
+    const isAllSame = p.length > 1 && /^([a-zA-Z0-9])\1+$/.test(p);
+
+    // 1. Kurang dari 12 karakter
+    if (p.length < 12) {
+      const remaining = 12 - p.length;
+      return {
+        score: 1,
+        label: lang === "eng" ? "Weak" : "Lemah",
+        feedback:
+          lang === "eng"
+            ? `Password needs at least ${remaining} more character${remaining > 1 ? "s" : ""} (min. 12 characters).`
+            : `Kurang ${remaining} karakter lagi (minimal 12 karakter).`,
+        isCommon,
+        isValid: false,
+      };
+    }
+
+    // 2. Password umum atau berulang
+    if (isCommon || isAllSame) {
+      return {
+        score: 1,
+        label: lang === "eng" ? "Weak" : "Lemah",
+        feedback:
+          lang === "eng"
+            ? "This password is too common or easily guessable. Please use another combination."
+            : "Kata sandi terlalu umum atau mudah ditebak. Silakan gunakan kombinasi lain.",
+        isCommon: true,
+        isValid: false,
+      };
+    }
+
+    // 3. Hitung variasi kategori karakter
+    const hasLower = /[a-z]/.test(p);
+    const hasUpper = /[A-Z]/.test(p);
+    const hasDigit = /[0-9]/.test(p);
+    const hasSpecial = /[^a-zA-Z0-9]/.test(p);
+    const categories = [hasLower, hasUpper, hasDigit, hasSpecial].filter(Boolean).length;
+
+    // 4. Standar NIST SP 800-63B:
+    // Jika passphrase panjang (>= 16 karakter), tidak wajib kombinasi kaku simbol/angka
+    if (p.length >= 16) {
+      if (categories >= 2) {
+        return {
+          score: 3,
+          label: lang === "eng" ? "Strong" : "Sangat Kuat",
+          feedback:
+            lang === "eng"
+              ? "Excellent! Long passphrase provides strong security."
+              : "Sangat baik! Kata sandi panjang memenuhi standar keamanan tinggi.",
+          isCommon: false,
+          isValid: true,
+        };
+      }
+      return {
+        score: 2,
+        label: lang === "eng" ? "Medium" : "Sedang",
+        feedback:
+          lang === "eng"
+            ? "Passphrase length is good. Consider adding capital letters or numbers."
+            : "Panjang mencukupi. Anda dapat memadukan huruf kapital atau angka agar lebih kokoh.",
+        isCommon: false,
+        isValid: true,
+      };
+    }
+
+    // Jika 12 - 15 karakter: minimal 2 kategori karakter
+    if (categories < 2) {
+      return {
+        score: 1,
+        label: lang === "eng" ? "Weak" : "Lemah",
+        feedback:
+          lang === "eng"
+            ? "Combine at least 2 character types (uppercase, lowercase, numbers, or symbols)."
+            : "Kombinasikan minimal 2 jenis karakter (huruf besar/kecil, angka, atau simbol).",
+        isCommon: false,
+        isValid: false,
+      };
+    }
+
+    if (categories >= 3) {
+      return {
+        score: 3,
+        label: lang === "eng" ? "Strong" : "Kuat",
+        feedback:
+          lang === "eng"
+            ? "Strong password with good character combination!"
+            : "Kata sandi kuat dengan kombinasi karakter yang baik!",
+        isCommon: false,
+        isValid: true,
+      };
+    }
+
+    return {
+      score: 2,
+      label: lang === "eng" ? "Medium" : "Sedang",
+      feedback:
+        lang === "eng"
+          ? "Good password. Adding symbols or uppercase will make it stronger."
+          : "Kata sandi cukup baik. Tambahkan simbol atau huruf besar agar semakin kuat.",
+      isCommon: false,
+      isValid: true,
+    };
+  }, [formData.password, lang]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage("");
@@ -65,11 +222,20 @@ export default function RegisterPage() {
       );
       return;
     }
-    if (formData.password.length < 8) {
+    if (formData.password.length < 12) {
       setErrorMessage(
         lang === "eng"
-          ? "Password must be at least 8 characters long."
-          : "Kata sandi harus memiliki minimal 8 karakter."
+          ? "Password must be at least 12 characters long."
+          : "Kata sandi harus memiliki minimal 12 karakter."
+      );
+      return;
+    }
+    if (!passwordStrength.isValid) {
+      setErrorMessage(
+        passwordStrength.feedback ||
+          (lang === "eng"
+            ? "Please use a stronger password."
+            : "Silakan gunakan kata sandi yang lebih kuat.")
       );
       return;
     }
@@ -148,8 +314,8 @@ export default function RegisterPage() {
           </div>
           <p className="leading-relaxed">
             {lang === "eng"
-              ? "Complete your initial account registration to access the integrated admission form and sync data with Ministry of Religious Affairs (EMIS)."
-              : "Lengkapi data registrasi akun awal untuk mendapatkan akses pengisian formulir PMB terpadu dan sinkronisasi data EMIS Kopertais IV Surabaya."}
+              ? "Complete your initial account registration to access the integrated admission form and official PMB services of STAI Cendekia Insani."
+              : "Lengkapi data registrasi akun awal untuk mendapatkan akses pengisian formulir pendaftaran dan layanan administrasi PMB STAI Cendekia Insani."}
           </p>
         </div>
 
@@ -284,8 +450,8 @@ export default function RegisterPage() {
                 <label htmlFor="password" className="font-bold text-slate-900">
                   {lang === "eng" ? "Create Password" : "Buat Kata Sandi"} <span className="text-red-500">*</span>
                 </label>
-                <span className="text-slate-400 text-xs">
-                  {lang === "eng" ? "Min. 8 Characters" : "Min. 8 Karakter"}
+                <span className="text-slate-500 font-semibold text-xs">
+                  {lang === "eng" ? "Min. 12 Characters" : "Min. 12 Karakter"}
                 </span>
               </div>
               <div className="relative">
@@ -296,7 +462,8 @@ export default function RegisterPage() {
                   type={showPassword ? "text" : "password"}
                   id="password"
                   required
-                  minLength={8}
+                  minLength={12}
+                  autoComplete="off"
                   value={formData.password}
                   onChange={(e) =>
                     setFormData({ ...formData, password: e.target.value })
@@ -316,6 +483,58 @@ export default function RegisterPage() {
                   )}
                 </button>
               </div>
+
+              {/* Indikator Kekuatan Kata Sandi (Weak, Medium, Strong) */}
+              {formData.password.length > 0 && (
+                <div className="pt-1.5 space-y-2 animate-fadeIn">
+                  {/* Progress Bar 3 Segmen */}
+                  <div className="grid grid-cols-3 gap-1.5">
+                    <div
+                      className={`h-1.5 rounded-full transition-all duration-300 ${
+                        passwordStrength.score >= 1
+                          ? passwordStrength.score === 1
+                            ? "bg-rose-500"
+                            : passwordStrength.score === 2
+                            ? "bg-amber-500"
+                            : "bg-emerald-500"
+                          : "bg-slate-200"
+                      }`}
+                    />
+                    <div
+                      className={`h-1.5 rounded-full transition-all duration-300 ${
+                        passwordStrength.score >= 2
+                          ? passwordStrength.score === 2
+                            ? "bg-amber-500"
+                            : "bg-emerald-500"
+                          : "bg-slate-200"
+                      }`}
+                    />
+                    <div
+                      className={`h-1.5 rounded-full transition-all duration-300 ${
+                        passwordStrength.score >= 3 ? "bg-emerald-500" : "bg-slate-200"
+                      }`}
+                    />
+                  </div>
+
+                  {/* Keterangan & Badge Kekuatan */}
+                  <div className="flex items-start justify-between gap-2 text-xs">
+                    <span className="text-slate-500 text-[11px] leading-tight flex-1">
+                      {passwordStrength.feedback}
+                    </span>
+                    <span
+                      className={`px-2 py-0.5 rounded-md font-bold text-[10px] tracking-wide uppercase shrink-0 border ${
+                        passwordStrength.score === 3
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                          : passwordStrength.score === 2
+                          ? "bg-amber-50 text-amber-700 border-amber-200"
+                          : "bg-rose-50 text-rose-700 border-rose-200"
+                      }`}
+                    >
+                      {passwordStrength.label}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Field 6: Konfirmasi Kata Sandi */}
@@ -339,6 +558,8 @@ export default function RegisterPage() {
                   type={showConfirmPassword ? "text" : "password"}
                   id="confirmPassword"
                   required
+                  minLength={12}
+                  autoComplete="off"
                   value={formData.confirmPassword}
                   onChange={(e) =>
                     setFormData({
@@ -361,6 +582,17 @@ export default function RegisterPage() {
                   )}
                 </button>
               </div>
+              {formData.confirmPassword && formData.password !== formData.confirmPassword && (
+                <p className="text-[11px] text-rose-600 font-medium pt-0.5">
+                  {lang === "eng" ? "Passwords do not match" : "Kata sandi tidak cocok"}
+                </p>
+              )}
+              {formData.confirmPassword && formData.password === formData.confirmPassword && (
+                <p className="text-[11px] text-emerald-600 font-medium pt-0.5 flex items-center gap-1">
+                  <Check className="w-3.5 h-3.5" />
+                  <span>{lang === "eng" ? "Passwords match" : "Kata sandi cocok"}</span>
+                </p>
+              )}
             </div>
 
             {/* Checkbox Persetujuan */}
@@ -377,8 +609,8 @@ export default function RegisterPage() {
               />
               <label htmlFor="agreeTerms" className="leading-relaxed cursor-pointer select-none">
                 {lang === "eng"
-                  ? "I agree to the admission requirements and ensure the authenticity of all registration data for EMIS Kopertais IV Surabaya reporting."
-                  : "Saya menyetujui persyaratan PMB serta menjamin keabsahan data registrasi untuk keperluan pelaporan EMIS Kopertais IV Surabaya."}
+                  ? "I agree to the admission requirements and ensure the authenticity of all data submitted to STAI Cendekia Insani Situbondo."
+                  : "Saya menyetujui seluruh persyaratan PMB serta menjamin keabsahan data registrasi yang saya daftarkan di STAI Cendekia Insani Situbondo."}
               </label>
             </div>
 
@@ -400,7 +632,7 @@ export default function RegisterPage() {
             {/* Auxiliary Links Bar */}
             <div className="bg-slate-100/90 border border-slate-200/60 rounded-xl p-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-semibold text-slate-700">
               <Link
-                href="/login"
+                href={redirectParam ? `/login?redirect=${encodeURIComponent(redirectParam)}` : "/login"}
                 className="flex items-center gap-2 hover:text-[#0d3830] transition"
               >
                 <Mail className="w-4 h-4 text-slate-500" />
@@ -429,7 +661,14 @@ export default function RegisterPage() {
         email={registeredEmail}
         initialDevOtp={devOtp}
         onClose={() => setShowOtpModal(false)}
-        redirectTo="/dashboard"
+        autoLogin={false}
+        onVerified={() => {
+          setShowOtpModal(false);
+          router.push(
+            `/login?verified=true&email=${encodeURIComponent(registeredEmail)}&redirect=${encodeURIComponent(redirectParam)}`
+          );
+        }}
+        redirectTo={redirectParam}
       />
     </div>
   );

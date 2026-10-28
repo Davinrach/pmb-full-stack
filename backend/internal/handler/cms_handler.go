@@ -186,8 +186,11 @@ func (h *CMSHandler) UpdateJalur(c *gin.Context) {
 
 	jalur.Kode = req.Kode
 	jalur.Nama = req.Nama
+	jalur.NamaEN = req.NamaEN
 	jalur.BadgeText = req.BadgeText
+	jalur.BadgeTextEN = req.BadgeTextEN
 	jalur.Deskripsi = req.Deskripsi
+	jalur.DeskripsiEN = req.DeskripsiEN
 	jalur.SyaratKhusus = req.SyaratKhusus
 	jalur.BebasBiaya = req.BebasBiaya
 	jalur.TampilDiHomepage = req.TampilDiHomepage
@@ -414,10 +417,12 @@ func (h *CMSHandler) UpdateHotline(c *gin.Context) {
 	}
 
 	hotline.NamaLayanan = req.NamaLayanan
+	hotline.NamaLayananEN = req.NamaLayananEN
 	hotline.TipeKontak = req.TipeKontak
 	hotline.NomorAtauEmail = req.NomorAtauEmail
 	hotline.NamaPetugas = req.NamaPetugas
 	hotline.JamLayanan = req.JamLayanan
+	hotline.JamLayananEN = req.JamLayananEN
 	hotline.IsAktif = req.IsAktif
 	hotline.Urutan = req.Urutan
 
@@ -507,8 +512,10 @@ func (h *CMSHandler) UpdatePersyaratan(c *gin.Context) {
 	}
 
 	doc.NamaDokumen = req.NamaDokumen
+	doc.NamaDokumenEN = req.NamaDokumenEN
 	doc.Kode = req.Kode
 	doc.Deskripsi = req.Deskripsi
+	doc.DeskripsiEN = req.DeskripsiEN
 	doc.IsWajib = req.IsWajib
 	doc.JalurKhusus = req.JalurKhusus
 	doc.TipeFile = req.TipeFile

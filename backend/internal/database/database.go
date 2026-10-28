@@ -138,18 +138,63 @@ func seedProgramStudi(db *gorm.DB) {
 func seedGelombang(db *gorm.DB) {
 	var count int64
 	db.Model(&model.Gelombang{}).Count(&count)
-	if count == 0 {
-		now := time.Now()
-		gelombang1 := model.Gelombang{
-			Nama:             "Gelombang 1 - TA 2026/2027",
-			TahunAkademik:    "2026/2027",
-			TanggalBuka:      now.AddDate(0, -1, 0),
-			TanggalTutup:     now.AddDate(0, 3, 0),
-			BiayaPendaftaran: 250000,
-			Kuota:            150,
-			IsAktif:          true,
+	if count < 3 {
+		// Gelombang 1 (Sudah Ditutup)
+		var g1 model.Gelombang
+		if err := db.Where("nama LIKE ?", "Gelombang 1%").First(&g1).Error; err != nil {
+			tBuka := time.Date(2026, 5, 1, 0, 0, 0, 0, time.Local)
+			tTutup := time.Date(2026, 7, 31, 23, 59, 59, 0, time.Local)
+			db.Create(&model.Gelombang{
+				Nama:             "Gelombang 1 - TA 2026/2027",
+				TahunAkademik:    "2026/2027",
+				TanggalBuka:      tBuka,
+				TanggalTutup:     tTutup,
+				BiayaPendaftaran: 250000,
+				Kuota:            150,
+				IsAktif:          false,
+			})
+		} else {
+			// Update g1 dates so it reflects closed status accurately
+			tBuka := time.Date(2026, 5, 1, 0, 0, 0, 0, time.Local)
+			tTutup := time.Date(2026, 7, 31, 23, 59, 59, 0, time.Local)
+			db.Model(&g1).Updates(map[string]interface{}{
+				"tanggal_buka":  tBuka,
+				"tanggal_tutup": tTutup,
+				"is_aktif":      false,
+			})
 		}
-		db.Create(&gelombang1)
+
+		// Gelombang 2 (Sedang Dibuka)
+		var g2 model.Gelombang
+		if err := db.Where("nama LIKE ?", "Gelombang 2%").First(&g2).Error; err != nil {
+			tBuka := time.Date(2026, 8, 1, 0, 0, 0, 0, time.Local)
+			tTutup := time.Date(2026, 11, 30, 23, 59, 59, 0, time.Local)
+			db.Create(&model.Gelombang{
+				Nama:             "Gelombang 2 - TA 2026/2027",
+				TahunAkademik:    "2026/2027",
+				TanggalBuka:      tBuka,
+				TanggalTutup:     tTutup,
+				BiayaPendaftaran: 250000,
+				Kuota:            200,
+				IsAktif:          true,
+			})
+		}
+
+		// Gelombang 3 (Akan Datang)
+		var g3 model.Gelombang
+		if err := db.Where("nama LIKE ?", "Gelombang 3%").First(&g3).Error; err != nil {
+			tBuka := time.Date(2026, 12, 1, 0, 0, 0, 0, time.Local)
+			tTutup := time.Date(2027, 2, 28, 23, 59, 59, 0, time.Local)
+			db.Create(&model.Gelombang{
+				Nama:             "Gelombang 3 - TA 2026/2027",
+				TahunAkademik:    "2026/2027",
+				TanggalBuka:      tBuka,
+				TanggalTutup:     tTutup,
+				BiayaPendaftaran: 300000,
+				Kuota:            100,
+				IsAktif:          false,
+			})
+		}
 	}
 }
 
@@ -1022,13 +1067,7 @@ func createDummyPNG(filePath string, width, height int, baseColor color.RGBA) {
 // seedSiteTranslations menyuntikkan seluruh teks terjemahan default (ID & EN) ke tabel site_translations.
 // Hanya dijalankan jika tabel masih kosong, agar perubahan admin tidak tertimpa.
 func seedSiteTranslations(db *gorm.DB) {
-	var count int64
-	db.Model(&model.SiteTranslation{}).Count(&count)
-	if count > 0 {
-		return
-	}
-
-	log.Println("📝 Seeding teks terjemahan default (site_translations)...")
+	log.Println("📝 Memeriksa dan menyinkronkan teks terjemahan default (site_translations)...")
 
 	type entry struct {
 		Group string
@@ -1127,26 +1166,93 @@ func seedSiteTranslations(db *gorm.DB) {
 
 		// ── PENDAFTARAN PAGE ──
 		{"pendaftaranPage", "title", "Formulir Pendaftaran Mahasiswa Baru", "New Student Admission Form"},
-		{"pendaftaranPage", "subtitle", "Tahun Akademik 2026/2027 • STAI Cendekia Insani Situbondo", "Academic Year 2026/2027 • STAI Cendekia Insani Situbondo"},
-		{"pendaftaranPage", "step1Title", "1. Pilihan Prodi & Biodata", "1. Program Choice & Identity"},
-		{"pendaftaranPage", "step2Title", "2. Sekolah & Keluarga", "2. School & Family"},
-		{"pendaftaranPage", "step3Title", "3. Unggah Berkas & Submit", "3. Document Upload & Submit"},
+		{"pendaftaranPage", "subtitle", "STAI Cendekia Insani Situbondo • Lengkapi 3 tahap praktis di bawah ini", "STAI Cendekia Insani Situbondo • Complete the 3 easy steps below"},
+		{"pendaftaranPage", "badgeTa", "Penerimaan Mahasiswa Baru 2026/2027", "New Student Admission 2026/2027"},
+		{"pendaftaranPage", "btnLihatProdi", "Lihat Detail Prodi", "View Study Programs"},
+		{"pendaftaranPage", "tipsAuth", "Anda dapat langsung mengisi formulir, atau Masuk / Buat Akun agar draft isian tersimpan otomatis ke akun Anda.", "You can fill the form directly, or Sign In / Register to automatically save your draft."},
+		{"pendaftaranPage", "btnMasukAkun", "Masuk / Daftar Akun", "Sign In / Register"},
+		{"pendaftaranPage", "step1Title", "1. Jalur & Biodata", "1. Track & Identity"},
+		{"pendaftaranPage", "step2Title", "2. Sekolah & Ortu", "2. School & Parents"},
+		{"pendaftaranPage", "step3Title", "3. Berkas & Selesai", "3. Documents & Submit"},
+		{"pendaftaranPage", "tahap1Header", "Tahap 1: Jalur Masuk & Biodata Calon Mahasiswa", "Stage 1: Admission Track & Applicant Identity"},
+		{"pendaftaranPage", "tahap1Sub", "Pilih jalur, gelombang, prodi, dan lengkapi identitas dasar Anda.", "Select your entry track, wave, program, and complete your basic identity."},
+		{"pendaftaranPage", "jalurTitle", "Jalur Pendaftaran", "Admission Track"},
+		{"pendaftaranPage", "jalurHint", "Pilih salah satu", "Select one"},
+		{"pendaftaranPage", "gelombangTitle", "Gelombang Pendaftaran (Sedang Dibuka)", "Admission Wave (Currently Open)"},
+		{"pendaftaranPage", "gelombangAktif", "Periode Aktif", "Active Period"},
+		{"pendaftaranPage", "prodiTitle", "Pilihan Program Studi S1", "Undergraduate Program Choice"},
+		{"pendaftaranPage", "namaLengkap", "Nama Lengkap (Sesuai KTP/Ijazah)", "Full Name (as in ID/Diploma)"},
+		{"pendaftaranPage", "nik", "NIK (16 Digit KTP/KK)", "National ID (16 Digits)"},
+		{"pendaftaranPage", "jenisKelamin", "Jenis Kelamin", "Gender"},
+		{"pendaftaranPage", "lakiLaki", "Laki-laki", "Male"},
+		{"pendaftaranPage", "perempuan", "Perempuan", "Female"},
+		{"pendaftaranPage", "tempatLahir", "Tempat Lahir", "Place of Birth"},
+		{"pendaftaranPage", "tanggalLahir", "Tanggal Lahir", "Date of Birth"},
+		{"pendaftaranPage", "statusPernikahan", "Status Pernikahan", "Marital Status"},
+		{"pendaftaranPage", "belumMenikah", "Belum Menikah", "Single"},
+		{"pendaftaranPage", "menikah", "Menikah", "Married"},
+		{"pendaftaranPage", "dudaJanda", "Duda / Janda", "Divorced / Widowed"},
+		{"pendaftaranPage", "agama", "Agama", "Religion"},
+		{"pendaftaranPage", "kewarganegaraan", "Kewarganegaraan", "Citizenship"},
+		{"pendaftaranPage", "noWa", "No. WhatsApp Aktif", "Active WhatsApp Number"},
+		{"pendaftaranPage", "email", "Email Aktif", "Active Email"},
+		{"pendaftaranPage", "alamat", "Alamat Tempat Tinggal Lengkap", "Full Residential Address"},
+		{"pendaftaranPage", "tahap2Header", "Tahap 2: Asal Sekolah & Data Orang Tua", "Stage 2: High School & Parents Information"},
+		{"pendaftaranPage", "tahap2Sub", "Lengkapi riwayat pendidikan sekolah menengah dan data orang tua/wali.", "Complete your high school history and parents/guardian information."},
+		{"pendaftaranPage", "asalSekolahTitle", "A. Data Asal Sekolah (SMA / MA / SMK)", "A. High School Information (SMA / MA / SMK)"},
+		{"pendaftaranPage", "namaSekolah", "Nama Asal Sekolah", "School Name"},
+		{"pendaftaranPage", "statusSekolah", "Status Sekolah", "School Status"},
+		{"pendaftaranPage", "jurusanSekolah", "Jurusan", "Major / Stream"},
+		{"pendaftaranPage", "nilaiRataRata", "Nilai Rata-rata Ijazah / Rapor", "Average Score (Diploma/Report)"},
+		{"pendaftaranPage", "tahunLulus", "Tahun Lulus", "Graduation Year"},
+		{"pendaftaranPage", "ayahTitle", "B. Data Ayah Kandung", "B. Father's Information"},
+		{"pendaftaranPage", "ibuTitle", "C. Data Ibu Kandung", "C. Mother's Information"},
+		{"pendaftaranPage", "almarhum", "Almarhum", "Deceased"},
+		{"pendaftaranPage", "almarhumah", "Almarhumah", "Deceased"},
+		{"pendaftaranPage", "namaAyah", "Nama Ayah", "Father's Name"},
+		{"pendaftaranPage", "pekerjaanAyah", "Pekerjaan Ayah", "Father's Occupation"},
+		{"pendaftaranPage", "penghasilanAyah", "Penghasilan Ayah", "Father's Income"},
+		{"pendaftaranPage", "namaIbu", "Nama Ibu", "Mother's Name"},
+		{"pendaftaranPage", "pekerjaanIbu", "Pekerjaan Ibu", "Mother's Occupation"},
+		{"pendaftaranPage", "penghasilanIbu", "Penghasilan Ibu", "Mother's Income"},
+		{"pendaftaranPage", "tahap3Header", "Tahap 3: Unggah Berkas & Finalisasi", "Stage 3: Document Upload & Final Submit"},
+		{"pendaftaranPage", "tahap3Sub", "Unggah berkas pendaftaran dan konfirmasi pengiriman formulir.", "Upload registration documents and confirm form submission."},
+		{"pendaftaranPage", "berkasTitle", "Berkas Persyaratan (Format JPG/PDF maks. 2MB)", "Required Documents (JPG/PDF format, max 2MB)"},
+		{"pendaftaranPage", "pembayaranTitle", "Nomor Rekening Resmi Kampus", "Official Campus Bank Account"},
+		{"pendaftaranPage", "pernyataan", "Saya menyatakan bahwa seluruh data dan berkas yang saya isikan adalah benar dan sah sesuai data diri saya.", "I solemnly declare that all information and documents provided are true and valid."},
 		{"pendaftaranPage", "btnDraft", "Simpan Draft", "Save Draft"},
 		{"pendaftaranPage", "btnNext", "Lanjut ke Tahap Berikutnya →", "Proceed to Next Step →"},
 		{"pendaftaranPage", "btnPrev", "← Kembali ke Tahap Sebelumnya", "← Back to Previous Step"},
 		{"pendaftaranPage", "btnSubmit", "Submit Pendaftaran Sekarang", "Submit Registration Now"},
+		{"pendaftaranPage", "ringkasanTitle", "Ringkasan Pendaftaran", "Application Summary"},
+		{"pendaftaranPage", "ringkasanJalur", "Jalur", "Track"},
+		{"pendaftaranPage", "ringkasanGelombang", "Gelombang", "Wave"},
+		{"pendaftaranPage", "ringkasanProdi", "Pilihan Prodi", "Study Program"},
+		{"pendaftaranPage", "ringkasanBiaya", "Biaya Formulir", "Registration Fee"},
+		{"pendaftaranPage", "ringkasanProgres", "Kelengkapan Data", "Data Completion"},
+		{"pendaftaranPage", "bantuanTitle", "Butuh Bantuan Pendaftaran?", "Need Help Applying?"},
+		{"pendaftaranPage", "bantuanSub", "Tim Panitia PMB STAICI siap mendampingi pengisian formulir Anda.", "The STAICI PMB committee is ready to assist you."},
+		{"pendaftaranPage", "bantuanWa", "WhatsApp Panitia PMB", "WhatsApp PMB Committee"},
+		{"pendaftaranPage", "bantuanJam", "Senin - Sabtu: 08.00 - 16.00 WIB", "Monday - Saturday: 08:00 - 16:00 WIB"},
 	}
 
+	seededCount := 0
 	for i, s := range seeds {
-		t := model.SiteTranslation{
-			GroupName:      s.Group,
-			TranslationKey: s.Key,
-			TextID:         s.ID,
-			TextEN:         s.EN,
-			Urutan:         i,
+		var existing model.SiteTranslation
+		if err := db.Where("group_name = ? AND translation_key = ?", s.Group, s.Key).First(&existing).Error; err != nil {
+			t := model.SiteTranslation{
+				GroupName:      s.Group,
+				TranslationKey: s.Key,
+				TextID:         s.ID,
+				TextEN:         s.EN,
+				Urutan:         i,
+			}
+			db.Create(&t)
+			seededCount++
 		}
-		db.Create(&t)
 	}
 
-	log.Printf("✓ Seeded %d baris teks terjemahan default.", len(seeds))
+	if seededCount > 0 {
+		log.Printf("✓ Disinkronkan %d teks terjemahan baru ke tabel site_translations.", seededCount)
+	}
 }

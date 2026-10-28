@@ -42,7 +42,7 @@ func TestPembayaran_JalurRegulerBerbayar(t *testing.T) {
 	biaya := float64(250000)
 	if isKip {
 		biaya = 0
-	} else if gelombang != nil && gelombang.BiayaPendaftaran > 0 {
+	} else if gelombang.BiayaPendaftaran > 0 {
 		biaya = gelombang.BiayaPendaftaran
 	}
 

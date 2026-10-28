@@ -11,11 +11,12 @@ import { authStorage, UserSession, getFileUrl, api } from "@/lib/api";
 import { useLanguage } from "@/lib/LanguageContext";
 
 interface NavbarProps {
-  activePage?: "beranda" | "pendaftaran" | "program-studi";
+  activePage?: "beranda" | "pendaftaran" | "program-studi" | "faq";
 }
 
 export default function Navbar({ activePage = "beranda" }: NavbarProps) {
   const { lang, setLang, t } = useLanguage();
+  const [currentActive, setCurrentActive] = useState<"beranda" | "pendaftaran" | "program-studi" | "faq">(activePage);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
@@ -23,6 +24,49 @@ export default function Navbar({ activePage = "beranda" }: NavbarProps) {
   const [prodiDropdownOpen, setProdiDropdownOpen] = useState(false);
   const [user, setUser] = useState<UserSession | null>(null);
   const [dynamicProdis, setDynamicProdis] = useState<any[]>([]);
+
+  // Sinkronisasi activePage prop ke currentActive
+  useEffect(() => {
+    setCurrentActive(activePage);
+  }, [activePage]);
+
+  // Scrollspy & hash detection saat berada di halaman beranda
+  useEffect(() => {
+    if (typeof window === "undefined" || window.location.pathname !== "/") return;
+
+    if (window.location.hash === "#faq") {
+      setCurrentActive("faq");
+    } else if (window.location.hash === "#program-studi") {
+      setCurrentActive("program-studi");
+    }
+
+    let ticking = false;
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const scrollPos = window.scrollY;
+          const prodiEl = document.getElementById("program-studi");
+          const faqEl = document.getElementById("faq");
+          const offset = 140;
+
+          if (faqEl && scrollPos >= faqEl.offsetTop - offset) {
+            setCurrentActive("faq");
+          } else if (prodiEl && scrollPos >= prodiEl.offsetTop - offset) {
+            setCurrentActive("program-studi");
+          } else {
+            setCurrentActive("beranda");
+          }
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
 
   // Fetch dynamic prodis for navbar dropdowns
   useEffect(() => {
@@ -118,13 +162,14 @@ export default function Navbar({ activePage = "beranda" }: NavbarProps) {
             <Link
               href="/"
               onClick={(e) => {
+                setCurrentActive("beranda");
                 if (typeof window !== "undefined" && window.location.pathname === "/") {
                   e.preventDefault();
                   window.scrollTo({ top: 0, behavior: "smooth" });
                 }
               }}
               className={
-                activePage === "beranda"
+                currentActive === "beranda"
                   ? "text-[#0d3830] hover:text-[#165349] font-bold border-b-2 border-[#0d3830] pb-0.5"
                   : "text-slate-600 hover:text-[#0d3830] transition-colors"
               }
@@ -141,6 +186,7 @@ export default function Navbar({ activePage = "beranda" }: NavbarProps) {
               <Link
                 href="/#program-studi"
                 onClick={(e) => {
+                  setCurrentActive("program-studi");
                   setProdiDropdownOpen(false);
                   if (typeof window !== "undefined" && window.location.pathname === "/") {
                     const el = document.getElementById("program-studi");
@@ -153,7 +199,7 @@ export default function Navbar({ activePage = "beranda" }: NavbarProps) {
                   }
                 }}
                 className={`inline-flex items-center gap-1 cursor-pointer transition-colors ${
-                  activePage === "program-studi"
+                  currentActive === "program-studi"
                     ? "text-[#0d3830] font-bold border-b-2 border-[#0d3830] pb-0.5"
                     : "text-slate-600 hover:text-[#0d3830]"
                 }`}
@@ -162,39 +208,24 @@ export default function Navbar({ activePage = "beranda" }: NavbarProps) {
                 <ChevronDown className={`w-3.5 h-3.5 opacity-70 transition-transform duration-200 ${prodiDropdownOpen ? "rotate-180" : "group-hover:rotate-180"}`} />
               </Link>
               {/* Dropdown Options (pt-2 padding prevents hover gap bug) */}
-              <div className={`absolute top-full left-0 pt-2 w-72 z-50 ${prodiDropdownOpen ? "block animate-fadeIn" : "hidden group-hover:block"}`}>
+              <div className={`absolute top-full left-0 pt-2 min-w-[280px] z-50 ${prodiDropdownOpen ? "block animate-fadeIn" : "hidden group-hover:block"}`}>
                 <div className="bg-white rounded-2xl shadow-xl border border-slate-100 p-2 space-y-1">
-                  <Link
-                    href="/#program-studi"
-                    onClick={(e) => {
-                      setProdiDropdownOpen(false);
-                      if (typeof window !== "undefined" && window.location.pathname === "/") {
-                        const el = document.getElementById("program-studi");
-                        if (el) {
-                          e.preventDefault();
-                          const yOffset = -75;
-                          const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
-                          window.scrollTo({ top: y, behavior: "smooth" });
-                        }
-                      }
-                    }}
-                    className="block px-3 py-2 text-xs font-bold text-emerald-800 hover:bg-emerald-50 rounded-xl transition-colors border-b border-slate-100 mb-1"
-                  >
-                    {t.navbar.lihatSemuaProdi}
-                  </Link>
-                  {activeProdiList.map((prodi) => (
-                    <Link
-                      key={prodi.id}
-                      href={`/program-studi/${prodi.id}`}
-                      onClick={() => setProdiDropdownOpen(false)}
-                      className="flex items-center justify-between px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-[#0d3830] rounded-xl transition-colors group/item"
-                    >
-                      <span className="truncate">{prodi.nama}</span>
-                      <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 bg-slate-100 group-hover/item:bg-emerald-100 group-hover/item:text-[#0d3830] rounded text-slate-500 flex-shrink-0 ml-2">
-                        {prodi.badge}
-                      </span>
-                    </Link>
-                  ))}
+                  {activeProdiList.map((prodi) => {
+                    const cleanNama = prodi.nama.replace(/^S1\s+/i, "").replace(/\s*\(?S1\)?$/i, "").trim();
+                    return (
+                      <Link
+                        key={prodi.id}
+                        href={`/program-studi/${prodi.id}`}
+                        onClick={() => {
+                          setCurrentActive("program-studi");
+                          setProdiDropdownOpen(false);
+                        }}
+                        className="block px-4 py-2.5 text-[15px] font-medium text-slate-800 hover:bg-slate-50 hover:text-[#0d3830] rounded-xl transition-colors"
+                      >
+                        {cleanNama}
+                      </Link>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -203,6 +234,7 @@ export default function Navbar({ activePage = "beranda" }: NavbarProps) {
             <Link
               href="/#faq"
               onClick={(e) => {
+                setCurrentActive("faq");
                 if (typeof window !== "undefined" && window.location.pathname === "/") {
                   const el = document.getElementById("faq");
                   if (el) {
@@ -213,16 +245,21 @@ export default function Navbar({ activePage = "beranda" }: NavbarProps) {
                   }
                 }
               }}
-              className="text-slate-600 hover:text-[#0d3830] transition-colors py-2 cursor-pointer"
+              className={`inline-flex items-center cursor-pointer transition-colors ${
+                currentActive === "faq"
+                  ? "text-[#0d3830] font-bold border-b-2 border-[#0d3830] pb-0.5"
+                  : "text-slate-600 hover:text-[#0d3830]"
+              }`}
             >
               FAQ
             </Link>
 
             {/* Pendaftaran (Tombol Hijau Resmi) */}
             <Link
-              href="/dashboard"
+              href="/pendaftaran"
+              onClick={() => setCurrentActive("pendaftaran")}
               className={`inline-flex items-center px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-xs ${
-                activePage === "pendaftaran"
+                currentActive === "pendaftaran"
                   ? "bg-[#0d3830] text-white ring-2 ring-emerald-600/30 shadow-sm"
                   : "bg-[#0d3830] hover:bg-[#165349] text-white shadow-xs hover:shadow-sm"
               }`}
@@ -364,13 +401,14 @@ export default function Navbar({ activePage = "beranda" }: NavbarProps) {
             <Link
               href="/"
               onClick={() => {
+                setCurrentActive("beranda");
                 setMobileMenuOpen(false);
                 if (typeof window !== "undefined" && window.location.pathname === "/") {
                   window.scrollTo({ top: 0, behavior: "smooth" });
                 }
               }}
               className={`block text-sm font-bold ${
-                activePage === "beranda" ? "text-[#0d3830]" : "text-slate-700 hover:text-[#0d3830]"
+                currentActive === "beranda" ? "text-[#0d3830]" : "text-slate-700 hover:text-[#0d3830]"
               }`}
             >
               {t.navbar.beranda}
@@ -380,6 +418,7 @@ export default function Navbar({ activePage = "beranda" }: NavbarProps) {
               <Link
                 href="/#program-studi"
                 onClick={() => {
+                  setCurrentActive("program-studi");
                   setMobileMenuOpen(false);
                   if (typeof window !== "undefined" && window.location.pathname === "/") {
                     const el = document.getElementById("program-studi");
@@ -390,25 +429,34 @@ export default function Navbar({ activePage = "beranda" }: NavbarProps) {
                     }
                   }
                 }}
-                className="block text-xs font-bold text-[#0d3830] uppercase tracking-wider mb-1"
+                className={`block text-xs uppercase tracking-wider mb-1 font-bold ${
+                  currentActive === "program-studi" ? "text-emerald-700 font-extrabold" : "text-[#0d3830]"
+                }`}
               >
                 {t.navbar.programStudi} ↓
               </Link>
-              {activeProdiList.map((prodi) => (
-                <Link
-                  key={prodi.id}
-                  href={`/program-studi/${prodi.id}`}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="block text-xs font-medium text-slate-700 py-1 hover:text-[#0d3830]"
-                >
-                  {prodi.nama} ({prodi.badge})
-                </Link>
-              ))}
+              {activeProdiList.map((prodi) => {
+                const cleanNama = prodi.nama.replace(/^S1\s+/i, "").replace(/\s*\(?S1\)?$/i, "").trim();
+                return (
+                  <Link
+                    key={prodi.id}
+                    href={`/program-studi/${prodi.id}`}
+                    onClick={() => {
+                      setCurrentActive("program-studi");
+                      setMobileMenuOpen(false);
+                    }}
+                    className="block text-sm font-medium text-slate-800 py-1.5 hover:text-[#0d3830]"
+                  >
+                    {cleanNama}
+                  </Link>
+                );
+              })}
             </div>
 
             <Link
               href="/#faq"
               onClick={() => {
+                setCurrentActive("faq");
                 setMobileMenuOpen(false);
                 if (typeof window !== "undefined" && window.location.pathname === "/") {
                   const el = document.getElementById("faq");
@@ -419,15 +467,20 @@ export default function Navbar({ activePage = "beranda" }: NavbarProps) {
                   }
                 }
               }}
-              className="block text-sm font-medium text-slate-700 hover:text-[#0d3830]"
+              className={`block text-sm ${
+                currentActive === "faq" ? "font-bold text-[#0d3830]" : "font-medium text-slate-700 hover:text-[#0d3830]"
+              }`}
             >
               FAQ PMB
             </Link>
 
             {/* Mobile Pendaftaran */}
             <Link
-              href="/dashboard"
-              onClick={() => setMobileMenuOpen(false)}
+              href="/pendaftaran"
+              onClick={() => {
+                setCurrentActive("pendaftaran");
+                setMobileMenuOpen(false);
+              }}
               className="flex items-center justify-between p-2.5 rounded-xl bg-[#0d3830] text-white text-xs font-bold shadow-xs transition-all"
             >
               <span>{t.navbar.pendaftaran}</span>

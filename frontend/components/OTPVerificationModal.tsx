@@ -24,6 +24,7 @@ interface OTPVerificationModalProps {
   onClose?: () => void;
   onVerified?: (resData: any) => void;
   redirectTo?: string;
+  autoLogin?: boolean;
 }
 
 export default function OTPVerificationModal({
@@ -32,7 +33,8 @@ export default function OTPVerificationModal({
   initialDevOtp,
   onClose,
   onVerified,
-  redirectTo = "/dashboard",
+  redirectTo = "/dashboard/formulir",
+  autoLogin = false,
 }: OTPVerificationModalProps) {
   const router = useRouter();
   const { lang } = useLanguage();
@@ -65,6 +67,12 @@ export default function OTPVerificationModal({
       }, 150);
     }
   }, [isOpen, email]);
+
+  useEffect(() => {
+    if (initialDevOtp) {
+      setDevOtp(initialDevOtp);
+    }
+  }, [initialDevOtp]);
 
   // Countdown timer
   useEffect(() => {
@@ -159,7 +167,7 @@ export default function OTPVerificationModal({
         otp: fullOtp.trim(),
       });
 
-      if (res.data?.token) {
+      if (autoLogin && res.data?.token) {
         authStorage.setToken(res.data.token);
         authStorage.setUser(res.data.user);
       }
@@ -167,13 +175,19 @@ export default function OTPVerificationModal({
       setIsSuccess(true);
       setSuccessMessage(
         lang === "eng"
-          ? "Email verified successfully! Entering dashboard..."
-          : "Verifikasi email berhasil! Membuka dashboard..."
+          ? (autoLogin ? "Email verified successfully! Entering dashboard..." : "Account verified successfully! Redirecting to login...")
+          : (autoLogin ? "Verifikasi email berhasil! Membuka dashboard..." : "Akun berhasil diverifikasi! Mengarahkan ke halaman login...")
       );
 
       setTimeout(() => {
         if (onVerified) {
           onVerified(res.data);
+        } else if (!autoLogin) {
+          router.push(
+            `/login?verified=true&email=${encodeURIComponent(email)}&redirect=${encodeURIComponent(
+              redirectTo || "/dashboard/formulir"
+            )}`
+          );
         } else {
           router.push(redirectTo);
         }

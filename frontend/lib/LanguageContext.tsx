@@ -12,7 +12,7 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType>({
   lang: "id",
-  setLang: () => {},
+  setLang: () => { },
   t: translations.id,
 });
 

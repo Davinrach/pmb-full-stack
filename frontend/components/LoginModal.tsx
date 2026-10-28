@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   X,
@@ -13,6 +13,7 @@ import {
   Mail,
   Headphones,
   ExternalLink,
+  CheckCircle2,
   AlertCircle,
   GraduationCap,
   ArrowLeft,
@@ -28,6 +29,8 @@ interface LoginModalProps {
   allowClose?: boolean;
   onSuccess?: (user: any) => void;
   redirectTo?: string | null;
+  initialIdentifier?: string;
+  initialSuccessMessage?: string;
 }
 
 export default function LoginModal({
@@ -37,17 +40,45 @@ export default function LoginModal({
   allowClose = true,
   onSuccess,
   redirectTo,
+  initialIdentifier = "",
+  initialSuccessMessage = "",
 }: LoginModalProps) {
   const router = useRouter();
   const { lang, t } = useLanguage();
   const [showPassword, setShowPassword] = useState(false);
-  const [identifier, setIdentifier] = useState("");
+  const [identifier, setIdentifier] = useState(initialIdentifier);
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState(initialSuccessMessage);
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [unverifiedEmail, setUnverifiedEmail] = useState("");
+
+  // Update identifier atau pesan sukses jika ada prop baru (misal dari redirect verifikasi OTP)
+  useEffect(() => {
+    if (initialIdentifier) {
+      setIdentifier(initialIdentifier);
+    }
+  }, [initialIdentifier]);
+
+  useEffect(() => {
+    if (initialSuccessMessage) {
+      setSuccessMessage(initialSuccessMessage);
+    }
+  }, [initialSuccessMessage]);
+
+  // Ambil identifier tersimpan jika user sebelumnya mencentang "Ingat saya"
+  useEffect(() => {
+    if (isOpen && typeof window !== "undefined") {
+      const savedIdentifier = localStorage.getItem("pmb_remembered_identifier");
+      const isRemembered = localStorage.getItem("pmb_remember_me") === "true";
+      if (!initialIdentifier && savedIdentifier && isRemembered) {
+        setIdentifier(savedIdentifier);
+        setRememberMe(true);
+      }
+    }
+  }, [isOpen, initialIdentifier]);
 
   if (!isOpen) return null;
 
@@ -66,6 +97,17 @@ export default function LoginModal({
         authStorage.setToken(res.data.token);
         authStorage.setUser(res.data.user);
 
+        // Simpan / perbarui identitas jika opsi "Ingat saya" aktif
+        if (typeof window !== "undefined") {
+          if (rememberMe) {
+            localStorage.setItem("pmb_remembered_identifier", identifier.trim());
+            localStorage.setItem("pmb_remember_me", "true");
+          } else {
+            localStorage.removeItem("pmb_remembered_identifier");
+            localStorage.removeItem("pmb_remember_me");
+          }
+        }
+
         const userRole = res.data.user?.role;
 
         if (onSuccess) {
@@ -76,7 +118,7 @@ export default function LoginModal({
           } else if (userRole === "admin_pmb" || userRole === "super_admin") {
             router.push("/admincms");
           } else {
-            router.push("/dashboard");
+            router.push("/dashboard/formulir");
           }
         }
         onClose();
@@ -148,6 +190,13 @@ export default function LoginModal({
 
         {/* 2. Modal Body / Form Section */}
         <form onSubmit={handleSubmit} className="p-6 sm:p-8 space-y-5 bg-white">
+          {successMessage && (
+            <div className="p-3.5 bg-emerald-50 border border-emerald-200/80 rounded-xl text-xs text-emerald-800 flex items-start gap-2.5 animate-fadeIn font-medium">
+              <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5 text-emerald-600" />
+              <span>{successMessage}</span>
+            </div>
+          )}
+
           {errorMessage && (
             <div className="p-3 bg-rose-50/70 border border-rose-200/70 rounded-xl text-xs text-rose-800 flex items-start gap-2 animate-shake">
               <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5 text-rose-600/80" />
@@ -170,6 +219,7 @@ export default function LoginModal({
                 type="text"
                 id="identifier"
                 required
+                autoComplete="username"
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 bg-white text-slate-900 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:border-[#0d3830] focus:ring-1 focus:ring-[#0d3830] transition shadow-xs font-medium"
@@ -190,6 +240,7 @@ export default function LoginModal({
                 type={showPassword ? "text" : "password"}
                 id="password"
                 required
+                autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full pl-10 pr-10 py-3 bg-white text-slate-900 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:border-[#0d3830] focus:ring-1 focus:ring-[#0d3830] transition shadow-xs font-medium"
@@ -279,7 +330,7 @@ export default function LoginModal({
             <div>
               <span>{lang === "eng" ? "Don't have an applicant account?" : "Belum punya akun calon mahasiswa?"}</span>{" "}
               <Link
-                href="/register"
+                href={redirectTo ? `/register?redirect=${encodeURIComponent(redirectTo)}` : "/register"}
                 onClick={() => allowClose && !isStandalonePage && onClose()}
                 className="font-bold text-[#0d3830] hover:underline inline-flex items-center gap-0.5"
               >
@@ -300,15 +351,6 @@ export default function LoginModal({
             )}
           </div>
         </form>
-
-        {/* 3. Modal Footer Security Bar */}
-        <div className="bg-slate-50 px-6 py-3.5 flex items-center justify-between text-[11px] font-semibold text-slate-500 border-t border-slate-100">
-          <div className="flex items-center gap-1.5">
-            <Lock className="w-3.5 h-3.5 text-slate-400" />
-            <span>{lang === "eng" ? "Secure TLS 256-Bit Encrypted" : "Koneksi Aman TLS 256-Bit Terenkripsi"}</span>
-          </div>
-          <span>PMB PORTAL STAICI</span>
-        </div>
       </div>
 
       {/* OTP Verification Modal if login requires verification */}

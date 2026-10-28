@@ -119,13 +119,19 @@ export default function DetailProdiPage({ params }: PageProps) {
   }
 
   // Dynamic CMS Fallback mapping
-  let displayTitle = staticProdi?.title || backendProdi?.nama || "Program Studi";
+  const isEng = lang === "eng";
+  let displayTitle = (isEng && backendProdi?.nama_en) ? backendProdi.nama_en : (staticProdi?.title || backendProdi?.nama || "Program Studi");
   let displayIntro =
-    backendProdi?.deskripsi ||
-    staticProdi?.intro ||
-    `Program Studi ${displayTitle} STAI Cendekia Insani Situbondo menyelenggarakan pendidikan akademik jenjang ${backendProdi?.jenjang || "S1"} yang unggul, profesional, dan berintegritas berlandaskan nilai-nilai keislaman serta keilmuan kontemporer.`;
+    (isEng && backendProdi?.deskripsi_en) ? backendProdi.deskripsi_en : (
+      backendProdi?.deskripsi ||
+      staticProdi?.intro ||
+      (isEng
+        ? `STAI Cendekia Insani Situbondo ${displayTitle} Study Program organizes high-standard undergraduate (${backendProdi?.jenjang || "S1"}) academic education with professional and integrity values.`
+        : `Program Studi ${displayTitle} STAI Cendekia Insani Situbondo menyelenggarakan pendidikan akademik jenjang ${backendProdi?.jenjang || "S1"} yang unggul, profesional, dan berintegritas berlandaskan nilai-nilai keislaman serta keilmuan kontemporer.`
+      )
+    );
 
-  let displayGelarRaw = backendProdi?.gelar_akademik || staticProdi?.gelarAkademik || (backendProdi?.jenjang === "S1" || !backendProdi?.jenjang ? "Sarjana (S.Pd. / S.H. / S.Sos. / S.Ag.)" : "-");
+  let displayGelarRaw = (isEng && backendProdi?.gelar_akademik_en) ? backendProdi.gelar_akademik_en : (backendProdi?.gelar_akademik || staticProdi?.gelarAkademik || (backendProdi?.jenjang === "S1" || !backendProdi?.jenjang ? "Sarjana (S.Pd. / S.H. / S.Sos. / S.Ag.)" : "-"));
   let displayGelar = displayGelarRaw;
   if (
     displayGelarRaw !== "-" &&
@@ -139,34 +145,44 @@ export default function DetailProdiPage({ params }: PageProps) {
   }
 
   let displayProfilIntro =
-    backendProdi?.profil_lulusan_intro ||
-    staticProdi?.profilLulusanIntro ||
-    `Lulusan Program Studi ${displayTitle} STAI Cendekia Insani Situbondo memiliki prospek karir yang luas di berbagai sektor:`;
+    (isEng && backendProdi?.profil_lulusan_intro_en) ? backendProdi.profil_lulusan_intro_en : (
+      backendProdi?.profil_lulusan_intro ||
+      staticProdi?.profilLulusanIntro ||
+      (isEng
+        ? `Graduates of ${displayTitle} Program at STAI Cendekia Insani Situbondo have extensive career prospects:`
+        : `Lulusan Program Studi ${displayTitle} STAI Cendekia Insani Situbondo memiliki prospek karir yang luas di berbagai sektor:`
+      )
+    );
 
   let displayProfilList: { title: string; desc: string }[] = staticProdi?.profilLulusan || [];
   if (backendProdi?.profil_lulusan) {
     try {
       const parsed = typeof backendProdi.profil_lulusan === "string" ? JSON.parse(backendProdi.profil_lulusan) : backendProdi.profil_lulusan;
-      if (Array.isArray(parsed) && parsed.length > 0) displayProfilList = parsed;
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        displayProfilList = parsed.map((item: any) => ({
+          title: (isEng && item.title_en) ? item.title_en : (item.title || ""),
+          desc: (isEng && item.desc_en) ? item.desc_en : (item.desc || ""),
+        }));
+      }
     } catch {}
   }
   if (displayProfilList.length === 0) {
     displayProfilList = [
       {
-        title: "Praktisi & Tenaga Ahli Profesional",
-        desc: `Bekerja secara profesional di bidang keilmuan ${displayTitle} pada instansi pemerintah, BUMN, swasta, maupun lembaga keagamaan.`,
+        title: isEng ? "Professional Experts & Practitioners" : "Praktisi & Tenaga Ahli Profesional",
+        desc: isEng ? `Work professionally in ${displayTitle} in government, state-owned enterprises, private sectors, or institutions.` : `Bekerja secara profesional di bidang keilmuan ${displayTitle} pada instansi pemerintah, BUMN, swasta, maupun lembaga keagamaan.`,
       },
       {
-        title: "Pendidik & Akademisi",
-        desc: `Mengabdi sebagai tenaga pendidik, instruktur, atau peneliti muda yang berdedikasi di berbagai institusi kependidikan.`,
+        title: isEng ? "Educators & Academics" : "Pendidik & Akademisi",
+        desc: isEng ? "Dedicated educators, instructors, or researchers in educational institutions." : "Mengabdi sebagai tenaga pendidik, instruktur, atau peneliti muda yang berdedikasi di berbagai institusi kependidikan.",
       },
       {
-        title: "Konsultan & Analis Bidang Terkait",
-        desc: `Memberikan layanan konsultasi, evaluasi mutu, dan perumusan kebijakan di organisasi kemasyarakatan.`,
+        title: isEng ? "Consultants & Sector Analysts" : "Konsultan & Analis Bidang Terkait",
+        desc: isEng ? "Provide consultation services and policy development." : "Memberikan layanan konsultasi, evaluasi mutu, dan perumusan kebijakan di organisasi kemasyarakatan.",
       },
       {
-        title: "Wirausahawan & Sociopreneur",
-        desc: `Membangun dan mengembangkan unit usaha mandiri berbasis pemberdayaan masyarakat dan teknologi modern.`,
+        title: isEng ? "Entrepreneurs & Sociopreneurs" : "Wirausahawan & Sociopreneur",
+        desc: isEng ? "Build modern business units empowering local communities." : "Membangun dan mengembangkan unit usaha mandiri berbasis pemberdayaan masyarakat dan teknologi modern.",
       },
     ];
   }
@@ -175,7 +191,12 @@ export default function DetailProdiPage({ params }: PageProps) {
   if (backendProdi?.capaian_pembelajaran) {
     try {
       const parsed = typeof backendProdi.capaian_pembelajaran === "string" ? JSON.parse(backendProdi.capaian_pembelajaran) : backendProdi.capaian_pembelajaran;
-      if (Array.isArray(parsed) && parsed.length > 0) displayCapaianList = parsed;
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        displayCapaianList = parsed.map((item: any) => ({
+          title: (isEng && item.title_en) ? item.title_en : (item.title || ""),
+          desc: (isEng && item.desc_en) ? item.desc_en : (item.desc || ""),
+        }));
+      }
     } catch {}
   }
   if (displayCapaianList.length === 0) {
@@ -341,7 +362,7 @@ export default function DetailProdiPage({ params }: PageProps) {
             {/* Centered CTA Button */}
             <div className="pt-6 sm:pt-10 flex justify-center">
               <Link
-                href="/dashboard"
+                href="/pendaftaran"
                 className="px-8 py-3.5 bg-[#0e3831] hover:bg-[#165349] text-white font-bold text-sm sm:text-base rounded-xl shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5 inline-flex items-center justify-center gap-2 cursor-pointer"
               >
                 <span>{lang === "eng" ? "Apply Now" : "Daftar Sekarang"}</span>
@@ -440,7 +461,7 @@ export default function DetailProdiPage({ params }: PageProps) {
                           </div>
                           <div className="flex flex-col min-w-0">
                             <span className="text-[11px] font-semibold text-slate-600 truncate">
-                              {h.nama_layanan || "Email Resmi PMB STAICI"}
+                              {(isEng && h.nama_layanan_en ? h.nama_layanan_en : (h.nama_layanan || (isEng ? "Official PMB Email" : "Email Resmi PMB STAICI")))}
                             </span>
                             <span className="text-xs sm:text-sm font-bold text-slate-900 font-mono truncate">
                               {rawVal}
@@ -468,7 +489,7 @@ export default function DetailProdiPage({ params }: PageProps) {
                         </div>
                         <div className="flex flex-col min-w-0">
                           <span className="text-[11px] font-semibold text-slate-600 truncate">
-                            {h.nama_layanan || "WhatsApp PMB Center"}
+                            {(isEng && h.nama_layanan_en ? h.nama_layanan_en : (h.nama_layanan || "WhatsApp PMB Center"))}
                           </span>
                           <span className="text-sm sm:text-base font-bold text-slate-900 font-mono tracking-tight truncate">
                             {rawVal}

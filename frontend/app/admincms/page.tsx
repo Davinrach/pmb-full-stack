@@ -84,6 +84,10 @@ const LUCIDE_ICON_MAP: Record<string, React.ComponentType<{ className?: string }
   Award, ShieldCheck, ShieldAlert, Key, Lock,
   Download, RefreshCw, History, Database,
   CreditCard, Wallet, Receipt,
+
+
+
+
   Calendar, Clock, Megaphone, Bell,
   Settings, SlidersHorizontal, Grid,
   Home, Building2, Phone, Mail, Headphones, MessageSquare,
@@ -103,7 +107,7 @@ const LUCIDE_ICON_LIST = [
   { name: "BookOpen", label: "BookOpen (Buku/Studi)", category: "Akademik", keywords: ["buku", "kurikulum", "mata kuliah", "studi", "baca", "modul"] },
   { name: "Layers", label: "Layers (Prodi/Tingkat)", category: "Akademik", keywords: ["prodi", "program studi", "jurusan", "jenjang", "lapisan"] },
   { name: "Award", label: "Award (Prestasi/Seleksi)", category: "Akademik", keywords: ["prestasi", "juara", "seleksi", "kelulusan", "penghargaan"] },
-  
+
   // Dokumen & Berkas
   { name: "FileText", label: "FileText (Dokumen/Berkas)", category: "Dokumen", keywords: ["dokumen", "berkas", "file", "teks", "formulir", "surat"] },
   { name: "FileCheck", label: "FileCheck (Berkas Sah)", category: "Dokumen", keywords: ["berkas", "valid", "disetujui", "verifikasi", "acc"] },
@@ -222,7 +226,7 @@ function getJalurBadge(p: any) {
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md font-bold text-[10px] bg-indigo-50 text-indigo-800 border border-indigo-200">
+    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md font-bold text-[10px] bg-slate-100 text-slate-700 border border-slate-200">
       {jalur}
     </span>
   );
@@ -326,11 +330,104 @@ function getBerkasBadge(p: any) {
   }
 
   return (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 border border-blue-200 text-blue-800 font-bold rounded-lg text-[11px] whitespace-nowrap">
-      <Clock className="w-3.5 h-3.5 text-blue-600" />
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 border border-slate-200 text-slate-700 font-bold rounded-lg text-[11px] whitespace-nowrap">
+      <Clock className="w-3.5 h-3.5 text-slate-500" />
       <span>Menunggu Verifikasi</span>
     </span>
   );
+}
+
+function getStatusPendaftaranBadge(status: string) {
+  switch (status) {
+    case "akun_terdaftar":
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 border border-slate-200 text-slate-700 font-bold rounded-lg text-[11px] whitespace-nowrap">
+          <Clock className="w-3.5 h-3.5 text-slate-400" />
+          <span>Akun Terdaftar</span>
+        </span>
+      );
+    case "draft":
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 border border-slate-200 text-slate-600 font-bold rounded-lg text-[11px] whitespace-nowrap">
+          <span>Draft</span>
+        </span>
+      );
+    case "belum_lengkap":
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 border border-amber-200 text-amber-800 font-bold rounded-lg text-[11px] whitespace-nowrap">
+          <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
+          <span>Belum Lengkap</span>
+        </span>
+      );
+    case "menunggu_pembayaran":
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 border border-amber-200 text-amber-800 font-bold rounded-lg text-[11px] whitespace-nowrap">
+          <Clock className="w-3.5 h-3.5 text-amber-600" />
+          <span>Menunggu Pembayaran</span>
+        </span>
+      );
+    case "menunggu_verifikasi":
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 border border-amber-300 text-amber-900 font-bold rounded-lg text-[11px] whitespace-nowrap">
+          <Clock className="w-3.5 h-3.5 text-amber-600" />
+          <span>Menunggu Verifikasi</span>
+        </span>
+      );
+    case "berkas_diverifikasi":
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 border border-emerald-300 text-emerald-800 font-bold rounded-lg text-[11px] whitespace-nowrap">
+          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+          <span>Berkas Sah</span>
+        </span>
+      );
+    case "ditolak_perlu_perbaikan":
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-rose-50 border border-rose-200 text-rose-800 font-bold rounded-lg text-[11px] whitespace-nowrap">
+          <AlertCircle className="w-3.5 h-3.5 text-rose-600" />
+          <span>Perlu Perbaikan</span>
+        </span>
+      );
+    case "mengikuti_ujian":
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 border border-blue-200 text-blue-800 font-bold rounded-lg text-[11px] whitespace-nowrap">
+          <Users className="w-3.5 h-3.5 text-blue-600" />
+          <span>Tahap Wawancara</span>
+        </span>
+      );
+    case "lolos_seleksi":
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-100 border border-emerald-300 text-[#0d3830] font-extrabold rounded-lg text-[11px] whitespace-nowrap">
+          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
+          <span>Lolos Seleksi</span>
+        </span>
+      );
+    case "tidak_lolos":
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-rose-50 border border-rose-200 text-rose-800 font-bold rounded-lg text-[11px] whitespace-nowrap">
+          <XCircle className="w-3.5 h-3.5 text-rose-600" />
+          <span>Tidak Lolos</span>
+        </span>
+      );
+    case "daftar_ulang":
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#0d3830] border border-[#0d3830] text-white font-bold rounded-lg text-[11px] whitespace-nowrap shadow-2xs">
+          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-300" />
+          <span>Daftar Ulang (Mhs Aktif)</span>
+        </span>
+      );
+    case "kadaluarsa":
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 border border-slate-300 text-slate-700 font-bold rounded-lg text-[11px] whitespace-nowrap">
+          <span>Kadaluarsa</span>
+        </span>
+      );
+    default:
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 border border-slate-200 text-slate-700 font-bold rounded-lg text-[11px] whitespace-nowrap">
+          <span>{status || "Akun Terdaftar"}</span>
+        </span>
+      );
+  }
 }
 
 export default function AdminCMSDashboardPage() {
@@ -498,8 +595,18 @@ export default function AdminCMSDashboardPage() {
 
   // Add Gelombang State
   const [isAddGelombangOpen, setIsAddGelombangOpen] = useState(false);
-  const [newGelombang, setNewGelombang] = useState({
+  const [newGelombang, setNewGelombang] = useState<{
+    nama: string;
+    nama_en?: string;
+    tahun_akademik: string;
+    tanggal_buka: string;
+    tanggal_tutup: string;
+    biaya_pendaftaran: number;
+    kuota: number;
+    is_aktif: boolean;
+  }>({
     nama: "Gelombang 2 Reguler",
+    nama_en: "Wave 2 Regular",
     tahun_akademik: "2026/2027",
     tanggal_buka: new Date().toISOString().split("T")[0],
     tanggal_tutup: new Date(Date.now() + 60 * 24 * 3600 * 1000)
@@ -513,8 +620,18 @@ export default function AdminCMSDashboardPage() {
   // Edit Gelombang State
   const [isEditGelombangOpen, setIsEditGelombangOpen] = useState(false);
   const [selectedGelombangId, setSelectedGelombangId] = useState<number | null>(null);
-  const [editGelombang, setEditGelombang] = useState({
+  const [editGelombang, setEditGelombang] = useState<{
+    nama: string;
+    nama_en?: string;
+    tahun_akademik: string;
+    tanggal_buka: string;
+    tanggal_tutup: string;
+    biaya_pendaftaran: number;
+    kuota: number;
+    is_aktif: boolean;
+  }>({
     nama: "",
+    nama_en: "",
     tahun_akademik: "2026/2027",
     tanggal_buka: "",
     tanggal_tutup: "",
@@ -532,12 +649,16 @@ export default function AdminCMSDashboardPage() {
   const [prodiForm, setProdiForm] = useState<{
     kode: string;
     nama: string;
+    nama_en?: string;
     jenjang: string;
     gelar_akademik: string;
+    gelar_akademik_en?: string;
     deskripsi: string;
+    deskripsi_en?: string;
     profil_lulusan_intro: string;
-    profil_lulusan: { title: string; desc: string }[];
-    capaian_pembelajaran: { title: string; desc: string }[];
+    profil_lulusan_intro_en?: string;
+    profil_lulusan: { title: string; desc: string; title_en?: string; desc_en?: string }[];
+    capaian_pembelajaran: { title: string; desc: string; title_en?: string; desc_en?: string }[];
     is_aktif: boolean;
   }>({
     kode: "",
@@ -559,6 +680,21 @@ export default function AdminCMSDashboardPage() {
   const [exportApplicants, setExportApplicants] = useState<any[]>([]);
   const [isExportLoading, setIsExportLoading] = useState(false);
   const [isDownloadingExport, setIsDownloadingExport] = useState(false);
+  const [isPdfExportModalOpen, setIsPdfExportModalOpen] = useState(false);
+  const [exportPdfLengkapOnly, setExportPdfLengkapOnly] = useState(true);
+
+  const exportPdfFilteredApplicants = useMemo(() => {
+    if (!exportPdfLengkapOnly) return exportApplicants;
+    return exportApplicants.filter((p: any) => {
+      const status = p.status_pendaftaran;
+      return (
+        status !== "draft" &&
+        status !== "akun_terdaftar" &&
+        status !== "belum_lengkap" &&
+        status !== "ditolak_perlu_perbaikan"
+      );
+    });
+  }, [exportApplicants, exportPdfLengkapOnly]);
 
   // Seleksi & Kelulusan State (FR-8.5, FR-6.2, FR-6.3)
   const [seleksiSearch, setSeleksiSearch] = useState("");
@@ -577,7 +713,7 @@ export default function AdminCMSDashboardPage() {
   const [selectedForSeleksi, setSelectedForSeleksi] = useState<any | null>(null);
   const [isSeleksiModalOpen, setIsSeleksiModalOpen] = useState(false);
   const [seleksiForm, setSeleksiForm] = useState<{
-    status: "lolos_seleksi" | "mengikuti_ujian" | "tidak_lolos" | "berkas_diverifikasi";
+    status: "lolos_seleksi" | "mengikuti_ujian" | "tidak_lolos" | "berkas_diverifikasi" | "daftar_ulang";
     nilai_ujian: string;
     nilai_wawancara: string;
     catatan: string;
@@ -589,7 +725,26 @@ export default function AdminCMSDashboardPage() {
   });
 
   // Dynamic CMS Settings State
-  const [settings, setSettings] = useState({
+  const [settings, setSettings] = useState<{
+    banner_title: string;
+    banner_subtitle: string;
+    announcement_text: string;
+    bank_name: string;
+    nomor_rekening: string;
+    atas_nama: string;
+    petunjuk_pembayaran: string;
+    regulasi_bukti_bayar: string;
+    batas_waktu_konfirmasi: string;
+    persyaratan_pendaftaran: string;
+    jalur_pendaftaran_info: string;
+    no_whatsapp_cs: string;
+    email_cs: string;
+    alamat_kampus: string;
+    alamat_kampus_en?: string;
+    jam_operasional: string;
+    jam_operasional_en?: string;
+    homepage_prodi_list?: string;
+  }>({
     banner_title: "Pusat Pendaftaran Mahasiswa Baru & Informasi Program Studi",
     banner_subtitle:
       "Meneguhkan keilmuan Islam modern dan etika profesional santri. Mari bergabung bersama STAI Cendekia Insani Tahun Akademik 2026/2027.",
@@ -668,10 +823,20 @@ export default function AdminCMSDashboardPage() {
   const [faqsList, setFaqsList] = useState<any[]>([]);
   const [isFaqModalOpen, setIsFaqModalOpen] = useState(false);
   const [editingFaq, setEditingFaq] = useState<any | null>(null);
-  const [faqForm, setFaqForm] = useState({
+  const [faqForm, setFaqForm] = useState<{
+    kategori: string;
+    pertanyaan: string;
+    pertanyaan_en?: string;
+    jawaban: string;
+    jawaban_en?: string;
+    urutan: number;
+    is_aktif: boolean;
+  }>({
     kategori: "Umum",
     pertanyaan: "",
+    pertanyaan_en: "",
     jawaban: "",
+    jawaban_en: "",
     urutan: 1,
     is_aktif: true,
   });
@@ -698,11 +863,27 @@ export default function AdminCMSDashboardPage() {
   const [isAddJalurOpen, setIsAddJalurOpen] = useState(false);
   const [isEditJalurOpen, setIsEditJalurOpen] = useState(false);
   const [selectedJalurId, setSelectedJalurId] = useState<number | null>(null);
-  const [jalurForm, setJalurForm] = useState({
+  const [jalurForm, setJalurForm] = useState<{
+    kode: string;
+    nama: string;
+    nama_en?: string;
+    badge_text: string;
+    badge_text_en?: string;
+    deskripsi: string;
+    deskripsi_en?: string;
+    syarat_khusus: string;
+    bebas_biaya: boolean;
+    tampil_di_homepage: boolean;
+    is_aktif: boolean;
+    urutan: number;
+  }>({
     kode: "",
     nama: "",
+    nama_en: "",
     badge_text: "",
+    badge_text_en: "",
     deskripsi: "",
+    deskripsi_en: "",
     syarat_khusus: "",
     bebas_biaya: false,
     tampil_di_homepage: true,
@@ -715,10 +896,24 @@ export default function AdminCMSDashboardPage() {
   const [isAddPersyaratanOpen, setIsAddPersyaratanOpen] = useState(false);
   const [isEditPersyaratanOpen, setIsEditPersyaratanOpen] = useState(false);
   const [selectedPersyaratanId, setSelectedPersyaratanId] = useState<number | null>(null);
-  const [persyaratanForm, setPersyaratanForm] = useState({
+  const [persyaratanForm, setPersyaratanForm] = useState<{
+    nama_dokumen: string;
+    nama_dokumen_en?: string;
+    kode: string;
+    deskripsi: string;
+    deskripsi_en?: string;
+    is_wajib: boolean;
+    jalur_khusus: string;
+    tipe_file: string;
+    max_size_mb: number;
+    is_aktif: boolean;
+    urutan: number;
+  }>({
     nama_dokumen: "",
+    nama_dokumen_en: "",
     kode: "",
     deskripsi: "",
+    deskripsi_en: "",
     is_wajib: true,
     jalur_khusus: "",
     tipe_file: "PDF, JPG, PNG",
@@ -732,12 +927,24 @@ export default function AdminCMSDashboardPage() {
   const [isAddHotlineOpen, setIsAddHotlineOpen] = useState(false);
   const [isEditHotlineOpen, setIsEditHotlineOpen] = useState(false);
   const [selectedHotlineId, setSelectedHotlineId] = useState<number | null>(null);
-  const [hotlineForm, setHotlineForm] = useState({
+  const [hotlineForm, setHotlineForm] = useState<{
+    nama_layanan: string;
+    nama_layanan_en?: string;
+    tipe_kontak: string;
+    nomor_atau_email: string;
+    nama_petugas: string;
+    jam_layanan: string;
+    jam_layanan_en?: string;
+    is_aktif: boolean;
+    urutan: number;
+  }>({
     nama_layanan: "",
+    nama_layanan_en: "",
     tipe_kontak: "whatsapp",
     nomor_atau_email: "",
     nama_petugas: "",
     jam_layanan: "Senin - Sabtu: 08.00 - 16.00 WIB",
+    jam_layanan_en: "Monday - Saturday: 08.00 - 16.00 WIB",
     is_aktif: true,
     urutan: 1,
   });
@@ -812,15 +1019,22 @@ export default function AdminCMSDashboardPage() {
       const res = await api.get("/admin/dashboard/stats");
       if (res.data) {
         const d = res.data;
+        const totalVa = Number(d.va_terverifikasi || 0);
         setStats({
           total_pendaftar: d.total_pendaftar || 0,
-          va_terverifikasi: d.va_terverifikasi ? `Rp ${d.va_terverifikasi}` : "Rp 0",
+          akun_terdaftar: d.akun_terdaftar || 0,
+          va_terverifikasi: totalVa > 0 ? `Rp ${totalVa.toLocaleString("id-ID")}` : "Rp 0",
           berkas_lengkap: d.berkas_diverifikasi || 0,
-          menunggu_tindakan: (d.belum_lengkap || 0) + (d.menunggu_verifikasi || 0),
+          menunggu_tindakan: (d.belum_lengkap || 0) + (d.menunggu_verifikasi || 0) + (d.menunggu_pembayaran || 0),
           belum_lengkap: d.belum_lengkap || 0,
+          menunggu_pembayaran: d.menunggu_pembayaran || 0,
           menunggu_verifikasi: d.menunggu_verifikasi || 0,
+          mengikuti_ujian: d.mengikuti_ujian || 0,
           lolos_seleksi: d.lolos_seleksi || 0,
+          tidak_lolos: d.tidak_lolos || 0,
+          daftar_ulang: d.daftar_ulang || 0,
           ditolak: d.ditolak || 0,
+          kadaluarsa: d.kadaluarsa || 0,
         });
       }
     } catch (err) {
@@ -889,13 +1103,13 @@ export default function AdminCMSDashboardPage() {
         setSettings((prev) => ({ ...prev, ...res.data }));
         if (res.data.jalur_pendaftaran_info) {
           try {
-            const parsed = typeof res.data.jalur_pendaftaran_info === "string" 
-              ? JSON.parse(res.data.jalur_pendaftaran_info) 
+            const parsed = typeof res.data.jalur_pendaftaran_info === "string"
+              ? JSON.parse(res.data.jalur_pendaftaran_info)
               : res.data.jalur_pendaftaran_info;
             if (Array.isArray(parsed)) {
               setJalurCards(parsed);
             }
-          } catch {}
+          } catch { }
         }
         if (res.data.homepage_prodi_list) {
           try {
@@ -905,7 +1119,7 @@ export default function AdminCMSDashboardPage() {
             if (Array.isArray(parsed)) {
               setHomepageProdis(parsed);
             }
-          } catch {}
+          } catch { }
         }
       }
     } catch (err) {
@@ -1291,8 +1505,8 @@ export default function AdminCMSDashboardPage() {
       const list = Array.isArray(res.data)
         ? res.data
         : Array.isArray(res.data?.data)
-        ? res.data.data
-        : [];
+          ? res.data.data
+          : [];
       setSeleksiApplicants(list);
     } catch (err) {
       console.error("Gagal memuat data seleksi:", err);
@@ -1305,10 +1519,12 @@ export default function AdminCMSDashboardPage() {
   const handleOpenSeleksiModal = (applicant: any) => {
     setSelectedForSeleksi(applicant);
     const currStatus = applicant.status_pendaftaran;
-    let initialStatus: "lolos_seleksi" | "mengikuti_ujian" | "tidak_lolos" | "berkas_diverifikasi" = "lolos_seleksi";
+    let initialStatus: "lolos_seleksi" | "mengikuti_ujian" | "tidak_lolos" | "berkas_diverifikasi" | "daftar_ulang" = "lolos_seleksi";
     if (currStatus === "mengikuti_ujian") initialStatus = "mengikuti_ujian";
     else if (currStatus === "tidak_lolos") initialStatus = "tidak_lolos";
     else if (currStatus === "lolos_seleksi") initialStatus = "lolos_seleksi";
+    else if (currStatus === "daftar_ulang") initialStatus = "daftar_ulang";
+    else if (currStatus === "berkas_diverifikasi") initialStatus = "berkas_diverifikasi";
 
     setSeleksiForm({
       status: initialStatus,
@@ -1333,9 +1549,13 @@ export default function AdminCMSDashboardPage() {
       const statusLabel =
         seleksiForm.status === "lolos_seleksi"
           ? "Lolos Seleksi (Diterima)"
-          : seleksiForm.status === "mengikuti_ujian"
-          ? "Jadwalkan Wawancara"
-          : "Tidak Lolos";
+          : seleksiForm.status === "daftar_ulang"
+            ? "Daftar Ulang (Mahasiswa Aktif)"
+            : seleksiForm.status === "mengikuti_ujian"
+              ? "Jadwalkan Wawancara"
+              : seleksiForm.status === "tidak_lolos"
+                ? "Tidak Lolos"
+                : "Berkas Sah";
       alert(`Keputusan seleksi berhasil disimpan! Status calon mahasiswa: ${statusLabel}`);
       setIsSeleksiModalOpen(false);
       setSelectedForSeleksi(null);
@@ -2297,7 +2517,7 @@ export default function AdminCMSDashboardPage() {
     }));
   };
 
-  const handleProfilItemChange = (index: number, field: "title" | "desc", value: string) => {
+  const handleProfilItemChange = (index: number, field: "title" | "desc" | "title_en" | "desc_en", value: string) => {
     setProdiForm((prev) => {
       const updated = [...prev.profil_lulusan];
       updated[index] = { ...updated[index], [field]: value };
@@ -2319,7 +2539,7 @@ export default function AdminCMSDashboardPage() {
     }));
   };
 
-  const handleCapaianItemChange = (index: number, field: "title" | "desc", value: string) => {
+  const handleCapaianItemChange = (index: number, field: "title" | "desc" | "title_en" | "desc_en", value: string) => {
     setProdiForm((prev) => {
       const updated = [...prev.capaian_pembelajaran];
       updated[index] = { ...updated[index], [field]: value };
@@ -2768,7 +2988,7 @@ export default function AdminCMSDashboardPage() {
 
   return (
     <div className="min-h-screen bg-[#f8fafc] flex font-sans text-slate-900">
-      
+
       {/* 1. DYNAMIC LEFT SIDEBAR (RBAC Dynamic Menu Groups) */}
       <aside className="w-64 bg-white border-r border-slate-200/80 flex flex-col justify-between flex-shrink-0 min-h-screen sticky top-0 h-screen overflow-y-auto">
         <div>
@@ -2831,11 +3051,10 @@ export default function AdminCMSDashboardPage() {
                         key={m.id}
                         type="button"
                         onClick={() => setActiveTab(m.url || m.key)}
-                        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
-                          isActive
+                        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${isActive
                             ? "bg-[#0d3830] text-white shadow-xs"
                             : "text-slate-600 hover:bg-slate-100"
-                        }`}
+                          }`}
                       >
                         <div className="flex items-center gap-2.5">
                           {renderNavIcon(m.icon)}
@@ -2843,11 +3062,10 @@ export default function AdminCMSDashboardPage() {
                         </div>
                         {m.badge_text && (
                           <span
-                            className={`px-1.5 py-0.5 rounded-md text-[10px] font-extrabold ${
-                              isActive
+                            className={`px-1.5 py-0.5 rounded-md text-[10px] font-extrabold ${isActive
                                 ? "bg-emerald-500/30 text-emerald-200"
                                 : "bg-emerald-100 text-emerald-800"
-                            }`}
+                              }`}
                           >
                             {m.badge_text === "128" ? stats.total_pendaftar : m.badge_text}
                           </span>
@@ -2863,9 +3081,8 @@ export default function AdminCMSDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setActiveTab("pendaftar")}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
-                    activeTab === "pendaftar" ? "bg-[#0d3830] text-white" : "text-slate-600 hover:bg-slate-100"
-                  }`}
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${activeTab === "pendaftar" ? "bg-[#0d3830] text-white" : "text-slate-600 hover:bg-slate-100"
+                    }`}
                 >
                   <div className="flex items-center gap-2.5">
                     <Users className="w-4 h-4" />
@@ -2880,9 +3097,8 @@ export default function AdminCMSDashboardPage() {
                   <button
                     type="button"
                     onClick={() => setActiveTab("rbac")}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
-                      activeTab === "rbac" ? "bg-[#0d3830] text-white" : "text-slate-600 hover:bg-slate-100"
-                    }`}
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${activeTab === "rbac" ? "bg-[#0d3830] text-white" : "text-slate-600 hover:bg-slate-100"
+                      }`}
                   >
                     <div className="flex items-center gap-2.5">
                       <ShieldCheck className="w-4 h-4 text-emerald-400" />
@@ -2908,11 +3124,10 @@ export default function AdminCMSDashboardPage() {
                 </p>
                 <div className="flex items-center gap-1 mt-0.5">
                   <span
-                    className={`inline-block px-1.5 py-0.2 rounded text-[9px] font-bold tracking-tight ${
-                      currentUser?.role === "super_admin"
+                    className={`inline-block px-1.5 py-0.2 rounded text-[9px] font-bold tracking-tight ${currentUser?.role === "super_admin"
                         ? "bg-amber-100 text-amber-900 border border-amber-300"
                         : "bg-emerald-100 text-[#0d3830] border border-emerald-300"
-                    }`}
+                      }`}
                   >
                     {currentUser?.role === "super_admin" ? "Super Admin" : "Admin PMB"}
                   </span>
@@ -2933,7 +3148,7 @@ export default function AdminCMSDashboardPage() {
 
       {/* 2. MAIN CONTENT AREA */}
       <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        
+
         {/* Top Navbar Header */}
         <header className="bg-white border-b border-slate-200/80 px-6 py-3.5 flex items-center justify-between sticky top-0 z-20 shadow-xs">
           {/* Left Breadcrumb */}
@@ -2960,7 +3175,7 @@ export default function AdminCMSDashboardPage() {
 
         {/* Dashboard Content */}
         <div className="p-6 space-y-6 max-w-7xl w-full mx-auto">
-          
+
           {/* Main Title Bar */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
@@ -2968,43 +3183,43 @@ export default function AdminCMSDashboardPage() {
                 {activeTab === "export"
                   ? "Export Data Mahasiswa PMB"
                   : activeTab === "pendaftaran" || activeTab === "gelombang"
-                  ? "CMS Pendaftaran, Gelombang & Rekening Bank"
-                  : activeTab === "homepage" || activeTab === "settings"
-                  ? "CMS Homepage (Halaman Depan PMB)"
-                  : activeTab === "prodi"
-                  ? "CMS Program Studi"
-                  : activeTab === "hotline"
-                  ? "Hotline & Narahubung PMB"
-                  : activeTab === "emis"
-                  ? "Sinkronisasi EMIS & Kopertais"
-                  : activeTab === "seleksi"
-                  ? "Seleksi & Penerimaan PMB"
-                  : activeTab === "rbac"
-                  ? "Manajemen Role & Menu RBAC"
-                  : activeTab === "logs"
-                  ? "Log Aktivitas & Audit"
-                  : "Data Pendaftar PMB"}
+                    ? "CMS Pendaftaran, Gelombang & Rekening Bank"
+                    : activeTab === "homepage" || activeTab === "settings"
+                      ? "CMS Homepage (Halaman Depan PMB)"
+                      : activeTab === "prodi"
+                        ? "CMS Program Studi"
+                        : activeTab === "hotline"
+                          ? "Hotline & Narahubung PMB"
+                          : activeTab === "emis"
+                            ? "Sinkronisasi EMIS & Kopertais"
+                            : activeTab === "seleksi"
+                              ? "Seleksi & Penerimaan PMB"
+                              : activeTab === "rbac"
+                                ? "Manajemen Role & Menu RBAC"
+                                : activeTab === "logs"
+                                  ? "Log Aktivitas & Audit"
+                                  : "Data Pendaftar PMB"}
               </h2>
               <p className="text-xs text-slate-500 mt-1">
                 {activeTab === "export"
                   ? "Unduh rekapitulasi data pendaftar calon mahasiswa baru dalam format spreadsheet Microsoft Excel (.csv / .xlsx)."
                   : activeTab === "pendaftaran" || activeTab === "gelombang"
-                  ? "Atur gelombang PMB, jalur pendaftaran, persyaratan berkas formulir, dan multi-rekening bank pembayaran resmi kampus."
-                  : activeTab === "homepage" || activeTab === "settings"
-                  ? "Kelola konten halaman depan (Landing Page): Hero Banner, Jalur Masuk, Persyaratan Berkas, dan FAQ."
-                  : activeTab === "prodi"
-                  ? "Kelola master program studi: deskripsi, profil lulusan & karir, capaian pembelajaran, gelar akademik, serta panduan tata cara pendaftaran terpusat kampus."
-                  : activeTab === "hotline"
-                  ? "Kelola kontak resmi panitia (WhatsApp CS, Helpdesk KIP, Email Resmi, Alamat Kampus, dan Jam Operasional)."
-                  : activeTab === "emis"
-                  ? "Integrasi dan kesiapan pemetaan format data EMIS Kementerian Agama & Kopertais Wilayah IV."
-                  : activeTab === "seleksi"
-                  ? "Penetapan hasil seleksi dan status penerimaan calon mahasiswa baru."
-                  : activeTab === "rbac"
-                  ? "Pengaturan hak akses, grup menu, dan matriks wewenang akun administrator."
-                  : activeTab === "logs"
-                  ? "Catatan rekam jejak aktivitas operasional dan tindakan administrator."
-                  : "Daftar seluruh calon mahasiswa baru yang terdaftar di sistem PMB STAICI."}
+                    ? "Atur gelombang PMB, jalur pendaftaran, persyaratan berkas formulir, dan multi-rekening bank pembayaran resmi kampus."
+                    : activeTab === "homepage" || activeTab === "settings"
+                      ? "Kelola konten halaman depan (Landing Page): Hero Banner, Jalur Masuk, Persyaratan Berkas, dan FAQ."
+                      : activeTab === "prodi"
+                        ? "Kelola master program studi: deskripsi, profil lulusan & karir, capaian pembelajaran, gelar akademik, serta panduan tata cara pendaftaran terpusat kampus."
+                        : activeTab === "hotline"
+                          ? "Kelola kontak resmi panitia (WhatsApp CS, Helpdesk KIP, Email Resmi, Alamat Kampus, dan Jam Operasional)."
+                          : activeTab === "emis"
+                            ? "Integrasi dan kesiapan pemetaan format data EMIS Kementerian Agama & Kopertais Wilayah IV."
+                            : activeTab === "seleksi"
+                              ? "Penetapan hasil seleksi dan status penerimaan calon mahasiswa baru."
+                              : activeTab === "rbac"
+                                ? "Pengaturan hak akses, grup menu, dan matriks wewenang akun administrator."
+                                : activeTab === "logs"
+                                  ? "Catatan rekam jejak aktivitas operasional dan tindakan administrator."
+                                  : "Daftar seluruh calon mahasiswa baru yang terdaftar di sistem PMB STAICI."}
               </p>
             </div>
 
@@ -3068,23 +3283,23 @@ export default function AdminCMSDashboardPage() {
                   (activeTab === "pendaftar" && (pendaftarTahunFilter || pendaftarGelombangFilter)) ||
                   (activeTab === "seleksi" && (seleksiTahunFilter || seleksiGelombangFilter))
                 ) && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (activeTab === "pendaftar") {
-                        setPendaftarTahunFilter("");
-                        setPendaftarGelombangFilter("");
-                      } else {
-                        setSeleksiTahunFilter("");
-                        setSeleksiGelombangFilter("");
-                      }
-                    }}
-                    className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer"
-                    title="Reset Filter Periode"
-                  >
-                    <RotateCcw className="w-3.5 h-3.5" />
-                  </button>
-                )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (activeTab === "pendaftar") {
+                          setPendaftarTahunFilter("");
+                          setPendaftarGelombangFilter("");
+                        } else {
+                          setSeleksiTahunFilter("");
+                          setSeleksiGelombangFilter("");
+                        }
+                      }}
+                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer"
+                      title="Reset Filter Periode"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                    </button>
+                  )}
               </div>
             )}
           </div>
@@ -3092,7 +3307,7 @@ export default function AdminCMSDashboardPage() {
           {/* TAB CONTENT: MANAJEMEN ROLE & MENU RBAC */}
           {activeTab === "rbac" && (
             <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 space-y-6 shadow-xs animate-fadeIn">
-              
+
               {/* Header Info */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-4 gap-4">
                 <div>
@@ -3110,11 +3325,10 @@ export default function AdminCMSDashboardPage() {
                   <button
                     type="button"
                     onClick={() => setRbacSubTab("matrix")}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer ${
-                      rbacSubTab === "matrix"
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer ${rbacSubTab === "matrix"
                         ? "bg-[#0d3830] text-white shadow-xs"
                         : "text-slate-600 hover:text-slate-900"
-                    }`}
+                      }`}
                   >
                     Hak Akses Role
                   </button>
@@ -3122,16 +3336,14 @@ export default function AdminCMSDashboardPage() {
                   <button
                     type="button"
                     onClick={() => setRbacSubTab("users")}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
-                      rbacSubTab === "users"
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${rbacSubTab === "users"
                         ? "bg-[#0d3830] text-white shadow-xs"
                         : "text-slate-600 hover:text-slate-900"
-                    }`}
+                      }`}
                   >
                     <span>Akun Administrator</span>
-                    <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
-                      rbacSubTab === "users" ? "bg-white/20 text-white" : "bg-slate-200 text-slate-700"
-                    }`}>
+                    <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${rbacSubTab === "users" ? "bg-white/20 text-white" : "bg-slate-200 text-slate-700"
+                      }`}>
                       {adminUsersList.length}
                     </span>
                   </button>
@@ -3139,11 +3351,10 @@ export default function AdminCMSDashboardPage() {
                   <button
                     type="button"
                     onClick={() => setRbacSubTab("roles")}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer ${
-                      rbacSubTab === "roles"
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer ${rbacSubTab === "roles"
                         ? "bg-[#0d3830] text-white shadow-xs"
                         : "text-slate-600 hover:text-slate-900"
-                    }`}
+                      }`}
                   >
                     Master Role ({rolesList.length})
                   </button>
@@ -3151,11 +3362,10 @@ export default function AdminCMSDashboardPage() {
                   <button
                     type="button"
                     onClick={() => setRbacSubTab("menus")}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer ${
-                      rbacSubTab === "menus"
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer ${rbacSubTab === "menus"
                         ? "bg-[#0d3830] text-white shadow-xs"
                         : "text-slate-600 hover:text-slate-900"
-                    }`}
+                      }`}
                   >
                     Menu &amp; Group ({allMenusList.length})
                   </button>
@@ -3298,11 +3508,10 @@ export default function AdminCMSDashboardPage() {
                               return (
                                 <label
                                   key={m.id}
-                                  className={`p-3 rounded-xl border transition flex items-center justify-between cursor-pointer ${
-                                    isChecked
+                                  className={`p-3 rounded-xl border transition flex items-center justify-between cursor-pointer ${isChecked
                                       ? "bg-emerald-50/70 border-emerald-300 text-emerald-950 font-bold"
                                       : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
-                                  }`}
+                                    }`}
                                 >
                                   <div className="flex items-center gap-2.5">
                                     {renderNavIcon(m.icon)}
@@ -3375,9 +3584,8 @@ export default function AdminCMSDashboardPage() {
                             <tr key={user.id} className="hover:bg-slate-50 transition">
                               <td className="p-3">
                                 <div className="flex items-center gap-2.5">
-                                  <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${
-                                    isSuper ? "bg-rose-100 text-rose-800" : "bg-emerald-100 text-emerald-800"
-                                  }`}>
+                                  <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${isSuper ? "bg-rose-100 text-rose-800" : "bg-emerald-100 text-emerald-800"
+                                    }`}>
                                     {user.nama_lengkap?.charAt(0) || "A"}
                                   </div>
                                   <div>
@@ -3578,7 +3786,7 @@ export default function AdminCMSDashboardPage() {
 
                   {/* Top Balanced 2-Column Section */}
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
-                    
+
                     {/* KOLOM KIRI (5 COLS): KELOLA MENU GROUP (FORM + LIST GROUP DENGAN EDIT & HAPUS) */}
                     <div className="lg:col-span-5 flex flex-col gap-4">
                       {/* Form Tambah Menu Group Baru */}
@@ -3793,11 +4001,10 @@ export default function AdminCMSDashboardPage() {
                                   key={cat}
                                   type="button"
                                   onClick={() => setIconCategoryFilter(cat)}
-                                  className={`px-2 py-0.5 rounded-md text-[10px] font-bold whitespace-nowrap transition cursor-pointer ${
-                                    iconCategoryFilter === cat
+                                  className={`px-2 py-0.5 rounded-md text-[10px] font-bold whitespace-nowrap transition cursor-pointer ${iconCategoryFilter === cat
                                       ? "bg-[#0d3830] text-white"
                                       : "bg-slate-100 hover:bg-slate-200 text-slate-600"
-                                  }`}
+                                    }`}
                                 >
                                   {cat}
                                 </button>
@@ -3814,11 +4021,10 @@ export default function AdminCMSDashboardPage() {
                                       key={item.name}
                                       type="button"
                                       onClick={() => setNewMenu({ ...newMenu, icon: item.name })}
-                                      className={`p-1.5 rounded-lg text-left transition flex items-center gap-2 border cursor-pointer ${
-                                        isSelected
+                                      className={`p-1.5 rounded-lg text-left transition flex items-center gap-2 border cursor-pointer ${isSelected
                                           ? "bg-emerald-100/90 border-emerald-400 text-emerald-950 font-bold shadow-2xs"
                                           : "bg-white border-slate-200 text-slate-700 hover:bg-slate-100 hover:border-slate-300"
-                                      }`}
+                                        }`}
                                     >
                                       <span className={isSelected ? "text-emerald-700" : "text-slate-500"}>
                                         {renderNavIcon(item.name)}
@@ -4012,10 +4218,17 @@ export default function AdminCMSDashboardPage() {
                   onChange={(e) => setStatusFilter(e.target.value)}
                   className="px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#0d3830]"
                 >
-                  <option value="">Semua Status Berkas</option>
+                  <option value="">Semua Status Pendaftaran</option>
+                  <option value="akun_terdaftar">Akun Terdaftar</option>
+                  <option value="menunggu_pembayaran">Menunggu Pembayaran</option>
                   <option value="menunggu_verifikasi">Menunggu Verifikasi</option>
-                  <option value="berkas_diverifikasi">Berkas Sah</option>
-                  <option value="belum_lengkap">Perlu Revisi</option>
+                  <option value="berkas_diverifikasi">Berkas Sah / Diverifikasi</option>
+                  <option value="belum_lengkap">Belum Lengkap / Perlu Revisi</option>
+                  <option value="mengikuti_ujian">Tahap Wawancara / Ujian</option>
+                  <option value="lolos_seleksi">Lolos Seleksi (Diterima)</option>
+                  <option value="daftar_ulang">Daftar Ulang (Mhs Aktif)</option>
+                  <option value="tidak_lolos">Tidak Lolos</option>
+                  <option value="kadaluarsa">Kadaluarsa</option>
                 </select>
 
                 <button
@@ -4030,11 +4243,10 @@ export default function AdminCMSDashboardPage() {
                     setPendaftarTahunFilter("");
                     setPendaftarGelombangFilter("");
                   }}
-                  className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1 border ${
-                    Boolean(search || statusFilter || prodiFilter || jalurFilter || statusBayarFilter || pendaftarTahunFilter || pendaftarGelombangFilter)
+                  className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1 border ${Boolean(search || statusFilter || prodiFilter || jalurFilter || statusBayarFilter || pendaftarTahunFilter || pendaftarGelombangFilter)
                       ? "bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-200 cursor-pointer shadow-2xs"
                       : "bg-slate-100/70 text-slate-400 border-slate-200/80 cursor-not-allowed opacity-60"
-                  }`}
+                    }`}
                   title={
                     Boolean(search || statusFilter || prodiFilter || jalurFilter || statusBayarFilter || pendaftarTahunFilter || pendaftarGelombangFilter)
                       ? "Reset Seluruh Filter"
@@ -4059,11 +4271,10 @@ export default function AdminCMSDashboardPage() {
                     setStatusFilter("");
                     loadPendaftars(1);
                   }}
-                  className={`px-3.5 py-1.5 rounded-xl border transition cursor-pointer ${
-                    statusFilter === ""
+                  className={`px-3.5 py-1.5 rounded-xl border transition cursor-pointer ${statusFilter === ""
                       ? "bg-[#0d3830] text-white border-[#0d3830]"
                       : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
-                  }`}
+                    }`}
                 >
                   Semua ({stats.total_pendaftar})
                 </button>
@@ -4073,11 +4284,10 @@ export default function AdminCMSDashboardPage() {
                     setStatusFilter("menunggu_verifikasi");
                     loadPendaftars(1);
                   }}
-                  className={`px-3.5 py-1.5 rounded-xl border transition cursor-pointer flex items-center gap-1.5 ${
-                    statusFilter === "menunggu_verifikasi"
+                  className={`px-3.5 py-1.5 rounded-xl border transition cursor-pointer flex items-center gap-1.5 ${statusFilter === "menunggu_verifikasi"
                       ? "bg-amber-50 text-amber-900 border-amber-300 ring-1 ring-amber-200"
                       : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
-                  }`}
+                    }`}
                 >
                   <Clock className="w-3.5 h-3.5" />
                   <span>Menunggu Verifikasi ({stats.menunggu_verifikasi})</span>
@@ -4088,11 +4298,10 @@ export default function AdminCMSDashboardPage() {
                     setStatusFilter("berkas_diverifikasi");
                     loadPendaftars(1);
                   }}
-                  className={`px-3.5 py-1.5 rounded-xl border transition cursor-pointer flex items-center gap-1.5 ${
-                    statusFilter === "berkas_diverifikasi"
+                  className={`px-3.5 py-1.5 rounded-xl border transition cursor-pointer flex items-center gap-1.5 ${statusFilter === "berkas_diverifikasi"
                       ? "bg-emerald-50 text-[#0d3830] border-emerald-300 ring-1 ring-emerald-200"
                       : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
-                  }`}
+                    }`}
                 >
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   <span>Berkas Sah ({stats.berkas_lengkap})</span>
@@ -4103,11 +4312,10 @@ export default function AdminCMSDashboardPage() {
                     setStatusFilter("belum_lengkap");
                     loadPendaftars(1);
                   }}
-                  className={`px-3.5 py-1.5 rounded-xl border transition cursor-pointer flex items-center gap-1.5 ${
-                    statusFilter === "belum_lengkap"
+                  className={`px-3.5 py-1.5 rounded-xl border transition cursor-pointer flex items-center gap-1.5 ${statusFilter === "belum_lengkap"
                       ? "bg-rose-50 text-rose-900 border-rose-300 ring-1 ring-rose-200"
                       : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
-                  }`}
+                    }`}
                 >
                   <AlertCircle className="w-3.5 h-3.5" />
                   <span>Perlu Revisi ({stats.belum_lengkap})</span>
@@ -4207,24 +4415,22 @@ export default function AdminCMSDashboardPage() {
                                     return (
                                       <span
                                         key={docKey}
-                                        title={`${docKey.toUpperCase()}: ${
-                                          isValid
+                                        title={`${docKey.toUpperCase()}: ${isValid
                                             ? "Valid & Sah"
                                             : isInvalid
-                                            ? "Perlu Revisi"
-                                            : isUploaded
-                                            ? "Sudah Diunggah (Menunggu Verifikasi)"
-                                            : "Belum Diunggah"
-                                        }`}
-                                        className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase font-mono border ${
-                                          isValid
+                                              ? "Perlu Revisi"
+                                              : isUploaded
+                                                ? "Sudah Diunggah (Menunggu Verifikasi)"
+                                                : "Belum Diunggah"
+                                          }`}
+                                        className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase font-mono border ${isValid
                                             ? "bg-emerald-50 text-emerald-800 border-emerald-200"
                                             : isInvalid
-                                            ? "bg-rose-50 text-rose-800 border-rose-200"
-                                            : isUploaded
-                                            ? "bg-amber-50 text-amber-800 border-amber-200"
-                                            : "bg-slate-100 text-slate-400 border-slate-200"
-                                        }`}
+                                              ? "bg-rose-50 text-rose-800 border-rose-200"
+                                              : isUploaded
+                                                ? "bg-amber-50 text-amber-800 border-amber-200"
+                                                : "bg-slate-100 text-slate-400 border-slate-200"
+                                          }`}
                                       >
                                         {docKey}
                                       </span>
@@ -4496,11 +4702,16 @@ export default function AdminCMSDashboardPage() {
                       >
                         <option value="">Semua Status Pendaftaran</option>
                         <option value="akun_terdaftar">Akun Terdaftar</option>
-                        <option value="belum_lengkap">Belum Lengkap / Perlu Revisi</option>
+                        <option value="belum_lengkap">Belum Lengkap</option>
+                        <option value="menunggu_pembayaran">Menunggu Pembayaran</option>
                         <option value="menunggu_verifikasi">Menunggu Verifikasi</option>
                         <option value="berkas_diverifikasi">Berkas Sah / Diverifikasi</option>
-                        <option value="lolos_seleksi">Lolos Seleksi</option>
-                        <option value="ditolak_perlu_perbaikan">Ditolak</option>
+                        <option value="ditolak_perlu_perbaikan">Perlu Perbaikan</option>
+                        <option value="mengikuti_ujian">Mengikuti Ujian / Wawancara</option>
+                        <option value="lolos_seleksi">Lolos Seleksi (Diterima)</option>
+                        <option value="daftar_ulang">Daftar Ulang (Mahasiswa Aktif)</option>
+                        <option value="tidak_lolos">Tidak Lolos</option>
+                        <option value="kadaluarsa">Kadaluarsa</option>
                       </select>
                     </div>
 
@@ -4619,9 +4830,7 @@ export default function AdminCMSDashboardPage() {
                                     )}
                                   </td>
                                   <td className="p-3">
-                                    <span className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">
-                                      {p.status_pendaftaran || "Akun Terdaftar"}
-                                    </span>
+                                    {getStatusPendaftaranBadge(p.status_pendaftaran)}
                                   </td>
                                 </tr>
                               );
@@ -4659,11 +4868,10 @@ export default function AdminCMSDashboardPage() {
                   <button
                     type="button"
                     onClick={() => setPendaftaranSubTab("gelombang")}
-                    className={`px-3.5 py-2 font-bold rounded-xl transition whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
-                      pendaftaranSubTab === "gelombang"
+                    className={`px-3.5 py-2 font-bold rounded-xl transition whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${pendaftaranSubTab === "gelombang"
                         ? "bg-[#0d3830] text-white shadow-xs"
                         : "text-slate-600 hover:bg-slate-100"
-                    }`}
+                      }`}
                   >
                     <Calendar className="w-4 h-4" />
                     <span>1. Gelombang PMB</span>
@@ -4675,11 +4883,10 @@ export default function AdminCMSDashboardPage() {
                   <button
                     type="button"
                     onClick={() => setPendaftaranSubTab("jalur")}
-                    className={`px-3.5 py-2 font-bold rounded-xl transition whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
-                      pendaftaranSubTab === "jalur"
+                    className={`px-3.5 py-2 font-bold rounded-xl transition whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${pendaftaranSubTab === "jalur"
                         ? "bg-[#0d3830] text-white shadow-xs"
                         : "text-slate-600 hover:bg-slate-100"
-                    }`}
+                      }`}
                   >
                     <Award className="w-4 h-4" />
                     <span>2. Master Jalur Seleksi</span>
@@ -4691,11 +4898,10 @@ export default function AdminCMSDashboardPage() {
                   <button
                     type="button"
                     onClick={() => setPendaftaranSubTab("dokumen")}
-                    className={`px-3.5 py-2 font-bold rounded-xl transition whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
-                      pendaftaranSubTab === "dokumen"
+                    className={`px-3.5 py-2 font-bold rounded-xl transition whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${pendaftaranSubTab === "dokumen"
                         ? "bg-[#0d3830] text-white shadow-xs"
                         : "text-slate-600 hover:bg-slate-100"
-                    }`}
+                      }`}
                   >
                     <FileText className="w-4 h-4" />
                     <span>3. Persyaratan Berkas</span>
@@ -4707,11 +4913,10 @@ export default function AdminCMSDashboardPage() {
                   <button
                     type="button"
                     onClick={() => setPendaftaranSubTab("rekening")}
-                    className={`px-3.5 py-2 font-bold rounded-xl transition whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
-                      pendaftaranSubTab === "rekening"
+                    className={`px-3.5 py-2 font-bold rounded-xl transition whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${pendaftaranSubTab === "rekening"
                         ? "bg-[#0d3830] text-white shadow-xs"
                         : "text-slate-600 hover:bg-slate-100"
-                    }`}
+                      }`}
                   >
                     <Building2 className="w-4 h-4" />
                     <span>4. Rekening Pembayaran (Multi-Bank)</span>
@@ -4723,11 +4928,10 @@ export default function AdminCMSDashboardPage() {
                   <button
                     type="button"
                     onClick={() => setPendaftaranSubTab("teks_formulir")}
-                    className={`px-3.5 py-2 font-bold rounded-xl transition whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
-                      pendaftaranSubTab === "teks_formulir"
+                    className={`px-3.5 py-2 font-bold rounded-xl transition whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${pendaftaranSubTab === "teks_formulir"
                         ? "bg-[#0d3830] text-white shadow-xs"
                         : "text-slate-600 hover:bg-slate-100"
-                    }`}
+                      }`}
                   >
                     <Globe className="w-4 h-4" />
                     <span>5. Teks &amp; Tombol Formulir (i18n)</span>
@@ -4769,9 +4973,8 @@ export default function AdminCMSDashboardPage() {
                       return (
                         <div
                           key={gel.id}
-                          className={`rounded-2xl border p-5 space-y-4 transition-all shadow-xs flex flex-col justify-between ${
-                            isAktif ? "bg-white border-emerald-300 ring-2 ring-emerald-500/10" : "bg-slate-50 border-slate-200 opacity-80"
-                          }`}
+                          className={`rounded-2xl border p-5 space-y-4 transition-all shadow-xs flex flex-col justify-between ${isAktif ? "bg-white border-emerald-300 ring-2 ring-emerald-500/10" : "bg-slate-50 border-slate-200 opacity-80"
+                            }`}
                         >
                           <div className="space-y-4">
                             <div className="flex items-start justify-between gap-2">
@@ -4782,11 +4985,10 @@ export default function AdminCMSDashboardPage() {
                                 <h4 className="text-base font-black text-slate-900 font-serif mt-0.5">{gel.nama}</h4>
                               </div>
                               <span
-                                className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                                  isAktif
+                                className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${isAktif
                                     ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
                                     : "bg-slate-200 text-slate-600"
-                                }`}
+                                  }`}
                               >
                                 {isAktif ? "● Sedang Dibuka" : "Ditutup"}
                               </span>
@@ -4859,9 +5061,8 @@ export default function AdminCMSDashboardPage() {
                     {jalurList.map((jal) => (
                       <div
                         key={jal.id}
-                        className={`rounded-2xl border p-5 space-y-4 shadow-xs transition flex flex-col justify-between ${
-                          jal.is_aktif ? "bg-white border-slate-200 hover:border-emerald-300" : "bg-slate-50 border-slate-200 opacity-75"
-                        }`}
+                        className={`rounded-2xl border p-5 space-y-4 shadow-xs transition flex flex-col justify-between ${jal.is_aktif ? "bg-white border-slate-200 hover:border-emerald-300" : "bg-slate-50 border-slate-200 opacity-75"
+                          }`}
                       >
                         <div className="space-y-3">
                           <div className="flex items-center justify-between gap-2">
@@ -4971,9 +5172,8 @@ export default function AdminCMSDashboardPage() {
                     {persyaratanDocList.map((doc) => (
                       <div
                         key={doc.id}
-                        className={`p-4 rounded-2xl border space-y-3 shadow-xs flex flex-col justify-between ${
-                          doc.is_aktif ? "bg-white border-slate-200 hover:border-emerald-300" : "bg-slate-50 border-slate-200 opacity-75"
-                        }`}
+                        className={`p-4 rounded-2xl border space-y-3 shadow-xs flex flex-col justify-between ${doc.is_aktif ? "bg-white border-slate-200 hover:border-emerald-300" : "bg-slate-50 border-slate-200 opacity-75"
+                          }`}
                       >
                         <div className="space-y-2">
                           <div className="flex items-center justify-between gap-2">
@@ -4981,11 +5181,10 @@ export default function AdminCMSDashboardPage() {
                               {doc.kode || `DOK-${doc.id}`}
                             </span>
                             <span
-                              className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                                doc.is_wajib
+                              className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${doc.is_wajib
                                   ? "bg-rose-100 text-rose-800 border border-rose-200"
                                   : "bg-slate-200 text-slate-700"
-                              }`}
+                                }`}
                             >
                               {doc.is_wajib ? "Wajib Diunggah" : "Opsional"}
                             </span>
@@ -5062,13 +5261,12 @@ export default function AdminCMSDashboardPage() {
                     {rekeningList.map((rek) => (
                       <div
                         key={rek.id}
-                        className={`rounded-2xl border p-5 space-y-4 shadow-xs transition flex flex-col justify-between ${
-                          rek.is_utama
+                        className={`rounded-2xl border p-5 space-y-4 shadow-xs transition flex flex-col justify-between ${rek.is_utama
                             ? "bg-emerald-50/40 border-emerald-300 ring-2 ring-emerald-500/10"
                             : rek.is_aktif
-                            ? "bg-white border-slate-200 hover:border-slate-300"
-                            : "bg-slate-50 border-slate-200 opacity-75"
-                        }`}
+                              ? "bg-white border-slate-200 hover:border-slate-300"
+                              : "bg-slate-50 border-slate-200 opacity-75"
+                          }`}
                       >
                         <div className="space-y-3">
                           <div className="flex items-start justify-between gap-2">
@@ -5085,9 +5283,8 @@ export default function AdminCMSDashboardPage() {
                                 </span>
                               )}
                               <span
-                                className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                                  rek.is_aktif ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-600"
-                                }`}
+                                className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${rek.is_aktif ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-600"
+                                  }`}
                               >
                                 {rek.is_aktif ? "● Aktif" : "Nonaktif"}
                               </span>
@@ -5179,11 +5376,10 @@ export default function AdminCMSDashboardPage() {
                       type="button"
                       onClick={() => saveGroupTranslations("pendaftaranPage", "Teks dan tombol formulir pendaftaran berhasil disimpan!")}
                       disabled={isSavingTranslations || !isGroupDirty("pendaftaranPage")}
-                      className={`px-4 py-2 font-bold text-xs rounded-xl transition flex items-center gap-1.5 ${
-                        isGroupDirty("pendaftaranPage")
+                      className={`px-4 py-2 font-bold text-xs rounded-xl transition flex items-center gap-1.5 ${isGroupDirty("pendaftaranPage")
                           ? "bg-[#0d3830] hover:bg-[#165349] text-white cursor-pointer"
                           : "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
-                      }`}
+                        }`}
                     >
                       {isGroupDirty("pendaftaranPage") ? (
                         <>
@@ -5430,11 +5626,10 @@ export default function AdminCMSDashboardPage() {
                     type="button"
                     onClick={() => saveGroupTranslations("prodiSection", "Teks pengantar dan tombol Program Studi berhasil disimpan!")}
                     disabled={isSavingTranslations || !isGroupDirty("prodiSection")}
-                    className={`px-4 py-2 font-bold text-xs rounded-xl transition flex items-center gap-1.5 ${
-                      isGroupDirty("prodiSection")
+                    className={`px-4 py-2 font-bold text-xs rounded-xl transition flex items-center gap-1.5 ${isGroupDirty("prodiSection")
                         ? "bg-[#0d3830] hover:bg-[#165349] text-white cursor-pointer"
                         : "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
-                    }`}
+                      }`}
                   >
                     {isGroupDirty("prodiSection") ? (
                       <>
@@ -5697,9 +5892,8 @@ export default function AdminCMSDashboardPage() {
                     return (
                       <div
                         key={prodi.id}
-                        className={`rounded-2xl border p-5 space-y-4 shadow-xs hover:border-emerald-300 transition flex flex-col justify-between ${
-                          prodi.is_aktif ? "bg-white border-slate-200" : "bg-slate-50 border-slate-200 opacity-80"
-                        }`}
+                        className={`rounded-2xl border p-5 space-y-4 shadow-xs hover:border-emerald-300 transition flex flex-col justify-between ${prodi.is_aktif ? "bg-white border-slate-200" : "bg-slate-50 border-slate-200 opacity-80"
+                          }`}
                       >
                         <div className="space-y-3">
                           <div className="flex items-center justify-between">
@@ -5800,11 +5994,10 @@ export default function AdminCMSDashboardPage() {
                       type="button"
                       onClick={handleSaveBulkTataCara}
                       disabled={isSavingTataCara || !isTataCaraDirty}
-                      className={`px-4 py-2 font-bold text-xs rounded-xl shadow-xs transition flex items-center gap-1.5 whitespace-nowrap ${
-                        isTataCaraDirty
+                      className={`px-4 py-2 font-bold text-xs rounded-xl shadow-xs transition flex items-center gap-1.5 whitespace-nowrap ${isTataCaraDirty
                           ? "bg-[#0d3830] hover:bg-[#165349] text-white cursor-pointer"
                           : "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
-                      }`}
+                        }`}
                     >
                       {isTataCaraDirty ? (
                         <>
@@ -6007,6 +6200,7 @@ export default function AdminCMSDashboardPage() {
                       <option value="berkas_diverifikasi">Berkas Sah (Siap Seleksi)</option>
                       <option value="mengikuti_ujian">Tahap Wawancara</option>
                       <option value="lolos_seleksi">Lolos Seleksi (Diterima)</option>
+                      <option value="daftar_ulang">Daftar Ulang (Mahasiswa Aktif)</option>
                       <option value="tidak_lolos">Tidak Lolos</option>
                     </select>
 
@@ -6021,11 +6215,10 @@ export default function AdminCMSDashboardPage() {
                         setSeleksiJalurFilter("");
                         setSeleksiStatusFilter("");
                       }}
-                      className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1 border ${
-                        Boolean(seleksiSearch || seleksiProdiFilter || seleksiGelombangFilter || seleksiTahunFilter || seleksiJalurFilter || seleksiStatusFilter)
+                      className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1 border ${Boolean(seleksiSearch || seleksiProdiFilter || seleksiGelombangFilter || seleksiTahunFilter || seleksiJalurFilter || seleksiStatusFilter)
                           ? "bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-200 cursor-pointer shadow-2xs"
                           : "bg-slate-100/70 text-slate-400 border-slate-200/80 cursor-not-allowed opacity-60"
-                      }`}
+                        }`}
                       title={
                         Boolean(seleksiSearch || seleksiProdiFilter || seleksiGelombangFilter || seleksiTahunFilter || seleksiJalurFilter || seleksiStatusFilter)
                           ? "Reset Seluruh Filter"
@@ -6074,6 +6267,7 @@ export default function AdminCMSDashboardPage() {
                         ) : (
                           seleksiApplicants.map((p) => {
                             const isLolos = p.status_pendaftaran === "lolos_seleksi";
+                            const isDaftarUlang = p.status_pendaftaran === "daftar_ulang";
                             const isUjian = p.status_pendaftaran === "mengikuti_ujian";
                             const isTidakLolos = p.status_pendaftaran === "tidak_lolos";
                             const isSiap = p.status_pendaftaran === "berkas_diverifikasi";
@@ -6128,27 +6322,30 @@ export default function AdminCMSDashboardPage() {
                                 </td>
                                 <td className="p-3.5 text-center">
                                   <span
-                                    className={`px-3 py-1 rounded-full text-[11px] font-extrabold inline-block border ${
-                                      isLolos
+                                    className={`px-3 py-1 rounded-full text-[11px] font-extrabold inline-block border ${isLolos
                                         ? "bg-emerald-100 text-[#0d3830] border-emerald-300"
-                                        : isUjian
-                                        ? "bg-blue-100 text-blue-900 border-blue-300"
-                                        : isTidakLolos
-                                        ? "bg-rose-100 text-rose-900 border-rose-300"
-                                        : isSiap
-                                        ? "bg-amber-100 text-amber-900 border-amber-300"
-                                        : "bg-slate-100 text-slate-700 border-slate-300"
-                                    }`}
+                                        : isDaftarUlang
+                                          ? "bg-[#0d3830] text-emerald-100 border-[#0d3830]"
+                                          : isUjian
+                                            ? "bg-blue-100 text-blue-900 border-blue-300"
+                                            : isTidakLolos
+                                              ? "bg-rose-100 text-rose-900 border-rose-300"
+                                              : isSiap
+                                                ? "bg-amber-100 text-amber-900 border-amber-300"
+                                                : "bg-slate-100 text-slate-700 border-slate-300"
+                                      }`}
                                   >
                                     {isLolos
                                       ? "Lolos Seleksi (Diterima)"
-                                      : isUjian
-                                      ? "Tahap Wawancara"
-                                      : isTidakLolos
-                                      ? "Tidak Lolos"
-                                      : isSiap
-                                      ? "Berkas Sah (Siap Seleksi)"
-                                      : p.status_pendaftaran}
+                                      : isDaftarUlang
+                                        ? "Daftar Ulang (Mhs Aktif)"
+                                        : isUjian
+                                          ? "Tahap Wawancara"
+                                          : isTidakLolos
+                                            ? "Tidak Lolos"
+                                            : isSiap
+                                              ? "Berkas Sah (Siap Seleksi)"
+                                              : p.status_pendaftaran}
                                   </span>
                                 </td>
                                 <td className="p-3.5 max-w-[200px]">
@@ -6304,11 +6501,10 @@ export default function AdminCMSDashboardPage() {
                   type="button"
                   onClick={handleSaveHomepageSettings}
                   disabled={isSavingSettings || !isAnyHomepageDirty}
-                  className={`px-6 py-2.5 font-bold text-xs rounded-xl shadow-xs transition flex items-center justify-center gap-2 self-start sm:self-auto ${
-                    isAnyHomepageDirty
+                  className={`px-6 py-2.5 font-bold text-xs rounded-xl shadow-xs transition flex items-center justify-center gap-2 self-start sm:self-auto ${isAnyHomepageDirty
                       ? "bg-[#0d3830] hover:bg-[#165349] text-white cursor-pointer"
                       : "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
-                  }`}
+                    }`}
                 >
                   {isAnyHomepageDirty ? (
                     <>
@@ -6340,11 +6536,10 @@ export default function AdminCMSDashboardPage() {
                     type="button"
                     onClick={handleSaveBannerHomepage}
                     disabled={isSavingSettings || (!isBannerDirty && !isGroupDirty("hero") && !isGroupDirty("cta"))}
-                    className={`px-4 py-2 font-bold text-xs rounded-xl transition flex items-center gap-1.5 ${
-                      isBannerDirty || isGroupDirty("hero") || isGroupDirty("cta")
+                    className={`px-4 py-2 font-bold text-xs rounded-xl transition flex items-center gap-1.5 ${isBannerDirty || isGroupDirty("hero") || isGroupDirty("cta")
                         ? "bg-[#0d3830] hover:bg-[#165349] text-white cursor-pointer"
                         : "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
-                    }`}
+                      }`}
                   >
                     {isBannerDirty || isGroupDirty("hero") || isGroupDirty("cta") ? (
                       <>
@@ -6665,11 +6860,10 @@ export default function AdminCMSDashboardPage() {
                     type="button"
                     onClick={handleSaveProdiHomepage}
                     disabled={isSavingSettings || !isProdiDirty}
-                    className={`px-4 py-2 font-bold text-xs rounded-xl transition flex items-center gap-1.5 ${
-                      isProdiDirty
+                    className={`px-4 py-2 font-bold text-xs rounded-xl transition flex items-center gap-1.5 ${isProdiDirty
                         ? "bg-[#0d3830] hover:bg-[#165349] text-white cursor-pointer"
                         : "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
-                    }`}
+                      }`}
                   >
                     {isProdiDirty ? (
                       <>
@@ -6757,52 +6951,136 @@ export default function AdminCMSDashboardPage() {
                           </button>
                         </div>
 
-                        <div className="space-y-1.5">
-                          <label className="block text-[11px] font-bold text-slate-700">
-                            Deskripsi Singkat (Tampil di Homepage) *
-                          </label>
-                          <textarea
-                            rows={2}
-                            value={item.deskripsi_singkat}
-                            onChange={(e) => handleUpdateHomepageProdi(idx, "deskripsi_singkat", e.target.value)}
-                            placeholder="Deskripsi singkat program studi yang memikat calon mahasiswa..."
-                            className="w-full p-2.5 bg-slate-50/70 border border-slate-300 rounded-xl text-xs font-normal text-slate-700 focus:outline-none focus:border-[#0d3830]"
-                          />
-                        </div>
-
-                        {/* Badges Customizer: 3 Columns */}
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
-                          <div className="space-y-1">
-                            <label className="block text-[10px] font-extrabold uppercase text-slate-500">Badge 1: Jenjang</label>
-                            <input
-                              type="text"
-                              value={item.badge_jenjang}
-                              onChange={(e) => handleUpdateHomepageProdi(idx, "badge_jenjang", e.target.value)}
-                              placeholder="Contoh: Jenjang S1"
-                              className="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#0d3830]"
-                            />
+                        <div className="space-y-3">
+                          {/* Deskripsi Singkat Bilingual */}
+                          <div className="p-3.5 bg-slate-50/70 rounded-xl border border-slate-200/80 space-y-2">
+                            <span className="text-[11px] font-extrabold text-slate-800 uppercase tracking-wider block">
+                              Deskripsi Singkat Program Studi di Homepage
+                            </span>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              <div className="space-y-1">
+                                <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                                  <span>🇮🇩</span>
+                                  <span>Bahasa Indonesia (ID) *</span>
+                                </label>
+                                <textarea
+                                  rows={2}
+                                  value={item.deskripsi_singkat}
+                                  onChange={(e) => handleUpdateHomepageProdi(idx, "deskripsi_singkat", e.target.value)}
+                                  placeholder="Deskripsi singkat program studi yang memikat calon mahasiswa..."
+                                  className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-normal text-slate-700 focus:outline-none focus:border-[#0d3830]"
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                                  <span>🇬🇧</span>
+                                  <span>English Translation (EN)</span>
+                                </label>
+                                <textarea
+                                  rows={2}
+                                  value={item.deskripsi_singkat_en || ""}
+                                  onChange={(e) => handleUpdateHomepageProdi(idx, "deskripsi_singkat_en", e.target.value)}
+                                  placeholder="Short program overview to attract prospective students..."
+                                  className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-normal text-slate-700 focus:outline-none focus:border-[#0d3830]"
+                                />
+                              </div>
+                            </div>
                           </div>
 
-                          <div className="space-y-1">
-                            <label className="block text-[10px] font-extrabold uppercase text-slate-500">Badge 2: Gelar Akademik</label>
-                            <input
-                              type="text"
-                              value={item.badge_gelar}
-                              onChange={(e) => handleUpdateHomepageProdi(idx, "badge_gelar", e.target.value)}
-                              placeholder="Contoh: Gelar Sarjana Hukum (S.H.)"
-                              className="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#0d3830]"
-                            />
-                          </div>
+                          {/* Badges Bilingual: 3 Columns with ID & EN */}
+                          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 pt-1">
+                            {/* Badge 1: Jenjang */}
+                            <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-200/80 space-y-2">
+                              <span className="text-[10px] font-extrabold uppercase text-slate-600 block">Badge 1: Jenjang</span>
+                              <div className="space-y-2">
+                                <div className="space-y-0.5">
+                                  <label className="text-[10px] font-bold text-slate-500 flex items-center gap-1">
+                                    <span>🇮🇩</span><span>Bahasa Indonesia</span>
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={item.badge_jenjang}
+                                    onChange={(e) => handleUpdateHomepageProdi(idx, "badge_jenjang", e.target.value)}
+                                    placeholder="Contoh: Jenjang S1"
+                                    className="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#0d3830]"
+                                  />
+                                </div>
+                                <div className="space-y-0.5">
+                                  <label className="text-[10px] font-bold text-slate-500 flex items-center gap-1">
+                                    <span>🇬🇧</span><span>English</span>
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={item.badge_jenjang_en || ""}
+                                    onChange={(e) => handleUpdateHomepageProdi(idx, "badge_jenjang_en", e.target.value)}
+                                    placeholder="e.g. Undergraduate (S1)"
+                                    className="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#0d3830]"
+                                  />
+                                </div>
+                              </div>
+                            </div>
 
-                          <div className="space-y-1">
-                            <label className="block text-[10px] font-extrabold uppercase text-slate-500">Badge 3: Akreditasi</label>
-                            <input
-                              type="text"
-                              value={item.badge_akreditasi}
-                              onChange={(e) => handleUpdateHomepageProdi(idx, "badge_akreditasi", e.target.value)}
-                              placeholder="Contoh: Terakreditasi BAN-PT"
-                              className="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-bold text-emerald-800 focus:outline-none focus:border-[#0d3830]"
-                            />
+                            {/* Badge 2: Gelar Akademik */}
+                            <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-200/80 space-y-2">
+                              <span className="text-[10px] font-extrabold uppercase text-slate-600 block">Badge 2: Gelar Akademik</span>
+                              <div className="space-y-2">
+                                <div className="space-y-0.5">
+                                  <label className="text-[10px] font-bold text-slate-500 flex items-center gap-1">
+                                    <span>🇮🇩</span><span>Bahasa Indonesia</span>
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={item.badge_gelar}
+                                    onChange={(e) => handleUpdateHomepageProdi(idx, "badge_gelar", e.target.value)}
+                                    placeholder="Contoh: Gelar Sarjana Hukum (S.H.)"
+                                    className="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#0d3830]"
+                                  />
+                                </div>
+                                <div className="space-y-0.5">
+                                  <label className="text-[10px] font-bold text-slate-500 flex items-center gap-1">
+                                    <span>🇬🇧</span><span>English</span>
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={item.badge_gelar_en || ""}
+                                    onChange={(e) => handleUpdateHomepageProdi(idx, "badge_gelar_en", e.target.value)}
+                                    placeholder="e.g. Bachelor of Law (S.H.)"
+                                    className="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#0d3830]"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Badge 3: Akreditasi */}
+                            <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-200/80 space-y-2">
+                              <span className="text-[10px] font-extrabold uppercase text-slate-600 block">Badge 3: Akreditasi</span>
+                              <div className="space-y-2">
+                                <div className="space-y-0.5">
+                                  <label className="text-[10px] font-bold text-slate-500 flex items-center gap-1">
+                                    <span>🇮🇩</span><span>Bahasa Indonesia</span>
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={item.badge_akreditasi}
+                                    onChange={(e) => handleUpdateHomepageProdi(idx, "badge_akreditasi", e.target.value)}
+                                    placeholder="Contoh: Terakreditasi BAN-PT"
+                                    className="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-bold text-emerald-800 focus:outline-none focus:border-[#0d3830]"
+                                  />
+                                </div>
+                                <div className="space-y-0.5">
+                                  <label className="text-[10px] font-bold text-slate-500 flex items-center gap-1">
+                                    <span>🇬🇧</span><span>English</span>
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={item.badge_akreditasi_en || ""}
+                                    onChange={(e) => handleUpdateHomepageProdi(idx, "badge_akreditasi_en", e.target.value)}
+                                    placeholder="e.g. Accredited by BAN-PT"
+                                    className="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-bold text-emerald-800 focus:outline-none focus:border-[#0d3830]"
+                                  />
+                                </div>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -6878,11 +7156,10 @@ export default function AdminCMSDashboardPage() {
                     type="button"
                     onClick={handleSaveJalurHomepage}
                     disabled={isSavingSettings || !isJalurDirty}
-                    className={`px-4 py-2 font-bold text-xs rounded-xl transition flex items-center gap-1.5 ${
-                      isJalurDirty
+                    className={`px-4 py-2 font-bold text-xs rounded-xl transition flex items-center gap-1.5 ${isJalurDirty
                         ? "bg-[#0d3830] hover:bg-[#165349] text-white cursor-pointer"
                         : "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
-                    }`}
+                      }`}
                   >
                     {isJalurDirty ? (
                       <>
@@ -6947,9 +7224,8 @@ export default function AdminCMSDashboardPage() {
                     {jalurCards.map((card, idx) => (
                       <div
                         key={idx}
-                        className={`p-5 rounded-2xl border transition-all space-y-3 bg-white shadow-xs ${
-                          card.is_aktif ? "border-slate-300" : "border-slate-200 opacity-60"
-                        }`}
+                        className={`p-5 rounded-2xl border transition-all space-y-3 bg-white shadow-xs ${card.is_aktif ? "border-slate-300" : "border-slate-200 opacity-60"
+                          }`}
                       >
                         <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2">
                           <div className="flex items-center gap-2">
@@ -6983,26 +7259,76 @@ export default function AdminCMSDashboardPage() {
                           </div>
                         </div>
 
-                        <div className="space-y-1.5">
-                          <label className="block text-[11px] font-bold text-slate-700">Teks Badge Label *</label>
-                          <input
-                            type="text"
-                            value={card.badge}
-                            onChange={(e) => handleUpdateJalurCard(idx, "badge", e.target.value)}
-                            placeholder="Contoh: Jalur Reguler / Beasiswa KIP"
-                            className="w-full p-2.5 bg-slate-50/70 border border-slate-300 rounded-xl text-xs font-semibold text-emerald-800 focus:outline-none focus:border-[#0d3830]"
-                          />
-                        </div>
+                        <div className="space-y-3">
+                          {/* Teks Badge Label Bilingual */}
+                          <div className="p-3.5 bg-slate-50/70 rounded-xl border border-slate-200/80 space-y-2">
+                            <span className="text-[11px] font-extrabold text-slate-800 uppercase tracking-wider block">
+                              Label Badge Jalur Masuk
+                            </span>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              <div className="space-y-1">
+                                <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                                  <span>🇮🇩</span>
+                                  <span>Bahasa Indonesia (ID) *</span>
+                                </label>
+                                <input
+                                  type="text"
+                                  value={card.badge}
+                                  onChange={(e) => handleUpdateJalurCard(idx, "badge", e.target.value)}
+                                  placeholder="Contoh: Jalur Reguler / Beasiswa KIP"
+                                  className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-emerald-800 focus:outline-none focus:border-[#0d3830]"
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                                  <span>🇬🇧</span>
+                                  <span>English Translation (EN)</span>
+                                </label>
+                                <input
+                                  type="text"
+                                  value={card.badge_en || ""}
+                                  onChange={(e) => handleUpdateJalurCard(idx, "badge_en", e.target.value)}
+                                  placeholder="e.g. Regular Track / KIP Scholarship"
+                                  className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-emerald-800 focus:outline-none focus:border-[#0d3830]"
+                                />
+                              </div>
+                            </div>
+                          </div>
 
-                        <div className="space-y-1.5">
-                          <label className="block text-[11px] font-bold text-slate-700">Deskripsi Penjelasan Jalur di Homepage *</label>
-                          <textarea
-                            rows={3}
-                            value={card.deskripsi}
-                            onChange={(e) => handleUpdateJalurCard(idx, "deskripsi", e.target.value)}
-                            placeholder="Keterangan kriteria penerima, benefit, dan ketentuan seleksi..."
-                            className="w-full p-2.5 bg-slate-50/70 border border-slate-300 rounded-xl text-xs font-normal text-slate-700 leading-relaxed focus:outline-none focus:border-[#0d3830]"
-                          />
+                          {/* Deskripsi Penjelasan Jalur Bilingual */}
+                          <div className="p-3.5 bg-slate-50/70 rounded-xl border border-slate-200/80 space-y-2">
+                            <span className="text-[11px] font-extrabold text-slate-800 uppercase tracking-wider block">
+                              Deskripsi Penjelasan Jalur di Homepage
+                            </span>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              <div className="space-y-1">
+                                <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                                  <span>🇮🇩</span>
+                                  <span>Bahasa Indonesia (ID) *</span>
+                                </label>
+                                <textarea
+                                  rows={3}
+                                  value={card.deskripsi}
+                                  onChange={(e) => handleUpdateJalurCard(idx, "deskripsi", e.target.value)}
+                                  placeholder="Keterangan kriteria penerima, benefit, dan ketentuan seleksi..."
+                                  className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-normal text-slate-700 leading-relaxed focus:outline-none focus:border-[#0d3830]"
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                                  <span>🇬🇧</span>
+                                  <span>English Translation (EN)</span>
+                                </label>
+                                <textarea
+                                  rows={3}
+                                  value={card.deskripsi_en || ""}
+                                  onChange={(e) => handleUpdateJalurCard(idx, "deskripsi_en", e.target.value)}
+                                  placeholder="Track requirements, scholarship coverage, and admission timeline..."
+                                  className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-normal text-slate-700 leading-relaxed focus:outline-none focus:border-[#0d3830]"
+                                />
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -7046,11 +7372,10 @@ export default function AdminCMSDashboardPage() {
                     {faqsList.map((faq) => (
                       <div
                         key={faq.id}
-                        className={`p-5 rounded-2xl border transition-all ${
-                          faq.is_aktif
+                        className={`p-5 rounded-2xl border transition-all ${faq.is_aktif
                             ? "bg-white border-slate-200 hover:border-emerald-300 shadow-xs"
                             : "bg-slate-50/80 border-slate-200 opacity-60"
-                        }`}
+                          }`}
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div className="space-y-1">
@@ -7216,13 +7541,12 @@ export default function AdminCMSDashboardPage() {
                               <td className="p-3">
                                 <div className="flex items-center gap-1.5">
                                   <span
-                                    className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${
-                                      hl.tipe_kontak === "whatsapp"
+                                    className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${hl.tipe_kontak === "whatsapp"
                                         ? "bg-emerald-100 text-emerald-800"
                                         : hl.tipe_kontak === "email"
-                                        ? "bg-amber-100 text-amber-900"
-                                        : "bg-blue-100 text-blue-900"
-                                    }`}
+                                          ? "bg-amber-100 text-amber-900"
+                                          : "bg-blue-100 text-blue-900"
+                                      }`}
                                   >
                                     {hl.tipe_kontak || "whatsapp"}
                                   </span>
@@ -7238,11 +7562,10 @@ export default function AdminCMSDashboardPage() {
                                 <button
                                   type="button"
                                   onClick={() => handleToggleHotline(hl.id)}
-                                  className={`px-2.5 py-1 rounded-full text-[11px] font-bold transition cursor-pointer ${
-                                    hl.is_aktif
+                                  className={`px-2.5 py-1 rounded-full text-[11px] font-bold transition cursor-pointer ${hl.is_aktif
                                       ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200"
                                       : "bg-slate-100 text-slate-500 hover:bg-slate-200"
-                                  }`}
+                                    }`}
                                   title="Klik untuk mengubah status aktif"
                                 >
                                   {hl.is_aktif ? "Aktif" : "Non-aktif"}
@@ -7284,49 +7607,99 @@ export default function AdminCMSDashboardPage() {
                       <span>2. Identitas Kampus &amp; Layanan Pusat PMB</span>
                     </h4>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                      <div className="space-y-1.5">
-                        <label className="block text-xs font-bold text-slate-700">Nomor WhatsApp Utama *</label>
-                        <input
-                          type="text"
-                          value={settings.no_whatsapp_cs}
-                          onChange={(e) => setSettings({ ...settings, no_whatsapp_cs: e.target.value })}
-                          placeholder="085233432221"
-                          className="w-full p-3 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:border-[#0d3830]"
-                        />
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <label className="block text-xs font-bold text-slate-700">Nomor WhatsApp Utama *</label>
+                          <input
+                            type="text"
+                            value={settings.no_whatsapp_cs}
+                            onChange={(e) => setSettings({ ...settings, no_whatsapp_cs: e.target.value })}
+                            placeholder="085233432221"
+                            className="w-full p-3 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:border-[#0d3830]"
+                          />
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label className="block text-xs font-bold text-slate-700">Email Resmi PMB *</label>
+                          <input
+                            type="email"
+                            value={settings.email_cs}
+                            onChange={(e) => setSettings({ ...settings, email_cs: e.target.value })}
+                            placeholder="pmb@staicisitubondo.ac.id"
+                            className="w-full p-3 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:border-[#0d3830]"
+                          />
+                        </div>
                       </div>
 
-                      <div className="space-y-1.5">
-                        <label className="block text-xs font-bold text-slate-700">Jam Operasional Layanan *</label>
-                        <input
-                          type="text"
-                          value={settings.jam_operasional}
-                          onChange={(e) => setSettings({ ...settings, jam_operasional: e.target.value })}
-                          placeholder="Senin - Sabtu: 08.00 - 15.00 WIB"
-                          className="w-full p-3 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:border-[#0d3830]"
-                        />
+                      {/* Jam Operasional Bilingual */}
+                      <div className="p-3.5 bg-white rounded-xl border border-slate-200 space-y-2">
+                        <span className="text-[11px] font-extrabold text-slate-800 uppercase tracking-wider block">
+                          Jam Operasional Layanan Kampus
+                        </span>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div className="space-y-1">
+                            <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                              <span>🇮🇩</span>
+                              <span>Bahasa Indonesia (ID) *</span>
+                            </label>
+                            <input
+                              type="text"
+                              value={settings.jam_operasional}
+                              onChange={(e) => setSettings({ ...settings, jam_operasional: e.target.value })}
+                              placeholder="Senin - Sabtu: 08.00 - 15.00 WIB"
+                              className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:border-[#0d3830]"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                              <span>🇬🇧</span>
+                              <span>English Translation (EN)</span>
+                            </label>
+                            <input
+                              type="text"
+                              value={settings.jam_operasional_en || ""}
+                              onChange={(e) => setSettings({ ...settings, jam_operasional_en: e.target.value })}
+                              placeholder="Monday - Saturday: 08:00 AM - 03:00 PM"
+                              className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:border-[#0d3830]"
+                            />
+                          </div>
+                        </div>
                       </div>
 
-                      <div className="space-y-1.5">
-                        <label className="block text-xs font-bold text-slate-700">Email Resmi PMB *</label>
-                        <input
-                          type="email"
-                          value={settings.email_cs}
-                          onChange={(e) => setSettings({ ...settings, email_cs: e.target.value })}
-                          placeholder="pmb@staicisitubondo.ac.id"
-                          className="w-full p-3 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:border-[#0d3830]"
-                        />
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="block text-xs font-bold text-slate-700">Alamat Kampus *</label>
-                        <input
-                          type="text"
-                          value={settings.alamat_kampus}
-                          onChange={(e) => setSettings({ ...settings, alamat_kampus: e.target.value })}
-                          placeholder="Jl. Raya Panji No. 12, Situbondo, Jawa Timur"
-                          className="w-full p-3 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:border-[#0d3830]"
-                        />
+                      {/* Alamat Kampus Bilingual */}
+                      <div className="p-3.5 bg-white rounded-xl border border-slate-200 space-y-2">
+                        <span className="text-[11px] font-extrabold text-slate-800 uppercase tracking-wider block">
+                          Alamat Fisik Kampus
+                        </span>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div className="space-y-1">
+                            <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                              <span>🇮🇩</span>
+                              <span>Bahasa Indonesia (ID) *</span>
+                            </label>
+                            <input
+                              type="text"
+                              value={settings.alamat_kampus}
+                              onChange={(e) => setSettings({ ...settings, alamat_kampus: e.target.value })}
+                              placeholder="Jl. Raya Panji No. 12, Situbondo, Jawa Timur"
+                              className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:border-[#0d3830]"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                              <span>🇬🇧</span>
+                              <span>English Translation (EN)</span>
+                            </label>
+                            <input
+                              type="text"
+                              value={settings.alamat_kampus_en || ""}
+                              onChange={(e) => setSettings({ ...settings, alamat_kampus_en: e.target.value })}
+                              placeholder="Jl. Raya Panji No. 12, Situbondo, East Java"
+                              className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:border-[#0d3830]"
+                            />
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -7414,28 +7787,78 @@ export default function AdminCMSDashboardPage() {
                     </div>
                   </div>
 
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-700">Pertanyaan *</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Contoh: Kapan waktu pendaftaran dibuka?"
-                      value={faqForm.pertanyaan}
-                      onChange={(e) => setFaqForm({ ...faqForm, pertanyaan: e.target.value })}
-                      className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs focus:outline-none focus:border-[#0d3830]"
-                    />
-                  </div>
+                  <div className="space-y-4">
+                    {/* Pertanyaan Bilingual */}
+                    <div className="p-3.5 bg-slate-50/70 rounded-2xl border border-slate-200/80 space-y-2">
+                      <span className="text-xs font-black text-slate-800 uppercase tracking-wider block">
+                        Teks Pertanyaan FAQ
+                      </span>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                            <span>🇮🇩</span>
+                            <span>Bahasa Indonesia (ID) *</span>
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            placeholder="Contoh: Kapan waktu pendaftaran dibuka?"
+                            value={faqForm.pertanyaan}
+                            onChange={(e) => setFaqForm({ ...faqForm, pertanyaan: e.target.value })}
+                            className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:border-[#0d3830]"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                            <span>🇬🇧</span>
+                            <span>English Translation (EN)</span>
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="e.g. When is the admission period open?"
+                            value={faqForm.pertanyaan_en || ""}
+                            onChange={(e) => setFaqForm({ ...faqForm, pertanyaan_en: e.target.value })}
+                            className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:border-[#0d3830]"
+                          />
+                        </div>
+                      </div>
+                    </div>
 
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-700">Jawaban / Penjelasan Lengkap *</label>
-                    <textarea
-                      rows={5}
-                      required
-                      placeholder="Masukkan jawaban yang jelas dan mudah dipahami calon mahasiswa..."
-                      value={faqForm.jawaban}
-                      onChange={(e) => setFaqForm({ ...faqForm, jawaban: e.target.value })}
-                      className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs focus:outline-none focus:border-[#0d3830]"
-                    />
+                    {/* Jawaban Bilingual */}
+                    <div className="p-3.5 bg-slate-50/70 rounded-2xl border border-slate-200/80 space-y-2">
+                      <span className="text-xs font-black text-slate-800 uppercase tracking-wider block">
+                        Jawaban / Penjelasan Lengkap FAQ
+                      </span>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                            <span>🇮🇩</span>
+                            <span>Bahasa Indonesia (ID) *</span>
+                          </label>
+                          <textarea
+                            rows={4}
+                            required
+                            placeholder="Masukkan jawaban yang jelas dan mudah dipahami calon mahasiswa..."
+                            value={faqForm.jawaban}
+                            onChange={(e) => setFaqForm({ ...faqForm, jawaban: e.target.value })}
+                            className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:border-[#0d3830]"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                            <span>🇬🇧</span>
+                            <span>English Translation (EN)</span>
+                          </label>
+                          <textarea
+                            rows={4}
+                            placeholder="Provide a comprehensive and clear explanation in English..."
+                            value={faqForm.jawaban_en || ""}
+                            onChange={(e) => setFaqForm({ ...faqForm, jawaban_en: e.target.value })}
+                            className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:border-[#0d3830]"
+                          />
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="flex items-center gap-2 pt-1">
@@ -7476,7 +7899,7 @@ export default function AdminCMSDashboardPage() {
           {isDetailOpen && selectedPendaftar && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/60 backdrop-blur-xs animate-fadeIn">
               <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[92vh] overflow-y-auto shadow-2xl border border-slate-200 p-6 sm:p-8 space-y-6 animate-scaleUp">
-                
+
                 {/* Header Modal */}
                 <div className="flex items-start justify-between gap-4 border-b border-slate-100 pb-4">
                   <div className="flex items-center gap-3">
@@ -7727,18 +8150,17 @@ export default function AdminCMSDashboardPage() {
                             <strong className="text-slate-900 font-bold text-sm">
                               Transfer Rp {Number(pembayaran.jumlah).toLocaleString("id-ID")}
                             </strong>
-                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border whitespace-nowrap ${
-                              pembayaran.status === "diterima"
+                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border whitespace-nowrap ${pembayaran.status === "diterima"
                                 ? "bg-emerald-50 text-emerald-800 border-emerald-200"
                                 : pembayaran.status === "ditolak"
-                                ? "bg-amber-50 text-amber-800 border-amber-300"
-                                : "bg-blue-50 text-blue-800 border-blue-200"
-                            }`}>
+                                  ? "bg-amber-50 text-amber-800 border-amber-300"
+                                  : "bg-blue-50 text-blue-800 border-blue-200"
+                              }`}>
                               {pembayaran.status === "diterima"
                                 ? "Lunas & Sah"
                                 : pembayaran.status === "ditolak"
-                                ? "Perlu Revisi"
-                                : "Menunggu Verifikasi"}
+                                  ? "Perlu Revisi"
+                                  : "Menunggu Verifikasi"}
                             </span>
                           </div>
                           <p className="text-slate-600 text-[11px]">
@@ -7807,40 +8229,46 @@ export default function AdminCMSDashboardPage() {
                   const isBerkasComplete = validMap["kk"] && validMap["ktp"] && validMap["ijazah"] && validMap["foto"] && (!isKip || validMap["kip"]);
 
                   return (
-                    <div className="pt-4 border-t border-slate-100 space-y-1.5 text-xs">
-                      <span className="font-extrabold text-slate-900 block">Status Administrasi &amp; Berkas:</span>
+                    <div className="pt-4 border-t border-slate-100 space-y-2 text-xs">
+                      <span className="font-extrabold text-slate-900 block">Status Pendaftaran &amp; Administrasi:</span>
                       <div className="flex items-center gap-2">
-                        <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold border ${
-                          selectedPendaftar.status_pendaftaran === "berkas_diverifikasi"
-                            ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                            : selectedPendaftar.status_pendaftaran === "belum_lengkap" || selectedPendaftar.status_pendaftaran === "ditolak_perlu_perbaikan"
-                            ? "bg-rose-50 text-rose-800 border-rose-200"
-                            : "bg-blue-50 text-blue-800 border-blue-200"
-                        }`}>
-                          {selectedPendaftar.status_pendaftaran === "berkas_diverifikasi"
-                            ? "Berkas & Pembayaran Terverifikasi Sah"
-                            : selectedPendaftar.status_pendaftaran === "belum_lengkap" || selectedPendaftar.status_pendaftaran === "ditolak_perlu_perbaikan"
-                            ? "Perlu Revisi / Perbaikan Berkas"
-                            : isKip && isBerkasComplete
-                            ? "Berkas Terverifikasi Sah (Bebas Biaya KIP)"
-                            : isPayApproved && !isBerkasComplete
-                            ? "Pembayaran Sah — Menunggu Verifikasi Berkas"
-                            : isBerkasComplete && !isPayApproved
-                            ? "Berkas Sah — Menunggu Validasi Pembayaran"
-                            : "Menunggu Verifikasi Berkas & Pembayaran"}
-                        </span>
+                        {getStatusPendaftaranBadge(selectedPendaftar.status_pendaftaran)}
                       </div>
 
-                      {selectedPendaftar.status_pendaftaran === "berkas_diverifikasi" ? (
-                        <p className="text-[11px] text-slate-500">
-                          Seluruh berkas dan pembayaran calon mahasiswa ini telah sah. Silakan buka menu <strong>Seleksi &amp; Penerimaan</strong> pada sidebar untuk menentukan status kelolosan.
+                      {selectedPendaftar.status_pendaftaran === "lolos_seleksi" ? (
+                        <p className="text-[11px] text-emerald-800 bg-emerald-50/80 p-2.5 rounded-xl border border-emerald-200">
+                          Calon mahasiswa telah dinyatakan <strong>Lolos Seleksi (Diterima)</strong> pada program studi pilihan. Menunggu proses her-registrasi / daftar ulang.
+                        </p>
+                      ) : selectedPendaftar.status_pendaftaran === "daftar_ulang" ? (
+                        <p className="text-[11px] text-white bg-[#0d3830] p-2.5 rounded-xl border border-[#0d3830]">
+                          Calon mahasiswa telah menyelesaikan her-registrasi dan <strong>resmi menjadi Mahasiswa Baru</strong> STAI Cendekia Insani Situbondo.
+                        </p>
+                      ) : selectedPendaftar.status_pendaftaran === "mengikuti_ujian" ? (
+                        <p className="text-[11px] text-blue-800 bg-blue-50/80 p-2.5 rounded-xl border border-blue-200">
+                          Calon mahasiswa dijadwalkan mengikuti sesi <strong>tes / wawancara seleksi</strong>. Catatan dan jadwal seleksi tercantum pada pengumuman.
+                        </p>
+                      ) : selectedPendaftar.status_pendaftaran === "tidak_lolos" ? (
+                        <p className="text-[11px] text-rose-800 bg-rose-50/80 p-2.5 rounded-xl border border-rose-200">
+                          Calon mahasiswa dinyatakan <strong>tidak lolos</strong> pada seleksi periode ini.
+                        </p>
+                      ) : selectedPendaftar.status_pendaftaran === "kadaluarsa" ? (
+                        <p className="text-[11px] text-slate-600 bg-slate-100 p-2.5 rounded-xl border border-slate-200">
+                          Masa pendaftaran calon mahasiswa telah <strong>berakhir (kadaluarsa)</strong>.
+                        </p>
+                      ) : selectedPendaftar.status_pendaftaran === "berkas_diverifikasi" ? (
+                        <p className="text-[11px] text-emerald-700 bg-emerald-50/60 p-2.5 rounded-xl border border-emerald-200">
+                          Seluruh berkas dan pembayaran calon mahasiswa ini telah sah. Silakan buka menu <strong>Seleksi &amp; Kelulusan</strong> untuk menetapkan keputusan penerimaan.
+                        </p>
+                      ) : selectedPendaftar.status_pendaftaran === "belum_lengkap" || selectedPendaftar.status_pendaftaran === "ditolak_perlu_perbaikan" ? (
+                        <p className="text-[11px] text-rose-700 bg-rose-50/60 p-2.5 rounded-xl border border-rose-200">
+                          Terdapat berkas yang memerlukan <strong>revisi / perbaikan</strong> dari calon mahasiswa. Calon mahasiswa dapat memperbaiki berkas melalui portal.
                         </p>
                       ) : isKip ? (
-                        <p className="text-[11px] text-slate-500">
-                          Pendaftar jalur <strong>KIP-Kuliah bebas biaya pendaftaran</strong>. Pendaftar berstatus sah dan siap seleksi apabila <strong>seluruh berkas wajib valid</strong>.
+                        <p className="text-[11px] text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                          Pendaftar jalur <strong>KIP-Kuliah bebas biaya pendaftaran</strong>. Pendaftar berstatus sah dan siap seleksi apabila seluruh berkas wajib telah valid.
                         </p>
                       ) : (
-                        <p className="text-[11px] text-slate-500">
+                        <p className="text-[11px] text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
                           Calon mahasiswa akan berstatus sah dan siap seleksi apabila <strong>seluruh berkas wajib valid</strong> dan <strong>pembayaran telah disetujui</strong>.
                         </p>
                       )}
@@ -8079,13 +8507,12 @@ export default function AdminCMSDashboardPage() {
                             >
                               <div className="flex items-center gap-2 min-w-0">
                                 <span
-                                  className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                                    isDocValid
+                                  className={`w-2 h-2 rounded-full flex-shrink-0 ${isDocValid
                                       ? "bg-emerald-500"
                                       : isDocInvalid
-                                      ? "bg-rose-500"
-                                      : "bg-amber-500"
-                                  }`}
+                                        ? "bg-rose-500"
+                                        : "bg-amber-500"
+                                    }`}
                                 />
                                 <span className="font-bold text-slate-800 truncate">{b.jenis_dokumen}</span>
                                 <span className="text-[10px] text-slate-400 truncate hidden sm:inline max-w-[120px]">
@@ -8128,7 +8555,7 @@ export default function AdminCMSDashboardPage() {
                       <span className="text-[11px] text-slate-400">Pilih salah satu status</span>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
                       {/* 1. Lolos Seleksi */}
                       <button
                         type="button"
@@ -8138,11 +8565,10 @@ export default function AdminCMSDashboardPage() {
                             status: "lolos_seleksi",
                           });
                         }}
-                        className={`p-3.5 rounded-2xl border text-left transition flex flex-col justify-between cursor-pointer ${
-                          seleksiForm.status === "lolos_seleksi"
+                        className={`p-3.5 rounded-2xl border text-left transition flex flex-col justify-between cursor-pointer ${seleksiForm.status === "lolos_seleksi"
                             ? "bg-emerald-50 border-emerald-500 text-emerald-950 ring-2 ring-emerald-500/20 shadow-xs"
                             : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
-                        }`}
+                          }`}
                       >
                         <div className="flex items-center justify-between mb-1.5">
                           <span className="text-xs font-extrabold text-emerald-900 flex items-center gap-1.5">
@@ -8167,11 +8593,10 @@ export default function AdminCMSDashboardPage() {
                             status: "mengikuti_ujian",
                           });
                         }}
-                        className={`p-3.5 rounded-2xl border text-left transition flex flex-col justify-between cursor-pointer ${
-                          seleksiForm.status === "mengikuti_ujian"
+                        className={`p-3.5 rounded-2xl border text-left transition flex flex-col justify-between cursor-pointer ${seleksiForm.status === "mengikuti_ujian"
                             ? "bg-blue-50 border-blue-500 text-blue-950 ring-2 ring-blue-500/20 shadow-xs"
                             : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
-                        }`}
+                          }`}
                       >
                         <div className="flex items-center justify-between mb-1.5">
                           <span className="text-xs font-extrabold text-blue-900 flex items-center gap-1.5">
@@ -8187,7 +8612,35 @@ export default function AdminCMSDashboardPage() {
                         </p>
                       </button>
 
-                      {/* 3. Tidak Lolos */}
+                      {/* 3. Daftar Ulang (Mahasiswa Aktif) */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSeleksiForm({
+                            ...seleksiForm,
+                            status: "daftar_ulang",
+                          });
+                        }}
+                        className={`p-3.5 rounded-2xl border text-left transition flex flex-col justify-between cursor-pointer ${seleksiForm.status === "daftar_ulang"
+                            ? "bg-[#0d3830] border-[#0d3830] text-white ring-2 ring-emerald-500/30 shadow-xs"
+                            : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
+                          }`}
+                      >
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className={`text-xs font-extrabold flex items-center gap-1.5 ${seleksiForm.status === "daftar_ulang" ? "text-white" : "text-[#0d3830]"}`}>
+                            <CheckCircle2 className={`w-4 h-4 ${seleksiForm.status === "daftar_ulang" ? "text-emerald-400" : "text-emerald-700"}`} />
+                            Daftar Ulang
+                          </span>
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${seleksiForm.status === "daftar_ulang" ? "bg-emerald-800 text-emerald-100" : "bg-emerald-100 text-emerald-800"}`}>
+                            Mhs Aktif
+                          </span>
+                        </div>
+                        <p className={`text-[11px] leading-tight ${seleksiForm.status === "daftar_ulang" ? "text-emerald-200" : "text-slate-600"}`}>
+                          Telah menyelesaikan her-registrasi dan resmi menjadi Mahasiswa Baru.
+                        </p>
+                      </button>
+
+                      {/* 4. Tidak Lolos */}
                       <button
                         type="button"
                         onClick={() => {
@@ -8196,11 +8649,10 @@ export default function AdminCMSDashboardPage() {
                             status: "tidak_lolos",
                           });
                         }}
-                        className={`p-3.5 rounded-2xl border text-left transition flex flex-col justify-between cursor-pointer ${
-                          seleksiForm.status === "tidak_lolos"
+                        className={`p-3.5 rounded-2xl border text-left transition flex flex-col justify-between cursor-pointer ${seleksiForm.status === "tidak_lolos"
                             ? "bg-rose-50 border-rose-500 text-rose-950 ring-2 ring-rose-500/20 shadow-xs"
                             : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
-                        }`}
+                          }`}
                       >
                         <div className="flex items-center justify-between mb-1.5">
                           <span className="text-xs font-extrabold text-rose-900 flex items-center gap-1.5">
@@ -8239,6 +8691,19 @@ export default function AdminCMSDashboardPage() {
                           className="text-[10px] px-2 py-0.5 rounded bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 transition cursor-pointer"
                         >
                           Lolos
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setSeleksiForm({
+                              ...seleksiForm,
+                              catatan:
+                                "Selamat Datang Mahasiswa Baru! Berkas daftar ulang her-registrasi Anda telah sah dan diverifikasi. Anda resmi terdaftar sebagai Mahasiswa Baru STAI Cendekia Insani Situbondo.",
+                            })
+                          }
+                          className="text-[10px] px-2 py-0.5 rounded bg-[#0d3830] hover:bg-emerald-900 text-white transition cursor-pointer"
+                        >
+                          Daftar Ulang Sah
                         </button>
                         <button
                           type="button"
@@ -8514,28 +8979,58 @@ export default function AdminCMSDashboardPage() {
                 </div>
 
                 <form onSubmit={handleCreateGelombang} className="space-y-4">
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-700">Nama Gelombang *</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Contoh: Gelombang 1 Reguler"
-                      value={newGelombang.nama}
-                      onChange={(e) => setNewGelombang({ ...newGelombang, nama: e.target.value })}
-                      className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#0d3830]"
-                    />
+                  <div className="p-3.5 bg-slate-50/70 rounded-2xl border border-slate-200/80 space-y-2.5">
+                    <span className="text-xs font-black text-slate-800 uppercase tracking-wider block">
+                      Nama Gelombang Pendaftaran
+                    </span>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                          <span>🇮🇩</span>
+                          <span>Bahasa Indonesia (ID) *</span>
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="Contoh: Gelombang 1 Reguler"
+                          value={newGelombang.nama}
+                          onChange={(e) => setNewGelombang({ ...newGelombang, nama: e.target.value })}
+                          className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#0d3830]"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                          <span>🇬🇧</span>
+                          <span>English Translation (EN)</span>
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Wave 1 Regular Admission"
+                          value={newGelombang.nama_en || ""}
+                          onChange={(e) => setNewGelombang({ ...newGelombang, nama_en: e.target.value })}
+                          className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#0d3830]"
+                        />
+                      </div>
+                    </div>
                     <div className="flex items-center gap-1.5 pt-0.5 flex-wrap">
                       <span className="text-[10px] text-slate-400 font-medium">Preset:</span>
                       {["Gelombang 1 Reguler", "Gelombang 2 Reguler", "Gelombang 3 Reguler", "Gelombang Beasiswa KIP"].map((preset) => (
                         <button
                           key={preset}
                           type="button"
-                          onClick={() => setNewGelombang({ ...newGelombang, nama: preset })}
-                          className={`px-2 py-0.5 text-[10px] rounded-md border transition cursor-pointer ${
-                            newGelombang.nama === preset
+                          onClick={() => {
+                            const enMap: Record<string, string> = {
+                              "Gelombang 1 Reguler": "Wave 1 Regular",
+                              "Gelombang 2 Reguler": "Wave 2 Regular",
+                              "Gelombang 3 Reguler": "Wave 3 Regular",
+                              "Gelombang Beasiswa KIP": "KIP Scholarship Wave",
+                            };
+                            setNewGelombang({ ...newGelombang, nama: preset, nama_en: enMap[preset] || preset });
+                          }}
+                          className={`px-2 py-0.5 text-[10px] rounded-md border transition cursor-pointer ${newGelombang.nama === preset
                               ? "bg-emerald-100 text-[#0d3830] border-emerald-300 font-bold"
-                              : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
-                          }`}
+                              : "bg-white text-slate-600 border-slate-200 hover:bg-slate-100"
+                            }`}
                         >
                           {preset}
                         </button>
@@ -8565,11 +9060,10 @@ export default function AdminCMSDashboardPage() {
                             key={yr}
                             type="button"
                             onClick={() => setNewGelombang({ ...newGelombang, tahun_akademik: yr })}
-                            className={`px-1.5 py-0.5 text-[10px] rounded border transition cursor-pointer ${
-                              newGelombang.tahun_akademik === yr
+                            className={`px-1.5 py-0.5 text-[10px] rounded border transition cursor-pointer ${newGelombang.tahun_akademik === yr
                                 ? "bg-emerald-100 text-[#0d3830] border-emerald-300 font-bold"
                                 : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
-                            }`}
+                              }`}
                           >
                             {yr}
                           </button>
@@ -8682,28 +9176,58 @@ export default function AdminCMSDashboardPage() {
                 </div>
 
                 <form onSubmit={handleUpdateGelombang} className="space-y-4">
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-700">Nama Gelombang *</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Contoh: Gelombang 1 Reguler"
-                      value={editGelombang.nama}
-                      onChange={(e) => setEditGelombang({ ...editGelombang, nama: e.target.value })}
-                      className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#0d3830]"
-                    />
+                  <div className="p-3.5 bg-slate-50/70 rounded-2xl border border-slate-200/80 space-y-2.5">
+                    <span className="text-xs font-black text-slate-800 uppercase tracking-wider block">
+                      Nama Gelombang Pendaftaran
+                    </span>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                          <span>🇮🇩</span>
+                          <span>Bahasa Indonesia (ID) *</span>
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="Contoh: Gelombang 1 Reguler"
+                          value={editGelombang.nama}
+                          onChange={(e) => setEditGelombang({ ...editGelombang, nama: e.target.value })}
+                          className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#0d3830]"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                          <span>🇬🇧</span>
+                          <span>English Translation (EN)</span>
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Wave 1 Regular Admission"
+                          value={editGelombang.nama_en || ""}
+                          onChange={(e) => setEditGelombang({ ...editGelombang, nama_en: e.target.value })}
+                          className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#0d3830]"
+                        />
+                      </div>
+                    </div>
                     <div className="flex items-center gap-1.5 pt-0.5 flex-wrap">
                       <span className="text-[10px] text-slate-400 font-medium">Preset:</span>
                       {["Gelombang 1 Reguler", "Gelombang 2 Reguler", "Gelombang 3 Reguler", "Gelombang Beasiswa KIP"].map((preset) => (
                         <button
                           key={preset}
                           type="button"
-                          onClick={() => setEditGelombang({ ...editGelombang, nama: preset })}
-                          className={`px-2 py-0.5 text-[10px] rounded-md border transition cursor-pointer ${
-                            editGelombang.nama === preset
+                          onClick={() => {
+                            const enMap: Record<string, string> = {
+                              "Gelombang 1 Reguler": "Wave 1 Regular",
+                              "Gelombang 2 Reguler": "Wave 2 Regular",
+                              "Gelombang 3 Reguler": "Wave 3 Regular",
+                              "Gelombang Beasiswa KIP": "KIP Scholarship Wave",
+                            };
+                            setEditGelombang({ ...editGelombang, nama: preset, nama_en: enMap[preset] || preset });
+                          }}
+                          className={`px-2 py-0.5 text-[10px] rounded-md border transition cursor-pointer ${editGelombang.nama === preset
                               ? "bg-emerald-100 text-[#0d3830] border-emerald-300 font-bold"
-                              : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
-                          }`}
+                              : "bg-white text-slate-600 border-slate-200 hover:bg-slate-100"
+                            }`}
                         >
                           {preset}
                         </button>
@@ -8733,11 +9257,10 @@ export default function AdminCMSDashboardPage() {
                             key={yr}
                             type="button"
                             onClick={() => setEditGelombang({ ...editGelombang, tahun_akademik: yr })}
-                            className={`px-1.5 py-0.5 text-[10px] rounded border transition cursor-pointer ${
-                              editGelombang.tahun_akademik === yr
+                            className={`px-1.5 py-0.5 text-[10px] rounded border transition cursor-pointer ${editGelombang.tahun_akademik === yr
                                 ? "bg-emerald-100 text-[#0d3830] border-emerald-300 font-bold"
                                 : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
-                            }`}
+                              }`}
                           >
                             {yr}
                           </button>
@@ -8875,22 +9398,20 @@ export default function AdminCMSDashboardPage() {
                   <button
                     type="button"
                     onClick={() => setProdiModalTab("dasar")}
-                    className={`px-3 py-2 font-bold rounded-xl transition whitespace-nowrap cursor-pointer ${
-                      prodiModalTab === "dasar"
+                    className={`px-3 py-2 font-bold rounded-xl transition whitespace-nowrap cursor-pointer ${prodiModalTab === "dasar"
                         ? "bg-[#0d3830] text-white shadow-xs"
                         : "text-slate-600 hover:bg-slate-100"
-                    }`}
+                      }`}
                   >
                     1. Identitas &amp; Info Dasar
                   </button>
                   <button
                     type="button"
                     onClick={() => setProdiModalTab("profil")}
-                    className={`px-3 py-2 font-bold rounded-xl transition whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
-                      prodiModalTab === "profil"
+                    className={`px-3 py-2 font-bold rounded-xl transition whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${prodiModalTab === "profil"
                         ? "bg-[#0d3830] text-white shadow-xs"
                         : "text-slate-600 hover:bg-slate-100"
-                    }`}
+                      }`}
                   >
                     <span>2. Deskripsi &amp; Profil</span>
                     <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-200 text-slate-800 font-mono">
@@ -8900,11 +9421,10 @@ export default function AdminCMSDashboardPage() {
                   <button
                     type="button"
                     onClick={() => setProdiModalTab("capaian")}
-                    className={`px-3 py-2 font-bold rounded-xl transition whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
-                      prodiModalTab === "capaian"
+                    className={`px-3 py-2 font-bold rounded-xl transition whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${prodiModalTab === "capaian"
                         ? "bg-[#0d3830] text-white shadow-xs"
                         : "text-slate-600 hover:bg-slate-100"
-                    }`}
+                      }`}
                   >
                     <span>3. Capaian &amp; Keunggulan</span>
                     <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-200 text-slate-800 font-mono">
@@ -8914,11 +9434,10 @@ export default function AdminCMSDashboardPage() {
                   <button
                     type="button"
                     onClick={() => setProdiModalTab("gelar")}
-                    className={`px-3 py-2 font-bold rounded-xl transition whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
-                      prodiModalTab === "gelar"
+                    className={`px-3 py-2 font-bold rounded-xl transition whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${prodiModalTab === "gelar"
                         ? "bg-[#0d3830] text-white shadow-xs"
                         : "text-slate-600 hover:bg-slate-100"
-                    }`}
+                      }`}
                   >
                     <span>4. Gelar Akademik</span>
                     {prodiForm.gelar_akademik && (
@@ -8960,16 +9479,39 @@ export default function AdminCMSDashboardPage() {
                         </div>
                       </div>
 
-                      <div className="space-y-1.5">
-                        <label className="block text-xs font-bold text-slate-700">Nama Lengkap Program Studi *</label>
-                        <input
-                          type="text"
-                          required
-                          placeholder="Contoh: Manajemen Pendidikan Islam"
-                          value={prodiForm.nama}
-                          onChange={(e) => setProdiForm({ ...prodiForm, nama: e.target.value })}
-                          className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#0d3830]"
-                        />
+                      <div className="p-3.5 bg-slate-50/70 rounded-2xl border border-slate-200/80 space-y-2">
+                        <span className="text-xs font-black text-slate-800 uppercase tracking-wider block">
+                          Nama Lengkap Program Studi
+                        </span>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div className="space-y-1">
+                            <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                              <span>🇮🇩</span>
+                              <span>Bahasa Indonesia (ID) *</span>
+                            </label>
+                            <input
+                              type="text"
+                              required
+                              placeholder="Contoh: Manajemen Pendidikan Islam"
+                              value={prodiForm.nama}
+                              onChange={(e) => setProdiForm({ ...prodiForm, nama: e.target.value })}
+                              className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#0d3830]"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                              <span>🇬🇧</span>
+                              <span>English Translation (EN)</span>
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="e.g. Islamic Education Management"
+                              value={prodiForm.nama_en || ""}
+                              onChange={(e) => setProdiForm({ ...prodiForm, nama_en: e.target.value })}
+                              className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#0d3830]"
+                            />
+                          </div>
+                        </div>
                       </div>
 
                       <div className="p-4 bg-emerald-50/60 rounded-xl border border-emerald-200 flex items-center justify-between">
@@ -8993,26 +9535,74 @@ export default function AdminCMSDashboardPage() {
                   {/* TAB 2: DESKRIPSI & PROFIL LULUSAN */}
                   {prodiModalTab === "profil" && (
                     <div className="space-y-4 animate-fadeIn">
-                      <div className="space-y-1.5">
-                        <label className="block text-xs font-bold text-slate-700">Deskripsi / Pengantar Program Studi</label>
-                        <textarea
-                          rows={3}
-                          placeholder="Contoh: Program studi unggulan yang membekali lulusan dengan kompetensi manajerial lembaga pendidikan berbasis nilai-nilai Islam..."
-                          value={prodiForm.deskripsi}
-                          onChange={(e) => setProdiForm({ ...prodiForm, deskripsi: e.target.value })}
-                          className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:border-[#0d3830]"
-                        />
+                      {/* Deskripsi Prodi Bilingual */}
+                      <div className="p-3.5 bg-slate-50/70 rounded-2xl border border-slate-200/80 space-y-2">
+                        <span className="text-xs font-black text-slate-800 uppercase tracking-wider block">
+                          Deskripsi / Pengantar Program Studi
+                        </span>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div className="space-y-1">
+                            <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                              <span>🇮🇩</span>
+                              <span>Bahasa Indonesia (ID)</span>
+                            </label>
+                            <textarea
+                              rows={3}
+                              placeholder="Contoh: Program studi unggulan yang membekali lulusan dengan kompetensi manajerial lembaga pendidikan berbasis nilai-nilai Islam..."
+                              value={prodiForm.deskripsi}
+                              onChange={(e) => setProdiForm({ ...prodiForm, deskripsi: e.target.value })}
+                              className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:border-[#0d3830]"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                              <span>🇬🇧</span>
+                              <span>English Translation (EN)</span>
+                            </label>
+                            <textarea
+                              rows={3}
+                              placeholder="e.g. Leading study program providing graduates with Islamic institution managerial competence..."
+                              value={prodiForm.deskripsi_en || ""}
+                              onChange={(e) => setProdiForm({ ...prodiForm, deskripsi_en: e.target.value })}
+                              className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:border-[#0d3830]"
+                            />
+                          </div>
+                        </div>
                       </div>
 
-                      <div className="space-y-1.5">
-                        <label className="block text-xs font-bold text-slate-700">Teks Pengantar Profil Lulusan &amp; Prospek Karir</label>
-                        <input
-                          type="text"
-                          placeholder="Contoh: Lulusan program studi disiapkan menjadi tenaga profesional yang adaptif dan siap berkarir di berbagai sektor:"
-                          value={prodiForm.profil_lulusan_intro}
-                          onChange={(e) => setProdiForm({ ...prodiForm, profil_lulusan_intro: e.target.value })}
-                          className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:border-[#0d3830]"
-                        />
+                      {/* Teks Pengantar Profil Lulusan Bilingual */}
+                      <div className="p-3.5 bg-slate-50/70 rounded-2xl border border-slate-200/80 space-y-2">
+                        <span className="text-xs font-black text-slate-800 uppercase tracking-wider block">
+                          Teks Pengantar Profil Lulusan &amp; Prospek Karir
+                        </span>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div className="space-y-1">
+                            <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                              <span>🇮🇩</span>
+                              <span>Bahasa Indonesia (ID)</span>
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="Contoh: Lulusan program studi disiapkan menjadi tenaga profesional..."
+                              value={prodiForm.profil_lulusan_intro}
+                              onChange={(e) => setProdiForm({ ...prodiForm, profil_lulusan_intro: e.target.value })}
+                              className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:border-[#0d3830]"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                              <span>🇬🇧</span>
+                              <span>English Translation (EN)</span>
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="e.g. Graduates are prepared as adaptive professionals ready for careers in..."
+                              value={prodiForm.profil_lulusan_intro_en || ""}
+                              onChange={(e) => setProdiForm({ ...prodiForm, profil_lulusan_intro_en: e.target.value })}
+                              className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:border-[#0d3830]"
+                            />
+                          </div>
+                        </div>
                       </div>
 
                       <div className="space-y-3 pt-2">
@@ -9046,20 +9636,58 @@ export default function AdminCMSDashboardPage() {
                                   </button>
                                 )}
                               </div>
-                              <input
-                                type="text"
-                                placeholder="Judul Karir (Contoh: Pengelola & Manajer Pendidikan Islam)"
-                                value={item.title}
-                                onChange={(e) => handleProfilItemChange(idx, "title", e.target.value)}
-                                className="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-semibold focus:outline-none focus:border-[#0d3830]"
-                              />
-                              <textarea
-                                rows={2}
-                                placeholder="Uraian prospek karir dan keunggulan peran..."
-                                value={item.desc}
-                                onChange={(e) => handleProfilItemChange(idx, "desc", e.target.value)}
-                                className="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-normal focus:outline-none focus:border-[#0d3830]"
-                              />
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                <div className="space-y-0.5">
+                                  <label className="text-[10px] font-bold text-slate-500 flex items-center gap-1">
+                                    <span>🇮🇩</span><span>Judul Karir (ID)</span>
+                                  </label>
+                                  <input
+                                    type="text"
+                                    placeholder="Judul Karir (Contoh: Pengelola Pendidikan)"
+                                    value={item.title}
+                                    onChange={(e) => handleProfilItemChange(idx, "title", e.target.value)}
+                                    className="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-semibold focus:outline-none focus:border-[#0d3830]"
+                                  />
+                                </div>
+                                <div className="space-y-0.5">
+                                  <label className="text-[10px] font-bold text-slate-500 flex items-center gap-1">
+                                    <span>🇬🇧</span><span>Career Title (EN)</span>
+                                  </label>
+                                  <input
+                                    type="text"
+                                    placeholder="Career Title (e.g. Education Manager)"
+                                    value={item.title_en || ""}
+                                    onChange={(e) => handleProfilItemChange(idx, "title_en", e.target.value)}
+                                    className="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-semibold focus:outline-none focus:border-[#0d3830]"
+                                  />
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                <div className="space-y-0.5">
+                                  <label className="text-[10px] font-bold text-slate-500 flex items-center gap-1">
+                                    <span>🇮🇩</span><span>Deskripsi Peran (ID)</span>
+                                  </label>
+                                  <textarea
+                                    rows={2}
+                                    placeholder="Uraian prospek karir dan keunggulan peran..."
+                                    value={item.desc}
+                                    onChange={(e) => handleProfilItemChange(idx, "desc", e.target.value)}
+                                    className="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-normal focus:outline-none focus:border-[#0d3830]"
+                                  />
+                                </div>
+                                <div className="space-y-0.5">
+                                  <label className="text-[10px] font-bold text-slate-500 flex items-center gap-1">
+                                    <span>🇬🇧</span><span>Role Description (EN)</span>
+                                  </label>
+                                  <textarea
+                                    rows={2}
+                                    placeholder="Career prospects and role competencies in English..."
+                                    value={item.desc_en || ""}
+                                    onChange={(e) => handleProfilItemChange(idx, "desc_en", e.target.value)}
+                                    className="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-normal focus:outline-none focus:border-[#0d3830]"
+                                  />
+                                </div>
+                              </div>
                             </div>
                           ))}
                         </div>
@@ -9105,20 +9733,58 @@ export default function AdminCMSDashboardPage() {
                                 </button>
                               )}
                             </div>
-                            <input
-                              type="text"
-                              placeholder="Judul Capaian (Contoh: Kompetensi Manajerial Modern Berbasis Riset)"
-                              value={item.title}
-                              onChange={(e) => handleCapaianItemChange(idx, "title", e.target.value)}
-                              className="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-semibold focus:outline-none focus:border-[#0d3830]"
-                            />
-                            <textarea
-                              rows={2}
-                              placeholder="Deskripsi kompetensi yang dikuasai mahasiswa setelah menyelesaikan studi..."
-                              value={item.desc}
-                              onChange={(e) => handleCapaianItemChange(idx, "desc", e.target.value)}
-                              className="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-normal focus:outline-none focus:border-[#0d3830]"
-                            />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                              <div className="space-y-0.5">
+                                <label className="text-[10px] font-bold text-slate-500 flex items-center gap-1">
+                                  <span>🇮🇩</span><span>Judul Capaian (ID)</span>
+                                </label>
+                                <input
+                                  type="text"
+                                  placeholder="Judul Capaian (Contoh: Kompetensi Manajerial)"
+                                  value={item.title}
+                                  onChange={(e) => handleCapaianItemChange(idx, "title", e.target.value)}
+                                  className="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-semibold focus:outline-none focus:border-[#0d3830]"
+                                />
+                              </div>
+                              <div className="space-y-0.5">
+                                <label className="text-[10px] font-bold text-slate-500 flex items-center gap-1">
+                                  <span>🇬🇧</span><span>Learning Outcome Title (EN)</span>
+                                </label>
+                                <input
+                                  type="text"
+                                  placeholder="Learning Outcome Title (e.g. Managerial Competence)"
+                                  value={item.title_en || ""}
+                                  onChange={(e) => handleCapaianItemChange(idx, "title_en", e.target.value)}
+                                  className="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-semibold focus:outline-none focus:border-[#0d3830]"
+                                />
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                              <div className="space-y-0.5">
+                                <label className="text-[10px] font-bold text-slate-500 flex items-center gap-1">
+                                  <span>🇮🇩</span><span>Deskripsi Kompetensi (ID)</span>
+                                </label>
+                                <textarea
+                                  rows={2}
+                                  placeholder="Deskripsi kompetensi yang dikuasai mahasiswa..."
+                                  value={item.desc}
+                                  onChange={(e) => handleCapaianItemChange(idx, "desc", e.target.value)}
+                                  className="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-normal focus:outline-none focus:border-[#0d3830]"
+                                />
+                              </div>
+                              <div className="space-y-0.5">
+                                <label className="text-[10px] font-bold text-slate-500 flex items-center gap-1">
+                                  <span>🇬🇧</span><span>Competency Description (EN)</span>
+                                </label>
+                                <textarea
+                                  rows={2}
+                                  placeholder="Mastered competency description in English..."
+                                  value={item.desc_en || ""}
+                                  onChange={(e) => handleCapaianItemChange(idx, "desc_en", e.target.value)}
+                                  className="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-normal focus:outline-none focus:border-[#0d3830]"
+                                />
+                              </div>
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -9138,17 +9804,38 @@ export default function AdminCMSDashboardPage() {
                       </div>
 
                       <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
-                        <label className="block text-xs font-bold text-slate-700">
-                          Penulisan Gelar Akademik Resmi *
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          placeholder="Contoh: Sarjana Pendidikan (S.Pd.) / Sarjana Hukum (S.H.)"
-                          value={prodiForm.gelar_akademik}
-                          onChange={(e) => setProdiForm({ ...prodiForm, gelar_akademik: e.target.value })}
-                          className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-bold focus:outline-none focus:border-[#0d3830]"
-                        />
+                        <span className="text-xs font-black text-slate-800 uppercase tracking-wider block">
+                          Penulisan Gelar Akademik Resmi
+                        </span>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div className="space-y-1">
+                            <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                              <span>🇮🇩</span>
+                              <span>Bahasa Indonesia (ID) *</span>
+                            </label>
+                            <input
+                              type="text"
+                              required
+                              placeholder="Contoh: Sarjana Pendidikan (S.Pd.) / Sarjana Hukum (S.H.)"
+                              value={prodiForm.gelar_akademik}
+                              onChange={(e) => setProdiForm({ ...prodiForm, gelar_akademik: e.target.value })}
+                              className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-bold focus:outline-none focus:border-[#0d3830]"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                              <span>🇬🇧</span>
+                              <span>English Translation (EN)</span>
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="e.g. Bachelor of Education (S.Pd.) / Bachelor of Law (S.H.)"
+                              value={prodiForm.gelar_akademik_en || ""}
+                              onChange={(e) => setProdiForm({ ...prodiForm, gelar_akademik_en: e.target.value })}
+                              className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-bold focus:outline-none focus:border-[#0d3830]"
+                            />
+                          </div>
+                        </div>
 
                         {/* Quick Presets */}
                         <div className="space-y-1.5 pt-1">
@@ -9168,11 +9855,10 @@ export default function AdminCMSDashboardPage() {
                                 key={preset}
                                 type="button"
                                 onClick={() => setProdiForm({ ...prodiForm, gelar_akademik: preset })}
-                                className={`px-2.5 py-1 text-[11px] font-medium rounded-lg border transition cursor-pointer ${
-                                  prodiForm.gelar_akademik === preset
+                                className={`px-2.5 py-1 text-[11px] font-medium rounded-lg border transition cursor-pointer ${prodiForm.gelar_akademik === preset
                                     ? "bg-emerald-100 text-emerald-900 border-emerald-300 font-bold"
                                     : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100"
-                                }`}
+                                  }`}
                               >
                                 {preset}
                               </button>
@@ -9237,8 +9923,8 @@ export default function AdminCMSDashboardPage() {
                           {isProcessing
                             ? "Menyimpan..."
                             : isEditProdiOpen
-                            ? "Perbarui Program Studi"
-                            : "Simpan Program Studi Baru"}
+                              ? "Perbarui Program Studi"
+                              : "Simpan Program Studi Baru"}
                         </span>
                       </button>
                     </div>
@@ -9418,53 +10104,123 @@ export default function AdminCMSDashboardPage() {
                 </div>
 
                 <form onSubmit={handleSaveJalur} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <label className="block text-xs font-bold text-slate-700">Kode Jalur (Singkat) *</label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="Contoh: REGULER / KIP / PRESTASI"
-                        value={jalurForm.kode}
-                        onChange={(e) => setJalurForm({ ...jalurForm, kode: e.target.value.toUpperCase() })}
-                        className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-mono font-bold focus:outline-none focus:border-[#0d3830]"
-                      />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <label className="block text-xs font-bold text-slate-700">Label Badge / Tag</label>
-                      <input
-                        type="text"
-                        placeholder="Contoh: Jalur Mandiri / Beasiswa KIP"
-                        value={jalurForm.badge_text}
-                        onChange={(e) => setJalurForm({ ...jalurForm, badge_text: e.target.value })}
-                        className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs focus:outline-none focus:border-[#0d3830]"
-                      />
-                    </div>
-                  </div>
-
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-700">Nama Jalur Pendaftaran *</label>
+                    <label className="block text-xs font-bold text-slate-700">Kode Jalur (Singkat) *</label>
                     <input
                       type="text"
                       required
-                      placeholder="Contoh: Jalur Masuk Reguler (Mandiri)"
-                      value={jalurForm.nama}
-                      onChange={(e) => setJalurForm({ ...jalurForm, nama: e.target.value })}
-                      className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs focus:outline-none focus:border-[#0d3830]"
+                      placeholder="Contoh: REGULER / KIP / PRESTASI"
+                      value={jalurForm.kode}
+                      onChange={(e) => setJalurForm({ ...jalurForm, kode: e.target.value.toUpperCase() })}
+                      className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-mono font-bold focus:outline-none focus:border-[#0d3830]"
                     />
                   </div>
 
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-700">Deskripsi Jalur *</label>
-                    <textarea
-                      rows={3}
-                      required
-                      placeholder="Jelaskan sasaran pendaftar, kriteria umum, dan keunggulan jalur seleksi ini..."
-                      value={jalurForm.deskripsi}
-                      onChange={(e) => setJalurForm({ ...jalurForm, deskripsi: e.target.value })}
-                      className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs focus:outline-none focus:border-[#0d3830]"
-                    />
+                  {/* Nama Jalur Bilingual */}
+                  <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-200/80 space-y-2">
+                    <span className="text-[11px] font-extrabold text-slate-800 uppercase tracking-wider block">
+                      Nama Jalur Pendaftaran
+                    </span>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                          <span>🇮🇩</span>
+                          <span>Bahasa Indonesia (ID) *</span>
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="Contoh: Jalur Masuk Reguler (Mandiri)"
+                          value={jalurForm.nama}
+                          onChange={(e) => setJalurForm({ ...jalurForm, nama: e.target.value })}
+                          className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs focus:outline-none focus:border-[#0d3830]"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                          <span>🇬🇧</span>
+                          <span>English Translation (EN)</span>
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Regular Admission Track"
+                          value={jalurForm.nama_en || ""}
+                          onChange={(e) => setJalurForm({ ...jalurForm, nama_en: e.target.value })}
+                          className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs focus:outline-none focus:border-[#0d3830]"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Badge Text Bilingual */}
+                  <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-200/80 space-y-2">
+                    <span className="text-[11px] font-extrabold text-slate-800 uppercase tracking-wider block">
+                      Label Badge / Tag Jalur
+                    </span>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                          <span>🇮🇩</span>
+                          <span>Bahasa Indonesia (ID)</span>
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Contoh: Jalur Mandiri / Beasiswa KIP"
+                          value={jalurForm.badge_text}
+                          onChange={(e) => setJalurForm({ ...jalurForm, badge_text: e.target.value })}
+                          className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs focus:outline-none focus:border-[#0d3830]"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                          <span>🇬🇧</span>
+                          <span>English Translation (EN)</span>
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Regular Track / KIP Scholarship"
+                          value={jalurForm.badge_text_en || ""}
+                          onChange={(e) => setJalurForm({ ...jalurForm, badge_text_en: e.target.value })}
+                          className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs focus:outline-none focus:border-[#0d3830]"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Deskripsi Jalur Bilingual */}
+                  <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-200/80 space-y-2">
+                    <span className="text-[11px] font-extrabold text-slate-800 uppercase tracking-wider block">
+                      Deskripsi &amp; Ketentuan Jalur
+                    </span>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                          <span>🇮🇩</span>
+                          <span>Bahasa Indonesia (ID) *</span>
+                        </label>
+                        <textarea
+                          rows={3}
+                          required
+                          placeholder="Jelaskan sasaran pendaftar, kriteria umum, dan keunggulan jalur seleksi ini..."
+                          value={jalurForm.deskripsi}
+                          onChange={(e) => setJalurForm({ ...jalurForm, deskripsi: e.target.value })}
+                          className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs focus:outline-none focus:border-[#0d3830]"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                          <span>🇬🇧</span>
+                          <span>English Translation (EN)</span>
+                        </label>
+                        <textarea
+                          rows={3}
+                          placeholder="Detail target applicants, eligibility criteria, and perks..."
+                          value={jalurForm.deskripsi_en || ""}
+                          onChange={(e) => setJalurForm({ ...jalurForm, deskripsi_en: e.target.value })}
+                          className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs focus:outline-none focus:border-[#0d3830]"
+                        />
+                      </div>
+                    </div>
                   </div>
 
                   <div className="space-y-1.5">
@@ -9566,16 +10322,39 @@ export default function AdminCMSDashboardPage() {
                 </div>
 
                 <form onSubmit={handleSavePersyaratan} className="space-y-4">
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-700">Nama Dokumen Berkas *</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Contoh: Kartu Keluarga (KK) Asli / Ijazah Legalitas"
-                      value={persyaratanForm.nama_dokumen}
-                      onChange={(e) => setPersyaratanForm({ ...persyaratanForm, nama_dokumen: e.target.value })}
-                      className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs focus:outline-none focus:border-[#0d3830]"
-                    />
+                  <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-200/80 space-y-2">
+                    <span className="text-[11px] font-extrabold text-slate-800 uppercase tracking-wider block">
+                      Nama Dokumen Berkas
+                    </span>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                          <span>🇮🇩</span>
+                          <span>Bahasa Indonesia (ID) *</span>
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="Contoh: Kartu Keluarga (KK) Asli"
+                          value={persyaratanForm.nama_dokumen}
+                          onChange={(e) => setPersyaratanForm({ ...persyaratanForm, nama_dokumen: e.target.value })}
+                          className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs focus:outline-none focus:border-[#0d3830]"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                          <span>🇬🇧</span>
+                          <span>English Translation (EN)</span>
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Original Family Card (KK)"
+                          value={persyaratanForm.nama_dokumen_en || ""}
+                          onChange={(e) => setPersyaratanForm({ ...persyaratanForm, nama_dokumen_en: e.target.value })}
+                          className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs focus:outline-none focus:border-[#0d3830]"
+                        />
+                      </div>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
@@ -9603,15 +10382,38 @@ export default function AdminCMSDashboardPage() {
                     </div>
                   </div>
 
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-700">Keterangan / Petunjuk Unggah</label>
-                    <textarea
-                      rows={2}
-                      placeholder="Contoh: Scan dokumen asli atau fotokopi legalisir basah yang terbaca jelas."
-                      value={persyaratanForm.deskripsi}
-                      onChange={(e) => setPersyaratanForm({ ...persyaratanForm, deskripsi: e.target.value })}
-                      className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs focus:outline-none focus:border-[#0d3830]"
-                    />
+                  <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-200/80 space-y-2">
+                    <span className="text-[11px] font-extrabold text-slate-800 uppercase tracking-wider block">
+                      Keterangan / Petunjuk Unggah
+                    </span>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                          <span>🇮🇩</span>
+                          <span>Bahasa Indonesia (ID)</span>
+                        </label>
+                        <textarea
+                          rows={2}
+                          placeholder="Contoh: Scan dokumen asli atau fotokopi legalisir basah yang terbaca jelas."
+                          value={persyaratanForm.deskripsi}
+                          onChange={(e) => setPersyaratanForm({ ...persyaratanForm, deskripsi: e.target.value })}
+                          className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs focus:outline-none focus:border-[#0d3830]"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                          <span>🇬🇧</span>
+                          <span>English Translation (EN)</span>
+                        </label>
+                        <textarea
+                          rows={2}
+                          placeholder="e.g. Clear scan of original document or legalized copy."
+                          value={persyaratanForm.deskripsi_en || ""}
+                          onChange={(e) => setPersyaratanForm({ ...persyaratanForm, deskripsi_en: e.target.value })}
+                          className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs focus:outline-none focus:border-[#0d3830]"
+                        />
+                      </div>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
@@ -9714,16 +10516,39 @@ export default function AdminCMSDashboardPage() {
                 </div>
 
                 <form onSubmit={handleSaveHotline} className="space-y-4">
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-700">Nama Layanan / Unit *</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Contoh: Panitia PMB Utama / Helpdesk Beasiswa KIP"
-                      value={hotlineForm.nama_layanan}
-                      onChange={(e) => setHotlineForm({ ...hotlineForm, nama_layanan: e.target.value })}
-                      className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs focus:outline-none focus:border-[#0d3830]"
-                    />
+                  <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-200/80 space-y-2">
+                    <span className="text-[11px] font-extrabold text-slate-800 uppercase tracking-wider block">
+                      Nama Layanan / Unit Helpdesk
+                    </span>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                          <span>🇮🇩</span>
+                          <span>Bahasa Indonesia (ID) *</span>
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="Contoh: Panitia PMB Utama / Helpdesk Beasiswa KIP"
+                          value={hotlineForm.nama_layanan}
+                          onChange={(e) => setHotlineForm({ ...hotlineForm, nama_layanan: e.target.value })}
+                          className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs focus:outline-none focus:border-[#0d3830]"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                          <span>🇬🇧</span>
+                          <span>English Translation (EN)</span>
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Main PMB Helpdesk / KIP Scholarship CS"
+                          value={hotlineForm.nama_layanan_en || ""}
+                          onChange={(e) => setHotlineForm({ ...hotlineForm, nama_layanan_en: e.target.value })}
+                          className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs focus:outline-none focus:border-[#0d3830]"
+                        />
+                      </div>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
@@ -9778,15 +10603,38 @@ export default function AdminCMSDashboardPage() {
                     </div>
                   </div>
 
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-700">Jam Layanan Operasional</label>
-                    <input
-                      type="text"
-                      placeholder="Contoh: Senin - Sabtu: 08.00 - 16.00 WIB"
-                      value={hotlineForm.jam_layanan}
-                      onChange={(e) => setHotlineForm({ ...hotlineForm, jam_layanan: e.target.value })}
-                      className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs focus:outline-none focus:border-[#0d3830]"
-                    />
+                  <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-200/80 space-y-2">
+                    <span className="text-[11px] font-extrabold text-slate-800 uppercase tracking-wider block">
+                      Jam Layanan Operasional
+                    </span>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                          <span>🇮🇩</span>
+                          <span>Bahasa Indonesia (ID)</span>
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Contoh: Senin - Sabtu: 08.00 - 16.00 WIB"
+                          value={hotlineForm.jam_layanan}
+                          onChange={(e) => setHotlineForm({ ...hotlineForm, jam_layanan: e.target.value })}
+                          className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs focus:outline-none focus:border-[#0d3830]"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                          <span>🇬🇧</span>
+                          <span>English Translation (EN)</span>
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Monday - Saturday: 08.00 AM - 04.00 PM"
+                          value={hotlineForm.jam_layanan_en || ""}
+                          onChange={(e) => setHotlineForm({ ...hotlineForm, jam_layanan_en: e.target.value })}
+                          className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs focus:outline-none focus:border-[#0d3830]"
+                        />
+                      </div>
+                    </div>
                   </div>
 
                   <div className="flex items-center gap-2 pt-1 border-t border-slate-100">
@@ -10104,11 +10952,10 @@ export default function AdminCMSDashboardPage() {
                         disabled={editingMenu.key === "rbac"}
                         value={editingMenu.key}
                         onChange={(e) => setEditingMenu({ ...editingMenu, key: e.target.value, url: e.target.value })}
-                        className={`w-full p-2.5 bg-white border rounded-xl text-xs font-mono font-bold focus:outline-none ${
-                          editingMenu.key === "rbac"
+                        className={`w-full p-2.5 bg-white border rounded-xl text-xs font-mono font-bold focus:outline-none ${editingMenu.key === "rbac"
                             ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed"
                             : "border-slate-300 focus:border-[#0d3830]"
-                        }`}
+                          }`}
                       />
                       {editingMenu.key === "rbac" && (
                         <p className="text-[10px] text-amber-700 font-medium">Key menu sistem dilindungi.</p>
@@ -10185,11 +11032,10 @@ export default function AdminCMSDashboardPage() {
                           key={cat}
                           type="button"
                           onClick={() => setEditMenuIconCategoryFilter(cat)}
-                          className={`px-2 py-0.5 rounded-md text-[10px] font-bold whitespace-nowrap transition cursor-pointer ${
-                            editMenuIconCategoryFilter === cat
+                          className={`px-2 py-0.5 rounded-md text-[10px] font-bold whitespace-nowrap transition cursor-pointer ${editMenuIconCategoryFilter === cat
                               ? "bg-[#0d3830] text-white"
                               : "bg-white hover:bg-slate-200 text-slate-600 border border-slate-200"
-                          }`}
+                            }`}
                         >
                           {cat}
                         </button>
@@ -10206,11 +11052,10 @@ export default function AdminCMSDashboardPage() {
                               key={item.name}
                               type="button"
                               onClick={() => setEditingMenu({ ...editingMenu, icon: item.name })}
-                              className={`p-1.5 rounded-lg text-left transition flex items-center gap-2 border cursor-pointer ${
-                                isSelected
+                              className={`p-1.5 rounded-lg text-left transition flex items-center gap-2 border cursor-pointer ${isSelected
                                   ? "bg-emerald-100/90 border-emerald-400 text-emerald-950 font-bold shadow-2xs"
                                   : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100 hover:border-slate-300"
-                              }`}
+                                }`}
                             >
                               <span className={isSelected ? "text-emerald-700" : "text-slate-500"}>
                                 {renderNavIcon(item.name)}

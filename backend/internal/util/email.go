@@ -31,11 +31,11 @@ func GenerateOTP() string {
 
 // SendVerificationOTPEmail sends a beautifully branded OTP verification email
 func SendVerificationOTPEmail(cfg *config.Config, toEmail, recipientName, otpCode string) error {
-	// If SMTP is not configured, run in simulation mode for seamless local development
-	if strings.TrimSpace(cfg.SMTPHost) == "" || strings.TrimSpace(cfg.SMTPUser) == "" {
+	// If SMTP is not configured or still uses placeholder password, run in simulation mode
+	if strings.TrimSpace(cfg.SMTPHost) == "" || strings.TrimSpace(cfg.SMTPUser) == "" || cfg.SMTPPass == "app_password_disini" || strings.TrimSpace(cfg.SMTPPass) == "" {
 		log.Printf("==================================================================")
-		log.Printf("[EMAIL SIMULATION] SMTP not configured. Development mode active.")
-		log.Printf("[EMAIL SIMULATION] To: %s (%s)", toEmail, recipientName)
+		log.Printf("[EMAIL SIMULATION] SMTP belum dikonfigurasi akun riil. Mode Dev Aktif.")
+		log.Printf("[EMAIL SIMULATION] Penerima: %s (%s)", toEmail, recipientName)
 		log.Printf("[EMAIL SIMULATION] KODE OTP VERIFIKASI PMB: >>> %s <<<", otpCode)
 		log.Printf("[EMAIL SIMULATION] Berlaku selama 15 Menit.")
 		log.Printf("==================================================================")
