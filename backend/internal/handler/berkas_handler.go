@@ -12,6 +12,7 @@ import (
 
 	"pmb-staici-backend/internal/config"
 	"pmb-staici-backend/internal/database"
+	"pmb-staici-backend/internal/crypto"
 	"pmb-staici-backend/internal/model"
 	"pmb-staici-backend/internal/response"
 
@@ -93,15 +94,22 @@ func (h *BerkasHandler) UploadBerkas(c *gin.Context) {
 	safeFileName := fmt.Sprintf("%d_%s_%s%s", pendaftar.ID, strings.ToLower(jenisDokumen), uuid.New().String()[:8], ext)
 	targetPath := filepath.Join(uploadDir, safeFileName)
 
-	out, err := os.Create(targetPath)
+	rawFileBytes, err := io.ReadAll(file)
 	if err != nil {
-		response.InternalServerError(c, fmt.Sprintf("Gagal menyimpan berkas ke disk: %v", err))
+		response.InternalServerError(c, "Gagal membaca konten berkas")
 		return
 	}
-	defer out.Close()
 
-	if _, err := io.Copy(out, file); err != nil {
-		response.InternalServerError(c, fmt.Sprintf("Gagal menyalin konten berkas: %v", err))
+	// Enkripsi seluruh byte berkas dengan AES-256-GCM sebelum disimpan ke disk
+	aad := []byte(fmt.Sprintf("pendaftar:%d:dokumen:%s", pendaftar.ID, strings.ToLower(jenisDokumen)))
+	encFileBytes, err := crypto.EncryptFile(rawFileBytes, aad)
+	if err != nil {
+		response.InternalServerError(c, fmt.Sprintf("Gagal mengenkripsi berkas: %v", err))
+		return
+	}
+
+	if err := os.WriteFile(targetPath, encFileBytes, 0600); err != nil {
+		response.InternalServerError(c, fmt.Sprintf("Gagal menyimpan berkas ke disk: %v", err))
 		return
 	}
 
@@ -176,6 +184,33 @@ func (h *BerkasHandler) DownloadBerkas(c *gin.Context) {
 		return
 	}
 
+	// Audit trail: catat akses admin ke berkas fisik pendaftar
+	if role != string(model.RoleCalonMahasiswa) {
+		RecordAdminLog(c, "Unduh Berkas Pendaftar", fmt.Sprintf("Admin mengunduh berkas %s (ID %d) milik pendaftar ID %d", berkas.JenisDokumen, berkas.ID, berkas.PendaftarID))
+	}
+
+	fileBytes, err := os.ReadFile(berkas.FilePath)
+	if err != nil {
+		response.InternalServerError(c, "Gagal membaca file fisik berkas")
+		return
+	}
+
+	c.Header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
+	c.Header("Pragma", "no-cache")
+
+	if crypto.IsEncryptedFile(fileBytes) {
+		aad := []byte(fmt.Sprintf("pendaftar:%d:dokumen:%s", berkas.PendaftarID, strings.ToLower(berkas.JenisDokumen)))
+		decBytes, err := crypto.DecryptFile(fileBytes, aad)
+		if err != nil {
+			response.InternalServerError(c, "Gagal mendekripsi berkas: verifikasi integritas data gagal")
+			return
+		}
+		c.Header("Content-Disposition", fmt.Sprintf("inline; filename=\"%s\"", berkas.FileName))
+		c.Data(http.StatusOK, berkas.MimeType, decBytes)
+		return
+	}
+
+	// Fallback transisi berkas lama sebelum migrasi
 	c.File(berkas.FilePath)
 }
 

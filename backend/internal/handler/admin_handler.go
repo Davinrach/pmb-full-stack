@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"pmb-staici-backend/internal/crypto"
 	"pmb-staici-backend/internal/database"
 	"pmb-staici-backend/internal/model"
 	"pmb-staici-backend/internal/response"
@@ -152,9 +153,10 @@ func (h *AdminHandler) ListPendaftar(c *gin.Context) {
 
 	if search != "" {
 		searchTerm := "%" + search + "%"
+		searchBlind := crypto.BlindIndex(search)
 		query = query.Joins("LEFT JOIN users ON users.id = pendaftars.user_id").
-			Where("users.nama_lengkap LIKE ? OR users.email LIKE ? OR users.nik LIKE ? OR pendaftars.nomor_pendaftaran LIKE ?",
-				searchTerm, searchTerm, searchTerm, searchTerm)
+			Where("users.nama_lengkap LIKE ? OR users.email LIKE ? OR users.nik_idx = ? OR pendaftars.nomor_pendaftaran LIKE ?",
+				searchTerm, searchTerm, searchBlind, searchTerm)
 	}
 
 	if jalur != "" {
@@ -213,6 +215,11 @@ func (h *AdminHandler) ListPendaftar(c *gin.Context) {
 	var pendaftars []model.Pendaftar
 	query.Order("pendaftars.id desc").Offset(offset).Limit(perPage).Find(&pendaftars)
 
+	// Masking NIK pada daftar pendaftar untuk perlindungan data pribadi
+	for i := range pendaftars {
+		pendaftars[i].User.NIK = crypto.MaskNIK(pendaftars[i].User.NIK)
+	}
+
 	totalPages := int((total + int64(perPage) - 1) / int64(perPage))
 
 	c.JSON(http.StatusOK, gin.H{
@@ -249,6 +256,7 @@ func (h *AdminHandler) GetDetailPendaftar(c *gin.Context) {
 		return
 	}
 
+	RecordAdminLog(c, "Akses Data Sensitif Pendaftar", fmt.Sprintf("Admin melihat data lengkap pendaftar ID %d (No: %s)", pendaftar.ID, pendaftar.DisplayNomorPendaftaran()))
 	response.Success(c, http.StatusOK, "Detail pendaftar berhasil diambil", pendaftar)
 }
 

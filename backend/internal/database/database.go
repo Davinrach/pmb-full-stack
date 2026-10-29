@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"pmb-staici-backend/internal/config"
+	"pmb-staici-backend/internal/crypto"
 	"pmb-staici-backend/internal/model"
 	"pmb-staici-backend/internal/util"
 
@@ -80,6 +81,8 @@ func InitDB(cfg *config.Config) (*gorm.DB, error) {
 
 	// Normalisasi nomor_pendaftaran kosong menjadi NULL agar tidak bentrok dengan UNIQUE index
 	db.Exec("UPDATE pendaftars SET nomor_pendaftaran = NULL WHERE nomor_pendaftaran = ''")
+	// Pastikan semua user memiliki UUID unik permanen untuk AAD kriptografi
+	db.Exec("UPDATE users SET uuid = UUID() WHERE uuid IS NULL OR uuid = ''")
 
 	// Seed Master Data Awal (Prodi, Gelombang, Admin, Settings, FAQ, Rekening, Jalur, TataCara, Hotline, Persyaratan, RBAC)
 	seedProgramStudi(db)
@@ -202,8 +205,9 @@ func seedAdminDefault(db *gorm.DB) {
 	hash, _ := util.HashPassword("adminpmb123")
 	
 	// Create user with NIK 'admin' for easy username login or update role to super_admin if exists
+	adminIdx := crypto.BlindIndex("admin")
 	var countAdminNIK int64
-	db.Model(&model.User{}).Where("nik = ?", "admin").Count(&countAdminNIK)
+	db.Model(&model.User{}).Where("email = ? OR nik_idx = ? OR nik = ?", "admin@staici.ac.id", adminIdx, "admin").Count(&countAdminNIK)
 	if countAdminNIK == 0 {
 		adminUser := model.User{
 			Email:           "admin@staici.ac.id",
@@ -217,7 +221,7 @@ func seedAdminDefault(db *gorm.DB) {
 		db.Create(&adminUser)
 		log.Println("✓ Akun default Super Admin dibuat: username (NIK): admin / password: adminpmb123")
 	} else {
-		db.Model(&model.User{}).Where("nik = ? OR email = ?", "admin", "admin@staici.ac.id").Updates(map[string]interface{}{
+		db.Model(&model.User{}).Where("email = ? OR nik_idx = ? OR nik = ?", "admin@staici.ac.id", adminIdx, "admin").Updates(map[string]interface{}{
 			"role":              model.RoleSuperAdmin,
 			"password_hash":     hash,
 			"is_email_verified": true,
@@ -226,8 +230,9 @@ func seedAdminDefault(db *gorm.DB) {
 	}
 
 	// Create user with NIK 'adminpmb' for Panitia PMB (Standard Admin) or update role to admin_pmb if exists
+	panitiaIdx := crypto.BlindIndex("adminpmb")
 	var countPanitiaNIK int64
-	db.Model(&model.User{}).Where("nik = ?", "adminpmb").Count(&countPanitiaNIK)
+	db.Model(&model.User{}).Where("email = ? OR nik_idx = ? OR nik = ?", "panitia@staici.ac.id", panitiaIdx, "adminpmb").Count(&countPanitiaNIK)
 	if countPanitiaNIK == 0 {
 		panitiaUser := model.User{
 			Email:           "panitia@staici.ac.id",
@@ -241,7 +246,7 @@ func seedAdminDefault(db *gorm.DB) {
 		db.Create(&panitiaUser)
 		log.Println("✓ Akun default Panitia PMB dibuat: username (NIK): adminpmb / password: adminpmb123")
 	} else {
-		db.Model(&model.User{}).Where("nik = ? OR email = ?", "adminpmb", "panitia@staici.ac.id").Updates(map[string]interface{}{
+		db.Model(&model.User{}).Where("email = ? OR nik_idx = ? OR nik = ?", "panitia@staici.ac.id", panitiaIdx, "adminpmb").Updates(map[string]interface{}{
 			"role":              model.RoleAdminPMB,
 			"password_hash":     hash,
 			"is_email_verified": true,
@@ -820,7 +825,8 @@ func seedBasicPendaftar(db *gorm.DB, uploadDir string) {
 
 	for i, app := range basicList {
 		var user model.User
-		if err := db.Where("nik = ?", app.NIK).First(&user).Error; err != nil {
+		appIdx := crypto.BlindIndex(app.NIK)
+		if err := db.Where("email = ? OR nik_idx = ? OR nik = ?", app.Email, appIdx, app.NIK).First(&user).Error; err != nil {
 			user = model.User{
 				Email:           app.Email,
 				PasswordHash:    passHash,

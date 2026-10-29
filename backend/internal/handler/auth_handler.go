@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"pmb-staici-backend/internal/config"
+	"pmb-staici-backend/internal/crypto"
 	"pmb-staici-backend/internal/database"
 	"pmb-staici-backend/internal/middleware"
 	"pmb-staici-backend/internal/model"
@@ -87,9 +88,10 @@ func (h *AuthHandler) Register(c *gin.Context) {
 
 	cleanEmail := strings.ToLower(strings.TrimSpace(req.Email))
 
-	// Check if Email or NIK already exists
+	// Check if Email or NIK already exists (menggunakan Blind Index untuk NIK)
+	nikIdx := crypto.BlindIndex(cleanNIK)
 	var existingUser model.User
-	if err := database.DB.Where("email = ? OR nik = ?", cleanEmail, cleanNIK).First(&existingUser).Error; err == nil {
+	if err := database.DB.Where("email = ? OR nik_idx = ? OR nik = ?", cleanEmail, nikIdx, cleanNIK).First(&existingUser).Error; err == nil {
 		if existingUser.Email == cleanEmail {
 			response.BadRequest(c, "Alamat email ini sudah terdaftar. Silakan login atau gunakan email lain.", "Email already exists")
 			return
@@ -320,8 +322,10 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	identifier := strings.TrimSpace(req.Identifier)
 	var user model.User
 
-	// Find by email or NIK
-	err := database.DB.Where("email = ? OR nik = ?", strings.ToLower(identifier), identifier).First(&user).Error
+	// Find by email or NIK via BlindIndex (dengan fallback OR nik = identifier untuk data legasi)
+	cleanIdentifier := strings.ToLower(identifier)
+	blindIdentifier := crypto.BlindIndex(identifier)
+	err := database.DB.Where("email = ? OR nik_idx = ? OR nik = ?", cleanIdentifier, blindIdentifier, identifier).First(&user).Error
 	if err != nil {
 		response.Unauthorized(c, "Email / NIK atau Kata Sandi yang Anda masukkan salah")
 		return

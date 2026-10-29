@@ -1,8 +1,13 @@
 package model
 
 import (
+	"fmt"
+	"strings"
 	"time"
 
+	"pmb-staici-backend/internal/crypto"
+
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -53,7 +58,9 @@ type User struct {
 	PasswordHash       string         `gorm:"type:varchar(255);not null" json:"-"`
 	NamaLengkap        string         `gorm:"type:varchar(191);not null" json:"nama_lengkap"`
 	NoHP               string         `gorm:"type:varchar(30);not null" json:"no_hp"`
-	NIK                string         `gorm:"type:varchar(30);uniqueIndex;not null" json:"nik"`
+	UUID               string         `gorm:"type:varchar(36);index" json:"uuid"`
+	NIK                string         `gorm:"type:varchar(255);not null" json:"nik"`
+	NIKIdx             string         `gorm:"type:varchar(64);index" json:"-"`
 	Role               Role           `gorm:"type:varchar(30);default:'calon_mahasiswa'" json:"role"`
 	FotoProfil         string         `gorm:"type:varchar(255)" json:"foto_profil,omitempty"`
 	IsEmailVerified    bool           `gorm:"default:false" json:"is_email_verified"`
@@ -162,8 +169,10 @@ type OrangTua struct {
 
 	// Data Ayah (FR-2.3)
 	NamaAyah             string    `gorm:"type:varchar(191)" json:"nama_ayah"`
-	NIKAyah              string    `gorm:"type:varchar(30)" json:"nik_ayah"`
-	KKAyah               string    `gorm:"type:varchar(30)" json:"kk_ayah"`
+	NIKAyah              string    `gorm:"type:varchar(255)" json:"nik_ayah"`
+	NIKAyahIdx           string    `gorm:"type:varchar(64);index" json:"-"`
+	KKAyah               string    `gorm:"type:varchar(255)" json:"kk_ayah"`
+	KKAyahIdx            string    `gorm:"type:varchar(64);index" json:"-"`
 	TempatLahirAyah      string    `gorm:"type:varchar(100)" json:"tempat_lahir_ayah"`
 	TanggalLahirAyah     *time.Time `json:"tanggal_lahir_ayah"`
 	AlamatAyah           string    `gorm:"type:text" json:"alamat_ayah"`
@@ -173,8 +182,10 @@ type OrangTua struct {
 
 	// Data Ibu (FR-2.3)
 	NamaIbu              string    `gorm:"type:varchar(191)" json:"nama_ibu"`
-	NIKIbu               string    `gorm:"type:varchar(30)" json:"nik_ibu"`
-	KKIbu                string    `gorm:"type:varchar(30)" json:"kk_ibu"`
+	NIKIbu               string    `gorm:"type:varchar(255)" json:"nik_ibu"`
+	NIKIbuIdx            string    `gorm:"type:varchar(64);index" json:"-"`
+	KKIbu                string    `gorm:"type:varchar(255)" json:"kk_ibu"`
+	KKIbuIdx             string    `gorm:"type:varchar(64);index" json:"-"`
 	TempatLahirIbu       string    `gorm:"type:varchar(100)" json:"tempat_lahir_ibu"`
 	TanggalLahirIbu      *time.Time `json:"tanggal_lahir_ibu"`
 	AlamatIbu            string    `gorm:"type:text" json:"alamat_ibu"`
@@ -411,3 +422,119 @@ type SiteTranslation struct {
 	UpdatedAt      time.Time `json:"updated_at"`
 }
 
+
+
+// Hook GORM User untuk Enkripsi Otomatis AES-256-GCM & Blind Index
+func (u *User) BeforeCreate(tx *gorm.DB) error {
+	if u.UUID == "" {
+		u.UUID = uuid.New().String()
+	}
+	return nil
+}
+
+func (u *User) BeforeSave(tx *gorm.DB) error {
+	if u.UUID == "" {
+		u.UUID = uuid.New().String()
+	}
+	cleanNIK := strings.TrimSpace(u.NIK)
+	if cleanNIK != "" {
+		if !crypto.IsEncryptedString(cleanNIK) {
+			u.NIKIdx = crypto.BlindIndex(cleanNIK)
+			aad := []byte(fmt.Sprintf("users:nik:%s", u.UUID))
+			enc, err := crypto.EncryptString(cleanNIK, aad)
+			if err != nil {
+				return fmt.Errorf("gagal enkripsi NIK: %w", err)
+			}
+			u.NIK = enc
+		}
+	}
+	return nil
+}
+
+func (u *User) AfterFind(tx *gorm.DB) error {
+	if u.NIK != "" && crypto.IsEncryptedString(u.NIK) {
+		aad := []byte(fmt.Sprintf("users:nik:%s", u.UUID))
+		dec, err := crypto.DecryptString(u.NIK, aad)
+		if err == nil {
+			u.NIK = dec
+		}
+	}
+	return nil
+}
+
+// Hook GORM OrangTua untuk Enkripsi Otomatis AES-256-GCM & Blind Index
+func (ot *OrangTua) BeforeSave(tx *gorm.DB) error {
+	if clean := strings.TrimSpace(ot.NIKAyah); clean != "" {
+		ot.NIKAyahIdx = crypto.BlindIndex(clean)
+		if !crypto.IsEncryptedString(clean) {
+			aad := []byte(fmt.Sprintf("orang_tuas:nik_ayah:%d", ot.PendaftarID))
+			enc, err := crypto.EncryptString(clean, aad)
+			if err != nil {
+				return fmt.Errorf("gagal enkripsi NIK Ayah: %w", err)
+			}
+			ot.NIKAyah = enc
+		}
+	}
+	if clean := strings.TrimSpace(ot.KKAyah); clean != "" {
+		ot.KKAyahIdx = crypto.BlindIndex(clean)
+		if !crypto.IsEncryptedString(clean) {
+			aad := []byte(fmt.Sprintf("orang_tuas:kk_ayah:%d", ot.PendaftarID))
+			enc, err := crypto.EncryptString(clean, aad)
+			if err != nil {
+				return fmt.Errorf("gagal enkripsi KK Ayah: %w", err)
+			}
+			ot.KKAyah = enc
+		}
+	}
+	if clean := strings.TrimSpace(ot.NIKIbu); clean != "" {
+		ot.NIKIbuIdx = crypto.BlindIndex(clean)
+		if !crypto.IsEncryptedString(clean) {
+			aad := []byte(fmt.Sprintf("orang_tuas:nik_ibu:%d", ot.PendaftarID))
+			enc, err := crypto.EncryptString(clean, aad)
+			if err != nil {
+				return fmt.Errorf("gagal enkripsi NIK Ibu: %w", err)
+			}
+			ot.NIKIbu = enc
+		}
+	}
+	if clean := strings.TrimSpace(ot.KKIbu); clean != "" {
+		ot.KKIbuIdx = crypto.BlindIndex(clean)
+		if !crypto.IsEncryptedString(clean) {
+			aad := []byte(fmt.Sprintf("orang_tuas:kk_ibu:%d", ot.PendaftarID))
+			enc, err := crypto.EncryptString(clean, aad)
+			if err != nil {
+				return fmt.Errorf("gagal enkripsi KK Ibu: %w", err)
+			}
+			ot.KKIbu = enc
+		}
+	}
+	return nil
+}
+
+func (ot *OrangTua) AfterFind(tx *gorm.DB) error {
+	if ot.NIKAyah != "" && crypto.IsEncryptedString(ot.NIKAyah) {
+		aad := []byte(fmt.Sprintf("orang_tuas:nik_ayah:%d", ot.PendaftarID))
+		if dec, err := crypto.DecryptString(ot.NIKAyah, aad); err == nil {
+			ot.NIKAyah = dec
+		}
+	}
+	if ot.KKAyah != "" && crypto.IsEncryptedString(ot.KKAyah) {
+		aad := []byte(fmt.Sprintf("orang_tuas:kk_ayah:%d", ot.PendaftarID))
+		if dec, err := crypto.DecryptString(ot.KKAyah, aad); err == nil {
+			ot.KKAyah = dec
+		}
+	}
+	if ot.NIKIbu != "" && crypto.IsEncryptedString(ot.NIKIbu) {
+		aad := []byte(fmt.Sprintf("orang_tuas:nik_ibu:%d", ot.PendaftarID))
+		if dec, err := crypto.DecryptString(ot.NIKIbu, aad); err == nil {
+			ot.NIKIbu = dec
+		}
+	}
+	if ot.KKIbu != "" && crypto.IsEncryptedString(ot.KKIbu) {
+		aad := []byte(fmt.Sprintf("orang_tuas:kk_ibu:%d", ot.PendaftarID))
+		if dec, err := crypto.DecryptString(ot.KKIbu, aad); err == nil {
+			ot.KKIbu = dec
+		}
+	}
+	return nil
+}

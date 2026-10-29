@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"pmb-staici-backend/internal/crypto"
 	"pmb-staici-backend/internal/database"
 	"pmb-staici-backend/internal/model"
 	"pmb-staici-backend/internal/response"
@@ -535,8 +536,9 @@ func (h *RBACHandler) CreateAdminUser(c *gin.Context) {
 		return
 	}
 
+	nikIdx := crypto.BlindIndex(req.NIK)
 	var countNIK int64
-	database.DB.Model(&model.User{}).Where("nik = ?", req.NIK).Count(&countNIK)
+	database.DB.Model(&model.User{}).Where("nik_idx = ? OR nik = ?", nikIdx, req.NIK).Count(&countNIK)
 	if countNIK > 0 {
 		response.BadRequest(c, "Username / NIK sudah terdaftar", "Gunakan NIK atau username lain")
 		return

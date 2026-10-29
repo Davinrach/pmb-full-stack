@@ -33,3 +33,13 @@ yarn-error.log*
 Thumbs.db
 .vscode/
 .idea/
+
+# Playwright Test Artifacts
+playwright-report/
+**/playwright-report/
+test-results/
+frontend/test-results/**/*.zip
+frontend/test-results/**/trace/
+frontend/test-results/**/error-context.md
+frontend/test-results/**/test-failed-*.png
+!frontend/test-results/evidence-*.png
