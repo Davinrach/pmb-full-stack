@@ -10,7 +10,7 @@ function LoginContent() {
   const roleParam = searchParams.get("role");
   const verifiedParam = searchParams.get("verified");
   const emailParam = searchParams.get("email");
-  const redirectParam = searchParams.get("redirect") || "/dashboard/formulir";
+  const redirectParam = searchParams.get("redirect") || "/dashboard";
 
   useEffect(() => {
     if (roleParam === "admin") {

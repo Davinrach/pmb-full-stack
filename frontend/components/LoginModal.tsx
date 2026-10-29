@@ -112,16 +112,21 @@ export default function LoginModal({
 
         if (onSuccess) {
           onSuccess(res.data.user);
+          if (!isStandalonePage) onClose();
         } else if (redirectTo !== null) {
           if (redirectTo) {
             router.push(redirectTo);
           } else if (userRole === "admin_pmb" || userRole === "super_admin") {
             router.push("/admincms");
           } else {
-            router.push("/dashboard/formulir");
+            router.push("/dashboard");
           }
+          if (!isStandalonePage) {
+            onClose();
+          }
+        } else {
+          onClose();
         }
-        onClose();
       }
     } catch (err: any) {
       if (err.data?.need_email_verification || err.code === "UNVERIFIED_EMAIL" || err.message?.toLowerCase().includes("belum diverifikasi")) {
