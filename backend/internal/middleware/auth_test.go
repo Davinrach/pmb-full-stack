@@ -33,7 +33,7 @@ func generateTestToken(secret string, userID uint, email string, role model.Role
 }
 
 // TC_WB_011: AuthMiddleware menolak request tanpa Authorization header
-func TestAuthMiddleware_MissingHeader(t *testing.T) {
+func TestWB011_AuthMiddleware_MissingHeader(t *testing.T) {
 	cfg := &config.Config{JWTSecret: "test_secret_key"}
 	router := gin.New()
 	router.Use(AuthMiddleware(cfg))
@@ -51,7 +51,7 @@ func TestAuthMiddleware_MissingHeader(t *testing.T) {
 }
 
 // TC_WB_012: AuthMiddleware menolak format header yang bukan 'Bearer <token>'
-func TestAuthMiddleware_InvalidFormat(t *testing.T) {
+func TestWB012_AuthMiddleware_InvalidFormat(t *testing.T) {
 	cfg := &config.Config{JWTSecret: "test_secret_key"}
 	router := gin.New()
 	router.Use(AuthMiddleware(cfg))
@@ -70,7 +70,7 @@ func TestAuthMiddleware_InvalidFormat(t *testing.T) {
 }
 
 // TC_WB_013: AuthMiddleware menolak token dengan signature atau secret yang salah
-func TestAuthMiddleware_InvalidSignature(t *testing.T) {
+func TestWB013_AuthMiddleware_InvalidSignature(t *testing.T) {
 	cfg := &config.Config{JWTSecret: "test_secret_key"}
 	tokenStr, _ := generateTestToken("wrong_secret", 1, "user@test.com", model.RoleCalonMahasiswa, time.Hour)
 
@@ -91,7 +91,7 @@ func TestAuthMiddleware_InvalidSignature(t *testing.T) {
 }
 
 // TC_WB_014: AuthMiddleware menolak token yang telah kedaluwarsa (expired)
-func TestAuthMiddleware_ExpiredToken(t *testing.T) {
+func TestWB014_AuthMiddleware_ExpiredToken(t *testing.T) {
 	cfg := &config.Config{JWTSecret: "test_secret_key"}
 	// Duration negatif agar langsung expired
 	tokenStr, _ := generateTestToken(cfg.JWTSecret, 1, "user@test.com", model.RoleCalonMahasiswa, -time.Hour)
@@ -113,7 +113,7 @@ func TestAuthMiddleware_ExpiredToken(t *testing.T) {
 }
 
 // TC_WB_015: AuthMiddleware menerima token valid dan menyematkan konteks user
-func TestAuthMiddleware_ValidToken(t *testing.T) {
+func TestWB015_AuthMiddleware_ValidToken(t *testing.T) {
 	cfg := &config.Config{JWTSecret: "test_secret_key"}
 	tokenStr, _ := generateTestToken(cfg.JWTSecret, 42, "mhs@staici.ac.id", model.RoleCalonMahasiswa, time.Hour)
 
@@ -145,7 +145,7 @@ func TestAuthMiddleware_ValidToken(t *testing.T) {
 }
 
 // TC_WB_016: RequireRoles menolak request saat context tidak memiliki atribut role
-func TestRequireRoles_MissingRoleInContext(t *testing.T) {
+func TestWB016_RequireRoles_MissingRoleInContext(t *testing.T) {
 	router := gin.New()
 	router.Use(RequireRoles(model.RoleAdminPMB))
 	router.GET("/admin-only", func(c *gin.Context) {
@@ -162,10 +162,10 @@ func TestRequireRoles_MissingRoleInContext(t *testing.T) {
 }
 
 // TC_WB_017: RequireRoles mengizinkan akses jika role pengguna sesuai
-func TestRequireRoles_RoleMatched(t *testing.T) {
+func TestWB017_RequireRoles_RoleMatched(t *testing.T) {
 	router := gin.New()
 	router.Use(func(c *gin.Context) {
-		c.Set("role", model.RoleAdminPMB)
+		c.Set("role", string(model.RoleAdminPMB))
 		c.Next()
 	})
 	router.Use(RequireRoles(model.RoleAdminPMB, model.RoleSuperAdmin))
@@ -183,10 +183,10 @@ func TestRequireRoles_RoleMatched(t *testing.T) {
 }
 
 // TC_WB_018: RequireRoles menolak akses jika role pengguna tidak memiliki wewenang
-func TestRequireRoles_RoleMismatched(t *testing.T) {
+func TestWB018_RequireRoles_RoleMismatched(t *testing.T) {
 	router := gin.New()
 	router.Use(func(c *gin.Context) {
-		c.Set("role", model.RoleCalonMahasiswa)
+		c.Set("role", string(model.RoleCalonMahasiswa))
 		c.Next()
 	})
 	router.Use(RequireRoles(model.RoleAdminPMB, model.RoleSuperAdmin))

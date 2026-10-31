@@ -4,8 +4,8 @@ import (
 	"testing"
 )
 
-// TC_WB_019: Validasi batas ukuran berkas (MaxFileSize = 2MB)
-func TestBerkas_MaxFileSizeLimit(t *testing.T) {
+// TC_WB_019: Validasi batas ukuran berkas fisik (MaxFileSize = 2MB)
+func TestWB019_Berkas_MaxFileSizeLimit(t *testing.T) {
 	validSize := int64(1.5 * 1024 * 1024)   // 1.5 MB
 	exceededSize := int64(2.5 * 1024 * 1024) // 2.5 MB
 
@@ -18,8 +18,8 @@ func TestBerkas_MaxFileSizeLimit(t *testing.T) {
 	}
 }
 
-// TC_WB_020: Validasi format MIME-Type berkas unggahan
-func TestBerkas_AllowedMimeTypes(t *testing.T) {
+// TC_WB_020: Validasi format whitelist MIME-Type berkas unggahan
+func TestWB020_Berkas_AllowedMimeTypes(t *testing.T) {
 	validTypes := []string{"image/jpeg", "image/jpg", "image/png", "image/webp", "application/pdf"}
 	invalidTypes := []string{"application/x-msdownload", "application/x-sh", "text/php", "application/octet-stream"}
 

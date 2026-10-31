@@ -14,7 +14,7 @@ import (
 )
 
 // TC_WB_021: Menguji percabangan penentuan biaya formulir pendaftaran untuk Jalur KIP-Kuliah (isKip == true)
-func TestPembayaran_JalurKipKuliahBebasBiaya(t *testing.T) {
+func TestWB021_Pembayaran_JalurKipKuliahBebasBiaya(t *testing.T) {
 	jalur := "KIP-Kuliah"
 	isKip := strings.Contains(strings.ToLower(jalur), "kip")
 
@@ -32,7 +32,7 @@ func TestPembayaran_JalurKipKuliahBebasBiaya(t *testing.T) {
 }
 
 // TC_WB_022: Menguji percabangan penentuan biaya formulir pendaftaran untuk Jalur Reguler berbayar (isKip == false)
-func TestPembayaran_JalurRegulerBerbayar(t *testing.T) {
+func TestWB022_Pembayaran_JalurRegulerBerbayar(t *testing.T) {
 	jalur := "Reguler"
 	gelombang := &model.Gelombang{
 		BiayaPendaftaran: 250000,
@@ -55,7 +55,7 @@ func TestPembayaran_JalurRegulerBerbayar(t *testing.T) {
 }
 
 // TC_WB_023: Menguji penanganan status kesehatan sistem saat koneksi basis data bernilai nil (database.DB == nil)
-func TestHealthHandler_DatabaseNilSafety(t *testing.T) {
+func TestWB023_HealthHandler_DatabaseNilSafety(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	originalDB := database.DB
 	database.DB = nil
