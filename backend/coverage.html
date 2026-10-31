@@ -5799,11 +5799,38 @@ func (h *PembayaranHandler) KonfirmasiPembayaran(c *gin.Context) {
                 return
 </span>        }
 
+        // Validasi Ekstensi dan MIME-Type Bukti Pembayaran
+        <span class="cov0" title="0">ext := strings.ToLower(filepath.Ext(header.Filename))
+        allowedExts := map[string]bool{
+                ".jpg":  true,
+                ".jpeg": true,
+                ".png":  true,
+                ".webp": true,
+                ".pdf":  true,
+</span>        }
+        <span class="cov0" title="0">if !allowedExts[ext] </span>{
+                <span class="cov0" title="0">response.BadRequest(c, "Format file bukti transfer tidak didukung. Harap unggah berkas berformat JPG, PNG, WEBP, atau PDF.", "Disallowed file extension")
+                return
+</span>        }
+
+        <span class="cov0" title="0">buffer := make([]byte, 512)
+        _, err = file.Read(buffer)
+        if err != nil </span>{
+                <span class="cov0" title="0">response.InternalServerError(c, "Gagal membaca header bukti transfer")
+                return
+</span>        }
+        <span class="cov0" title="0">file.Seek(0, io.SeekStart)
+</span>
+        <span class="cov0" title="0">mimeType := http.DetectContentType(buffer)
+        if !strings.HasPrefix(mimeType, "image/") &amp;&amp; mimeType != "application/pdf" </span>{
+                <span class="cov0" title="0">response.BadRequest(c, "Format file bukti pembayaran tidak valid. Harap unggah file berformat JPG, PNG, WEBP, atau PDF.", fmt.Sprintf("Mime %s not allowed", mimeType))
+                return
+</span>        }
+
         <span class="cov0" title="0">uploadDir := h.cfg.UploadDir
         _ = os.MkdirAll(uploadDir, 0755)
 </span>
-        <span class="cov0" title="0">ext := filepath.Ext(header.Filename)
-        safeFileName := fmt.Sprintf("pay_%d_%s%s", pendaftar.ID, uuid.New().String()[:8], ext)
+        <span class="cov0" title="0">safeFileName := fmt.Sprintf("pay_%d_%s%s", pendaftar.ID, uuid.New().String()[:8], ext)
         targetPath := filepath.Join(uploadDir, safeFileName)
 </span>
         <span class="cov0" title="0">out, err := os.Create(targetPath)
@@ -5881,6 +5908,7 @@ func (h *PembayaranHandler) GetStatusPembayaran(c *gin.Context) {
 import (
         "fmt"
         "net/http"
+        "strconv"
         "strings"
         "time"
 
@@ -6228,15 +6256,28 @@ func (h *PendaftarHandler) SubmitFinal(c *gin.Context) {
         <span class="cov0" title="0">currentYear := time.Now().Year()
         prefix := fmt.Sprintf("PMB-%d-", currentYear)
 </span>
-        <span class="cov0" title="0">var countSameYear int64
-        database.DB.Model(&amp;model.Pendaftar{}).
-                Where("nomor_pendaftaran LIKE ?", prefix+"%").
-                Count(&amp;countSameYear)
+        <span class="cov0" title="0">var nomorPendaftaran string
+        if pendaftar.NomorPendaftaran != nil &amp;&amp; *pendaftar.NomorPendaftaran != "" </span>{
+                <span class="cov0" title="0">nomorPendaftaran = *pendaftar.NomorPendaftaran
+</span>        } else {
+                <span class="cov0" title="0">var allNomor []string
+                database.DB.Model(&amp;model.Pendaftar{}).
+                        Where("nomor_pendaftaran LIKE ?", prefix+"%").
+                        Pluck("nomor_pendaftaran", &amp;allNomor)
 </span>
-        <span class="cov0" title="0">nomorPendaftaran := fmt.Sprintf("PMB-%d-%04d", currentYear, countSameYear+1)
-</span>
-        <span class="cov0" title="0">pendaftar.NomorPendaftaran = &amp;nomorPendaftaran
-        pendaftar.StatusPendaftaran = model.StatusMenungguPembayaran
+                <span class="cov0" title="0">maxSeq := 0
+                for _, n := range allNomor </span>{
+                        <span class="cov0" title="0">parts := strings.Split(n, "-")
+                        if len(parts) == 3 </span>{
+                                <span class="cov0" title="0">if seq, err := strconv.Atoi(parts[2]); err == nil &amp;&amp; seq &gt; maxSeq </span>{
+                                        <span class="cov0" title="0">maxSeq = seq
+</span>                                }
+                        }
+                }
+                <span class="cov0" title="0">nomorPendaftaran = fmt.Sprintf("PMB-%d-%04d", currentYear, maxSeq+1)
+                pendaftar.NomorPendaftaran = &amp;nomorPendaftaran</span>
+        }
+        <span class="cov0" title="0">pendaftar.StatusPendaftaran = model.StatusMenungguPembayaran
         pendaftar.IsLocked = true
         pendaftar.CatatanRevisi = ""
 </span>

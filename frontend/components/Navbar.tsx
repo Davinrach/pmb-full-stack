@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { ChevronDown, ChevronRight, Menu, User as UserIcon, LogOut, LayoutDashboard, UserCheck, Settings } from "lucide-react";
 import LoginModal from "@/components/LoginModal";
 import ProfileModal from "@/components/ProfileModal";
@@ -15,6 +16,7 @@ interface NavbarProps {
 }
 
 export default function Navbar({ activePage = "beranda" }: NavbarProps) {
+  const router = useRouter();
   const { lang, setLang, t } = useLanguage();
   const [currentActive, setCurrentActive] = useState<"beranda" | "pendaftaran" | "program-studi" | "faq">(activePage);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -572,9 +574,15 @@ export default function Navbar({ activePage = "beranda" }: NavbarProps) {
       <LoginModal
         isOpen={loginModalOpen}
         onClose={() => setLoginModalOpen(false)}
-        onSuccess={() => {
-          const u = authStorage.getUser();
+        onSuccess={(loggedUser) => {
+          const u = loggedUser || authStorage.getUser();
           if (u) setUser(u);
+          setLoginModalOpen(false);
+          if (u?.role === "admin_pmb" || u?.role === "super_admin") {
+            router.push("/admincms");
+          } else {
+            router.push("/dashboard");
+          }
         }}
       />
 

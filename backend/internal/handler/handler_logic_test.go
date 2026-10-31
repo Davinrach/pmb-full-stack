@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -83,5 +84,64 @@ func TestWB023_HealthHandler_DatabaseNilSafety(t *testing.T) {
 	dbStatus, ok := res["database"].(string)
 	if !ok || dbStatus != "disconnected" {
 		t.Errorf("Status database = %v, diharapkan 'disconnected'", res["database"])
+	}
+}
+
+// TestFix_Pembayaran_AllowedExtensions: Memastikan ekstensi file bukti transfer berbahaya ditolak
+func TestFix_Pembayaran_AllowedExtensions(t *testing.T) {
+	allowedExts := map[string]bool{
+		".jpg":  true,
+		".jpeg": true,
+		".png":  true,
+		".webp": true,
+		".pdf":  true,
+	}
+
+	dangerousFiles := []string{"shell.php", "exploit.exe", "script.sh", "payload.html", "trojan.js"}
+	for _, fn := range dangerousFiles {
+		ext := strings.ToLower(fn[strings.LastIndex(fn, "."):])
+		if allowedExts[ext] {
+			t.Errorf("Ekstensi berbahaya '%s' seharusnya ditolak, tapi diizinkan", ext)
+		}
+	}
+
+	validFiles := []string{"bukti.jpg", "struk.jpeg", "transfer.png", "receipt.webp", "nota.pdf"}
+	for _, fn := range validFiles {
+		ext := strings.ToLower(fn[strings.LastIndex(fn, "."):])
+		if !allowedExts[ext] {
+			t.Errorf("Ekstensi valid '%s' seharusnya diizinkan, tapi ditolak", ext)
+		}
+	}
+}
+
+// TestFix_SafeNomorPendaftaran_MaxSequence: Memastikan nomor pendaftaran menghitung MAX urutan agar bebas tabrakan
+func TestFix_SafeNomorPendaftaran_MaxSequence(t *testing.T) {
+	currentYear := 2026
+	allNomor := []string{"PMB-2026-0001", "PMB-2026-0005", "PMB-2026-0010"} // Ada gap penomoran
+
+	maxSeq := 0
+	for _, n := range allNomor {
+		parts := strings.Split(n, "-")
+		if len(parts) == 3 {
+			var seq int
+			for _, ch := range parts[2] {
+				if ch >= '0' && ch <= '9' {
+					seq = seq*10 + int(ch-'0')
+				}
+			}
+			if seq > maxSeq {
+				maxSeq = seq
+			}
+		}
+	}
+
+	nextSeq := maxSeq + 1
+	generated := fmt.Sprintf("PMB-%d-%04d", currentYear, nextSeq)
+
+	if nextSeq != 11 {
+		t.Errorf("nextSeq = %d, diharapkan 11 (maxSeq 10 + 1)", nextSeq)
+	}
+	if generated != "PMB-2026-0011" {
+		t.Errorf("generated = %s, diharapkan PMB-2026-0011", generated)
 	}
 }

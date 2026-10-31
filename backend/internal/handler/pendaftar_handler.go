@@ -3,6 +3,7 @@ package handler
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -350,14 +351,27 @@ func (h *PendaftarHandler) SubmitFinal(c *gin.Context) {
 	currentYear := time.Now().Year()
 	prefix := fmt.Sprintf("PMB-%d-", currentYear)
 
-	var countSameYear int64
-	database.DB.Model(&model.Pendaftar{}).
-		Where("nomor_pendaftaran LIKE ?", prefix+"%").
-		Count(&countSameYear)
+	var nomorPendaftaran string
+	if pendaftar.NomorPendaftaran != nil && *pendaftar.NomorPendaftaran != "" {
+		nomorPendaftaran = *pendaftar.NomorPendaftaran
+	} else {
+		var allNomor []string
+		database.DB.Model(&model.Pendaftar{}).
+			Where("nomor_pendaftaran LIKE ?", prefix+"%").
+			Pluck("nomor_pendaftaran", &allNomor)
 
-	nomorPendaftaran := fmt.Sprintf("PMB-%d-%04d", currentYear, countSameYear+1)
-
-	pendaftar.NomorPendaftaran = &nomorPendaftaran
+		maxSeq := 0
+		for _, n := range allNomor {
+			parts := strings.Split(n, "-")
+			if len(parts) == 3 {
+				if seq, err := strconv.Atoi(parts[2]); err == nil && seq > maxSeq {
+					maxSeq = seq
+				}
+			}
+		}
+		nomorPendaftaran = fmt.Sprintf("PMB-%d-%04d", currentYear, maxSeq+1)
+		pendaftar.NomorPendaftaran = &nomorPendaftaran
+	}
 	pendaftar.StatusPendaftaran = model.StatusMenungguPembayaran
 	pendaftar.IsLocked = true
 	pendaftar.CatatanRevisi = ""

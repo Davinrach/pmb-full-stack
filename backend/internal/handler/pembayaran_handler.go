@@ -126,10 +126,37 @@ func (h *PembayaranHandler) KonfirmasiPembayaran(c *gin.Context) {
 		return
 	}
 
+	// Validasi Ekstensi dan MIME-Type Bukti Pembayaran
+	ext := strings.ToLower(filepath.Ext(header.Filename))
+	allowedExts := map[string]bool{
+		".jpg":  true,
+		".jpeg": true,
+		".png":  true,
+		".webp": true,
+		".pdf":  true,
+	}
+	if !allowedExts[ext] {
+		response.BadRequest(c, "Format file bukti transfer tidak didukung. Harap unggah berkas berformat JPG, PNG, WEBP, atau PDF.", "Disallowed file extension")
+		return
+	}
+
+	buffer := make([]byte, 512)
+	_, err = file.Read(buffer)
+	if err != nil {
+		response.InternalServerError(c, "Gagal membaca header bukti transfer")
+		return
+	}
+	file.Seek(0, io.SeekStart)
+
+	mimeType := http.DetectContentType(buffer)
+	if !strings.HasPrefix(mimeType, "image/") && mimeType != "application/pdf" {
+		response.BadRequest(c, "Format file bukti pembayaran tidak valid. Harap unggah file berformat JPG, PNG, WEBP, atau PDF.", fmt.Sprintf("Mime %s not allowed", mimeType))
+		return
+	}
+
 	uploadDir := h.cfg.UploadDir
 	_ = os.MkdirAll(uploadDir, 0755)
 
-	ext := filepath.Ext(header.Filename)
 	safeFileName := fmt.Sprintf("pay_%d_%s%s", pendaftar.ID, uuid.New().String()[:8], ext)
 	targetPath := filepath.Join(uploadDir, safeFileName)
 
