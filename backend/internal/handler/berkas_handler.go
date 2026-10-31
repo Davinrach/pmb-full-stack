@@ -92,7 +92,7 @@ func (h *BerkasHandler) UploadBerkas(c *gin.Context) {
 	// Buat nama file unik & aman (PRD 7.1)
 	ext := filepath.Ext(header.Filename)
 	safeFileName := fmt.Sprintf("%d_%s_%s%s", pendaftar.ID, strings.ToLower(jenisDokumen), uuid.New().String()[:8], ext)
-	targetPath := filepath.Join(uploadDir, safeFileName)
+	targetPath := filepath.ToSlash(filepath.Join(uploadDir, safeFileName))
 
 	rawFileBytes, err := io.ReadAll(file)
 	if err != nil {

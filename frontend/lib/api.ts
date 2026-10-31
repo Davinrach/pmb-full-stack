@@ -17,7 +17,8 @@ export interface UserSession {
 export function getFileUrl(path?: string | null): string {
   if (!path) return '';
   if (path.startsWith('http://') || path.startsWith('https://')) return path;
-  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  const normalized = path.replace(/\\/g, '/');
+  const cleanPath = normalized.startsWith('/') ? normalized : `/${normalized}`;
   return `${API_HOST}${cleanPath}`;
 }
 

@@ -4931,7 +4931,7 @@ func (h *BerkasHandler) UploadBerkas(c *gin.Context) {
         // Buat nama file unik &amp; aman (PRD 7.1)
         <span class="cov0" title="0">ext := filepath.Ext(header.Filename)
         safeFileName := fmt.Sprintf("%d_%s_%s%s", pendaftar.ID, strings.ToLower(jenisDokumen), uuid.New().String()[:8], ext)
-        targetPath := filepath.Join(uploadDir, safeFileName)
+        targetPath := filepath.ToSlash(filepath.Join(uploadDir, safeFileName))
 </span>
         <span class="cov0" title="0">rawFileBytes, err := io.ReadAll(file)
         if err != nil </span>{
@@ -5831,7 +5831,7 @@ func (h *PembayaranHandler) KonfirmasiPembayaran(c *gin.Context) {
         _ = os.MkdirAll(uploadDir, 0755)
 </span>
         <span class="cov0" title="0">safeFileName := fmt.Sprintf("pay_%d_%s%s", pendaftar.ID, uuid.New().String()[:8], ext)
-        targetPath := filepath.Join(uploadDir, safeFileName)
+        targetPath := filepath.ToSlash(filepath.Join(uploadDir, safeFileName))
 </span>
         <span class="cov0" title="0">out, err := os.Create(targetPath)
         if err != nil </span>{

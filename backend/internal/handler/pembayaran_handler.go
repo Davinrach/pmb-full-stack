@@ -158,7 +158,7 @@ func (h *PembayaranHandler) KonfirmasiPembayaran(c *gin.Context) {
 	_ = os.MkdirAll(uploadDir, 0755)
 
 	safeFileName := fmt.Sprintf("pay_%d_%s%s", pendaftar.ID, uuid.New().String()[:8], ext)
-	targetPath := filepath.Join(uploadDir, safeFileName)
+	targetPath := filepath.ToSlash(filepath.Join(uploadDir, safeFileName))
 
 	out, err := os.Create(targetPath)
 	if err != nil {
