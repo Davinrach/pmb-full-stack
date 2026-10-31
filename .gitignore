@@ -17,8 +17,9 @@ dist/
 *.dylib
 
 # Backend & Uploads
-uploads/
-backend/uploads/
+/uploads/
+/backend/uploads/*
+!/backend/uploads/.gitkeep
 backend/bin/
 
 # Logs & Temporary files
