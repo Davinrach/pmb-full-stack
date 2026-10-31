@@ -196,8 +196,8 @@ test.describe('Black Box Testing - Tahap 2 (Formulir, Berkas, Admin Portal, & Ke
     const loginBody = await loginRes.json();
     const token = loginBody.data?.token;
 
-    const largeFilePath = path.join(FIXTURES_DIR, 'dummy_large.pdf');
-    const fileContent = fs.readFileSync(largeFilePath);
+    // Generate buffer > 2 MB (2.5 MB) dynamically in-memory without storing a heavy file in Git
+    const fileContent = Buffer.alloc(2.5 * 1024 * 1024, '%PDF-1.4 dummy large content ');
 
     const uploadRes = await request.post(`${API_BASE_URL}/api/v1/pendaftar/berkas`, {
       headers: { Authorization: `Bearer ${token}` },
