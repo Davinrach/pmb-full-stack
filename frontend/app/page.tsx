@@ -7,7 +7,6 @@ import {
   Home,
   CheckCircle2,
   Phone,
-  Clock,
   IdCard,
   Headphones,
   Briefcase,
@@ -17,9 +16,6 @@ import {
   ChevronDown,
   HelpCircle,
   FileText,
-  ShieldCheck,
-  Award,
-  GraduationCap,
   Mail,
   Calendar,
 } from "lucide-react";
@@ -322,9 +318,8 @@ export default function HomePage() {
         <section id="keunggulan" className="space-y-6 scroll-mt-28">
           <div className="border-b border-slate-200/80 pb-3 flex flex-col sm:flex-row sm:items-baseline justify-between gap-2">
             <div>
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight font-serif flex items-center gap-2.5">
-                <Award className="w-6 h-6 text-emerald-700" />
-                <span>STAI Cendekia Insani Situbondo</span>
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight font-serif">
+                STAI Cendekia Insani Situbondo
               </h2>
             </div>
             <p className="text-xs sm:text-sm text-slate-500 max-w-md leading-relaxed">
@@ -334,80 +329,57 @@ export default function HomePage() {
             </p>
           </div>
 
-          {/* Grid Keunggulan 5 Kolom Responsif */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+          {/* Grid Keunggulan 4 Kolom Responsif */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
             {(lang === "eng"
               ? [
                   {
                     title: "Academic & Islamic Character",
                     desc: "Standard degree curriculum with strong santri ethical foundation.",
-                    icon: <GraduationCap className="w-5 h-5 text-emerald-700" />,
                   },
                   {
                     title: "Qur'an & Classical Studies",
                     desc: "Tahfidz reinforcement and Arabic classical text literacy.",
-                    icon: <BookOpen className="w-5 h-5 text-emerald-700" />,
                   },
                   {
                     title: "Flexible Schedules",
                     desc: "Adaptive classes ideal for workers and madrasah teachers.",
-                    icon: <Clock className="w-5 h-5 text-emerald-700" />,
                   },
                   {
                     title: "Affordable & Scholarships",
                     desc: "Low-cost tuition, KIP-Kuliah, Tahfidz & Merit scholarships.",
-                    icon: <ShieldCheck className="w-5 h-5 text-emerald-700" />,
-                  },
-                  {
-                    title: "Career & Field Practice",
-                    desc: "Real internships, teaching practice, and community service.",
-                    icon: <Briefcase className="w-5 h-5 text-emerald-700" />,
                   },
                 ]
               : [
                   {
                     title: "Akademik & Karakter Islami",
                     desc: "Kurikulum sarjana terakreditasi berpadu adab & nilai kepesantrenan.",
-                    icon: <GraduationCap className="w-5 h-5 text-emerald-700" />,
                   },
                   {
                     title: "Kajian Qur'an & Kitab Kuning",
                     desc: "Penguatan tahfidz, bahasa Arab, dan literasi keagamaan.",
-                    icon: <BookOpen className="w-5 h-5 text-emerald-700" />,
                   },
                   {
                     title: "Jadwal Kuliah Fleksibel",
                     desc: "Pilihan kelas adaptif bagi pekerja, guru madrasah & honorer.",
-                    icon: <Clock className="w-5 h-5 text-emerald-700" />,
                   },
                   {
                     title: "Biaya Terjangkau & Beasiswa",
                     desc: "Akses beasiswa KIP-Kuliah, jalur Tahfidz, serta Prestasi.",
-                    icon: <ShieldCheck className="w-5 h-5 text-emerald-700" />,
-                  },
-                  {
-                    title: "Magang & Kesiapan Karir",
-                    desc: "Pengalaman riil lewat praktik mengajar, instansi & KKN aplikatif.",
-                    icon: <Briefcase className="w-5 h-5 text-emerald-700" />,
                   },
                 ]
             ).map((item, idx) => (
               <div
                 key={idx}
-                className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md hover:border-emerald-200 transition-all flex flex-col justify-between group"
+                className="p-5 sm:p-6 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md hover:border-emerald-300 transition-all flex flex-col justify-between group"
               >
-                <div className="space-y-3">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100/80 text-emerald-800 flex items-center justify-center flex-shrink-0 shadow-2xs group-hover:scale-110 transition-transform">
-                    {item.icon}
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-slate-800 leading-snug group-hover:text-emerald-900 transition-colors">
-                      {item.title}
-                    </h3>
-                    <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
-                      {item.desc}
-                    </p>
-                  </div>
+                <div className="space-y-2">
+                  <h3 className="text-sm sm:text-base font-bold text-slate-800 leading-snug group-hover:text-emerald-900 transition-colors">
+                    {item.title}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-500 leading-relaxed">
+                    {item.desc}
+                  </p>
                 </div>
               </div>
             ))}
