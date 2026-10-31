@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Printer, ShieldCheck, RefreshCw } from "lucide-react";
+import { ArrowLeft, Printer, RefreshCw, AlertCircle } from "lucide-react";
 import { api, authStorage } from "@/lib/api";
 
 export default function CetakKartuPage() {
@@ -39,7 +39,19 @@ export default function CetakKartuPage() {
     loadData();
   }, [router]);
 
+  // Syarat pencetakan kartu: berkas harus telah diverifikasi atau lolos seleksi
+  const isEligibleToPrint = [
+    "berkas_diverifikasi",
+    "mengikuti_ujian",
+    "lolos_seleksi",
+    "daftar_ulang",
+  ].includes(pendaftar?.status_pendaftaran);
+
   const handlePrint = () => {
+    if (!isEligibleToPrint) {
+      alert("Kartu Ujian PMB belum dapat diterbitkan. Administrasi berkas atau pembayaran Anda masih dalam proses verifikasi panitia.");
+      return;
+    }
     window.print();
   };
 
@@ -61,6 +73,21 @@ export default function CetakKartuPage() {
 
   return (
     <div className="min-h-screen bg-slate-100 print:bg-white flex flex-col items-center p-4 sm:p-8 font-sans text-slate-900 selection:bg-emerald-200">
+      {/* Alert Notice jika belum diverifikasi */}
+      {!isEligibleToPrint && (
+        <div className="max-w-3xl w-full mb-6 p-4 sm:p-5 bg-amber-50 border border-amber-300/80 rounded-2xl flex items-start gap-3.5 text-amber-900 print:hidden shadow-xs animate-fadeIn">
+          <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+          <div className="space-y-1 text-xs sm:text-sm">
+            <h4 className="font-bold text-amber-950 text-sm">
+              Kartu Ujian PMB Belum Diterbitkan
+            </h4>
+            <p className="text-amber-800 leading-relaxed">
+              Kartu tanda bukti pendaftaran dan peserta ujian belum dapat dicetak karena status pendaftaran Anda saat ini masih <strong>&quot;{pendaftar?.status_pendaftaran?.replace('_', ' ') || 'Menunggu Verifikasi'}&quot;</strong>. Tombol cetak akan otomatis aktif setelah dokumen dan pembayaran Anda disetujui oleh Panitia PMB.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Action Bar (Hidden on Print) */}
       <div className="max-w-3xl w-full flex items-center justify-between mb-6 print:hidden">
         <Link
@@ -74,15 +101,30 @@ export default function CetakKartuPage() {
         <button
           type="button"
           onClick={handlePrint}
-          className="px-6 py-2.5 bg-[#0d3830] hover:bg-[#165349] text-white font-bold text-xs sm:text-sm rounded-xl shadow-md transition flex items-center gap-2 cursor-pointer"
+          disabled={!isEligibleToPrint}
+          aria-disabled={!isEligibleToPrint}
+          className={`px-6 py-2.5 font-bold text-xs sm:text-sm rounded-xl transition flex items-center gap-2 ${
+            isEligibleToPrint
+              ? "bg-[#0d3830] hover:bg-[#165349] text-white shadow-md cursor-pointer"
+              : "bg-slate-300 text-slate-500 cursor-not-allowed opacity-60 shadow-none"
+          }`}
         >
           <Printer className="w-4 h-4" />
-          <span>Cetak / Simpan PDF (Ctrl+P)</span>
+          <span>
+            {isEligibleToPrint ? "Cetak / Simpan PDF (Ctrl+P)" : "Kartu Ujian Belum Diterbitkan"}
+          </span>
         </button>
       </div>
 
       {/* Printable Sheet (A4 Format) */}
-      <div className="max-w-3xl w-full bg-white rounded-2xl print:rounded-none border border-slate-300 print:border-none p-8 sm:p-12 shadow-lg print:shadow-none space-y-6">
+      <div className="max-w-3xl w-full bg-white rounded-2xl print:rounded-none border border-slate-300 print:border-none p-8 sm:p-12 shadow-lg print:shadow-none space-y-6 print:p-6 print:space-y-4 print:break-inside-avoid print:max-w-full">
+        {/* Banner Dokumen Draft jika belum lolos verifikasi */}
+        {!isEligibleToPrint && (
+          <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-center text-xs font-bold text-rose-700">
+            DOKUMEN DRAFT SEMENTARA — KARTU UJIAN RESMI BELUM DITERBITKAN OLEH PANITIA PMB
+          </div>
+        )}
+
         {/* Kop Surat Resmi */}
         <div className="flex items-center gap-5 border-b-2 border-slate-900 pb-5">
           <div className="relative w-20 h-20 flex-shrink-0">

@@ -47,23 +47,42 @@ func TestWB005_ValidateNIK_Empty(t *testing.T) {
 
 // TC_WB_006: Password valid yang memenuhi kriteria keamanan (NIST SP 800-63B min 12 karakter)
 func TestWB006_ValidatePasswordStrength_Valid(t *testing.T) {
-	// Kata sandi valid yang memenuhi standar keamanan sistem PMB STAICI (>= 12 karakter)
+	// 1. Kata sandi valid yang memenuhi standar keamanan sistem PMB STAICI (>= 12 karakter)
 	pass := "StaiciPMB2026!"
 	err := ValidatePasswordStrength(pass)
 	if err != nil {
 		t.Errorf("ValidatePasswordStrength(%s) menghasilkan error: %v, diharapkan nil", pass, err)
 	}
 
-	// Passphrase panjang (>= 16 karakter) tanpa simbol tetap valid
+	// 2. Passphrase panjang (>= 16 karakter) tanpa simbol tetap valid (NIST SP 800-63B)
 	longPassphrase := "belajardikampusstaici"
 	errLong := ValidatePasswordStrength(longPassphrase)
 	if errLong != nil {
 		t.Errorf("ValidatePasswordStrength(%s) menghasilkan error: %v, diharapkan nil", longPassphrase, errLong)
 	}
 
-	// Catatan Defect/Perbedaan Spesifikasi Lembar Pengujian:
-	// Pada lembar uji tercantum 'Rahasia123' (10 karakter).
-	// Backend menerapkan kebijakan keamanan minimal 12 karakter sehingga 'Rahasia123' menghasilkan error.
+	// 3. Menolak karakter tunggal berulang (misal aaaaaaaaaaaa)
+	allSamePass := "aaaaaaaaaaaa"
+	errAllSame := ValidatePasswordStrength(allSamePass)
+	if errAllSame == nil || !strings.Contains(errAllSame.Error(), "satu karakter yang diulang") {
+		t.Errorf("ValidatePasswordStrength(%s) harus ditolak karena karakter tunggal berulang", allSamePass)
+	}
+
+	// 4. Menolak kata sandi umum / bocor dari kamus blacklist
+	commonPass := "staicisitubondo"
+	errCommon := ValidatePasswordStrength(commonPass)
+	if errCommon == nil || !strings.Contains(errCommon.Error(), "terlalu umum") {
+		t.Errorf("ValidatePasswordStrength(%s) harus ditolak karena terdaftar di kamus umum", commonPass)
+	}
+
+	// 5. Menolak panjang 12-15 karakter yang hanya memiliki 1 kategori karakter (misal hanya huruf kecil)
+	singleCategory := "abcdefghijkl"
+	errSingle := ValidatePasswordStrength(singleCategory)
+	if errSingle == nil || !strings.Contains(errSingle.Error(), "minimal 2 jenis karakter") {
+		t.Errorf("ValidatePasswordStrength(%s) harus ditolak karena kurang dari 2 kategori", singleCategory)
+	}
+
+	// 6. Catatan Perbedaan Spesifikasi Awal Lembar Pengujian (Rahasia123 memiliki 10 karakter):
 	errOldSpec := ValidatePasswordStrength("Rahasia123")
 	if errOldSpec == nil {
 		t.Errorf("ValidatePasswordStrength('Rahasia123') diharapkan error karena panjang < 12 karakter")

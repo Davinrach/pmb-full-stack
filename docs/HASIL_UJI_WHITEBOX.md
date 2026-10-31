@@ -89,3 +89,4 @@
 Laporan visual cakupan kode telah digenerate menggunakan tool coverage resmi Go:
 * File profil mentah: [`backend/coverage.out`](file:///c:/Users/rachd/OneDrive/Documents/Staici/backend/coverage.out)
 * File visualisasi HTML: [`backend/coverage.html`](file:///c:/Users/rachd/OneDrive/Documents/Staici/backend/coverage.html)
+

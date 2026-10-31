@@ -329,6 +329,11 @@ test.describe('Black Box Testing - Tahap 2 (Formulir, Berkas, Admin Portal, & Ke
     const loginBody = await loginRes.json();
     const token = loginBody.data?.token;
 
+    // Pastikan status formulir pendaftar dalam kondisi terkunci (is_locked = true)
+    await request.post(`${API_BASE_URL}/api/v1/pendaftar/submit`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
     // 2. Coba kirim perubahan data formulir identitas
     const updateRes = await request.put(`${API_BASE_URL}/api/v1/pendaftar/identitas`, {
       headers: { Authorization: `Bearer ${token}` },

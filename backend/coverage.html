@@ -99,9 +99,9 @@
 				
 				<option value="file21">pmb-staici-backend/internal/response/response.go (0.0%)</option>
 				
-				<option value="file22">pmb-staici-backend/internal/util/email.go (0.0%)</option>
+				<option value="file22">pmb-staici-backend/internal/util/email.go (23.1%)</option>
 				
-				<option value="file23">pmb-staici-backend/internal/util/hash.go (92.5%)</option>
+				<option value="file23">pmb-staici-backend/internal/util/hash.go (100.0%)</option>
 				
 				</select>
 			</div>
@@ -8042,24 +8042,24 @@ import (
 
 // GenerateOTP generates a cryptographically secure 6-digit numeric OTP string
 func GenerateOTP() string {
-        <span class="cov0" title="0">var table = [...]byte{'1', '2', '3', '4', '5', '6', '7', '8', '9', '0'}
+        <span class="cov8" title="1">var table = [...]byte{'1', '2', '3', '4', '5', '6', '7', '8', '9', '0'}
         b := make([]byte, 6)
         n, err := io.ReadAtLeast(rand.Reader, b, 6)
         if n != 6 || err != nil </span>{
                 // Fallback timestamp-based RNG
                 <span class="cov0" title="0">return fmt.Sprintf("%06d", time.Now().UnixNano()%1000000)
 </span>        }
-        <span class="cov0" title="0">for i := 0; i &lt; len(b); i++ </span>{
-                <span class="cov0" title="0">b[i] = table[int(b[i])%len(table)]
+        <span class="cov8" title="1">for i := 0; i &lt; len(b); i++ </span>{
+                <span class="cov8" title="1">b[i] = table[int(b[i])%len(table)]
 </span>        }
-        <span class="cov0" title="0">return string(b)</span>
+        <span class="cov8" title="1">return string(b)</span>
 }
 
 // SendVerificationOTPEmail sends a beautifully branded OTP verification email
 func SendVerificationOTPEmail(cfg *config.Config, toEmail, recipientName, otpCode string) error {
         // If SMTP is not configured or still uses placeholder password, run in simulation mode
-        <span class="cov0" title="0">if strings.TrimSpace(cfg.SMTPHost) == "" || strings.TrimSpace(cfg.SMTPUser) == "" || cfg.SMTPPass == "app_password_disini" || strings.TrimSpace(cfg.SMTPPass) == "" </span>{
-                <span class="cov0" title="0">log.Printf("==================================================================")
+        <span class="cov8" title="1">if strings.TrimSpace(cfg.SMTPHost) == "" || strings.TrimSpace(cfg.SMTPUser) == "" || cfg.SMTPPass == "app_password_disini" || strings.TrimSpace(cfg.SMTPPass) == "" </span>{
+                <span class="cov8" title="1">log.Printf("==================================================================")
                 log.Printf("[EMAIL SIMULATION] SMTP belum dikonfigurasi akun riil. Mode Dev Aktif.")
                 log.Printf("[EMAIL SIMULATION] Penerima: %s (%s)", toEmail, recipientName)
                 log.Printf("[EMAIL SIMULATION] KODE OTP VERIFIKASI PMB: &gt;&gt;&gt; %s &lt;&lt;&lt;", otpCode)
@@ -8154,8 +8154,8 @@ func SendVerificationOTPEmail(cfg *config.Config, toEmail, recipientName, otpCod
 // SendPasswordResetEmail sends password reset link email with clickable verification button
 func SendPasswordResetEmail(cfg *config.Config, toEmail, recipientName, resetLink string) error {
         // If SMTP is not configured, run in simulation mode for seamless local development
-        <span class="cov0" title="0">if strings.TrimSpace(cfg.SMTPHost) == "" || strings.TrimSpace(cfg.SMTPUser) == "" </span>{
-                <span class="cov0" title="0">log.Printf("==================================================================")
+        <span class="cov8" title="1">if strings.TrimSpace(cfg.SMTPHost) == "" || strings.TrimSpace(cfg.SMTPUser) == "" </span>{
+                <span class="cov8" title="1">log.Printf("==================================================================")
                 log.Printf("[EMAIL SIMULATION] SMTP not configured. Development mode active.")
                 log.Printf("[EMAIL SIMULATION] To: %s (%s)", toEmail, recipientName)
                 log.Printf("[EMAIL SIMULATION] PERMINTAAN RESET KATA SANDI PMB")
@@ -8430,7 +8430,7 @@ func ValidatePasswordStrength(password string) error {
         // 2. Cek password umum / bocor
         <span class="cov8" title="1">lowered := strings.ToLower(trimmed)
         if commonLeakedPasswords[lowered] </span>{
-                <span class="cov0" title="0">return errors.New("kata sandi terlalu umum atau berisiko mudah ditebak, silakan gunakan kombinasi lain")
+                <span class="cov8" title="1">return errors.New("kata sandi terlalu umum atau berisiko mudah ditebak, silakan gunakan kombinasi lain")
 </span>        }
 
         // 3. Cek karakter tunggal berulang (misal aaaaaaaaaaaa)
@@ -8442,7 +8442,7 @@ func ValidatePasswordStrength(password string) error {
                 }
         }
         <span class="cov8" title="1">if allSame </span>{
-                <span class="cov0" title="0">return errors.New("kata sandi tidak boleh hanya terdiri dari satu karakter yang diulang")
+                <span class="cov8" title="1">return errors.New("kata sandi tidak boleh hanya terdiri dari satu karakter yang diulang")
 </span>        }
 
         // 4. Hitung keragaman kategori karakter
@@ -8482,7 +8482,7 @@ func ValidatePasswordStrength(password string) error {
 
         // Jika 12 - 15 karakter: minimal 2 kategori karakter
         <span class="cov8" title="1">if categories &lt; 2 </span>{
-                <span class="cov0" title="0">return errors.New("untuk kata sandi di bawah 16 karakter, kombinasikan minimal 2 jenis karakter (huruf besar/kecil, angka, atau simbol)")
+                <span class="cov8" title="1">return errors.New("untuk kata sandi di bawah 16 karakter, kombinasikan minimal 2 jenis karakter (huruf besar/kecil, angka, atau simbol)")
 </span>        }
 
         <span class="cov8" title="1">return nil</span>

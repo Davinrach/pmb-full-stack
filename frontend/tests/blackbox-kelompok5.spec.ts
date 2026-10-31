@@ -35,22 +35,32 @@ test.describe('Black Box Testing - Kelompok 5: Cetak Kartu & Ketahanan Sistem', 
     await page.goto(`${BASE_URL}/dashboard/cetak`);
     await page.waitForLoadState('networkidle');
 
-    // Ambil screenshot sebagai bukti status aktual implementasi
+    // Verifikasi sistem menolak pencetakan kartu dan tombol dinonaktifkan
+    await expect(page.getByText(/Kartu Ujian PMB Belum Diterbitkan/i).first()).toBeVisible();
+    const disabledBtn = page.getByRole('button', { name: /Kartu Ujian Belum Diterbitkan/i });
+    await expect(disabledBtn).toBeVisible();
+    await expect(disabledBtn).toBeDisabled();
+
+    // Ambil screenshot sebagai bukti status aktual kelulusan implementasi
     await page.screenshot({ path: '../docs/evidence/evidence-TC_BB_020-unverified-access.png', fullPage: true });
-
-    // Verifikasi apakah sistem menolak pencetakan kartu atau menonaktifkan tombol
-    const printButton = page.getByRole('button', { name: /Cetak \/ Simpan PDF/i });
-    const isPrintButtonVisible = await printButton.isVisible().catch(() => false);
-
-    // Sesuai aturan: jika tombol cetak tetap aktif dan tidak ada peringatan penolakan,
-    // maka aktual tidak memenuhi ekspektasi lembar pengujian (dilaporkan apa adanya).
-    console.log(`[TC_BB_020] Tombol cetak kartu terlihat: ${isPrintButtonVisible}`);
   });
 
   // ==========================================
   // TC_BB_021: Mencetak kartu peserta ujian setelah persyaratan dan verifikasi terpenuhi
   // ==========================================
   test('TC_BB_021: Pratinjau layout kartu peserta ujian pendaftar terverifikasi', async ({ page, request }) => {
+    // 0. Pastikan akun pendaftar berada pada status terverifikasi / lolos_seleksi
+    const adminUser = process.env.TEST_ADMIN_USERNAME || 'admin';
+    const adminPass = process.env.TEST_ADMIN_PASSWORD || 'adminpmb123';
+    const adminLoginRes = await request.post(`${API_BASE_URL}/api/v1/auth/login`, {
+      data: { identifier: adminUser, password: adminPass },
+    });
+    const adminToken = (await adminLoginRes.json()).data?.token;
+    await request.put(`${API_BASE_URL}/api/v1/admin/pendaftar/11/status-seleksi`, {
+      headers: { Authorization: `Bearer ${adminToken}` },
+      data: { status: 'lolos_seleksi', catatan: 'Lolos seleksi berkas & administrasi' },
+    });
+
     // 1. Login akun pendaftar yang sudah lolos seleksi / terverifikasi
     const verifiedUser = process.env.TEST_STUDENT_EMAIL || 'fauzi.ridwan@example.com';
     const verifiedPass = process.env.TEST_STUDENT_PASSWORD || 'pendaftar123';
